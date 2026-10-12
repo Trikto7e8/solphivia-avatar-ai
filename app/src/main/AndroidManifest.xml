@@ -12,7 +12,7 @@
   </activity>
   <activity android:name=".CompanionInputActivity" android:exported="false" android:excludeFromRecents="true" android:theme="@android:style/Theme.Material.Light.NoActionBar" />
   <service android:name=".PetService" android:exported="false" android:foregroundServiceType="specialUse">
-   <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-started draggable animated companion overlay; no screen reading or automation"/>
+   <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-started draggable animated AI assistant overlay; no screen reading or automation"/>
   </service>
   <service android:name=".OAuthKeepAliveService" android:exported="false" android:foregroundServiceType="specialUse">
    <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Keeps a local OAuth loopback callback listener active while the user authorizes ChatGPT in the system browser"/>

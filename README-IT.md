@@ -1,6 +1,6 @@
 # Solphivia Avatar AI
 
-**Un avatar animato per Android con fumetto, comandi touch, voce e una roadmap per collegare diversi fornitori di IA.**
+**Un avatar animato per Android che dà forma a Solphivia, assistente IA e collaboratrice creativa in sviluppo, con fumetto, comandi touch, voce e una roadmap per diversi fornitori di IA.**
 
 > Alpha comunitaria. Il progetto è in evoluzione e non è pronto per una distribuzione stabile. La versione attuale non ha completato la revisione Google Play.
 
