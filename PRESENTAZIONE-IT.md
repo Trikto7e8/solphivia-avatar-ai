@@ -2,7 +2,7 @@
 
 ## Descrizione breve
 
-Un avatar Android animato e flottante con fumetto, chat, comandi touch e voce. Alpha comunitaria con collegamento opzionale a ChatGPT e un progetto aperto a nuovi adattatori per modelli AI.
+Un avatar Android animato e flottante che rappresenta Solphivia, assistente IA e collaboratrice creativa in sviluppo, con fumetto, chat, comandi touch e voce. Alpha comunitaria con collegamento opzionale a ChatGPT e un progetto aperto a nuovi adattatori per modelli AI.
 
 ## Presentazione del progetto
 
@@ -24,7 +24,7 @@ Il progetto vuole separare nel tempo l'interfaccia-avatar dal fornitore AI: la c
 
 ## Testo pronto per la descrizione GitHub
 
-**GitHub short description:** `An animated Android avatar companion with a chat bubble, touch interaction, speech, and an extensible AI-provider roadmap.`
+**GitHub short description:** `Animated Android AI assistant with a draggable avatar, chat bubble, voice, and an extensible provider roadmap.`
 
 **Topics suggeriti:** `android`, `android-app`, `ai-assistant`, `avatar`, `text-to-speech`, `openai`, `chatgpt`, `java`.
 
