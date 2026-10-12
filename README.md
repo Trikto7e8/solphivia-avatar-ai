@@ -1,6 +1,6 @@
 # Solphivia Avatar AI
 
-**An animated Android companion with a chat bubble, touch controls, speech, and a provider-based AI roadmap.**
+**An animated Android AI assistant with a chat bubble, touch controls, speech, and a provider-based AI roadmap.**
 
 **Leggi in italiano:** [README-IT.md](README-IT.md) · [Italian quick start](AVVIO-RAPIDO-IT.md)
 
