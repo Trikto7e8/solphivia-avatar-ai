@@ -28,3 +28,7 @@ Questi sono obiettivi del progetto, non promesse sulle funzioni della versione a
 - Aggiornare l'app al target API corrente di Google Play e provarla sul dispositivo.
 - Completare privacy policy, dichiarazione Data safety, classificazione dei contenuti e dichiarazioni sui servizi foreground.
 - Preparare un Android App Bundle firmato e svolgere test interni/chiusi prima di qualsiasi pubblicazione generale.
+
+## iOS and community collaboration
+
+Start with an iOS feasibility study and an in-app avatar prototype, with portable encrypted memory and independent provider adapters. Document platform limitations before committing to feature parity. See [COLLABORATE.md](COLLABORATE.md) for contribution areas.

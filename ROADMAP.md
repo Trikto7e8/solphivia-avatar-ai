@@ -28,3 +28,7 @@ These are project goals, not promises about the current release.
 - Migrate the Android app to the current Google Play target API and test on-device.
 - Complete the privacy policy, Data safety declaration, content rating, and foreground-service declarations.
 - Prepare a signed Android App Bundle and use internal/closed testing before any production listing.
+
+## iOS and community collaboration
+
+Start with an iOS feasibility study and an in-app avatar prototype, with portable encrypted memory and independent provider adapters. Document platform limitations before committing to feature parity. See [COLLABORATE.md](COLLABORATE.md) for contribution areas.

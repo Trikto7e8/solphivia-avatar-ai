@@ -1,5 +1,12 @@
 # Solphivia Avatar AI
 
+## Contributors wanted: Android, iOS and local AI
+
+Help take Solphivia from a working Android alpha to a robust Google Play release, a native iOS experience and selectable local/cloud models. Android engineers, SwiftUI developers, testers and accessibility contributors are welcome.
+
+**[Join the collaboration](COLLABORATE.md)** · [Help wanted](https://github.com/Trikto7e8/solphivia-avatar-ai/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) · [Download the alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2)
+
+
 **An animated Android AI assistant with a chat bubble, touch controls, speech, and a provider-based AI roadmap.**
 
 **Leggi in italiano:** [README-IT.md](README-IT.md) · [Italian quick start](AVVIO-RAPIDO-IT.md)

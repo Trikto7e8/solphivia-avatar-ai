@@ -1,5 +1,12 @@
 # Solphivia Avatar AI
 
+## Cerchiamo collaboratori: Android, iOS e IA locale
+
+Ci aiuti a portare Solphivia su Google Play e a progettare una vera versione iOS? Cerchiamo sviluppatori Android/SwiftUI, persone esperte di modelli locali, tester e contributi per l’accessibilità. L’alpha Android è disponibile; iOS e nuove integrazioni sono da costruire.
+
+**[Partecipa al progetto](COLLABORATE.md)** · [Richieste di aiuto](https://github.com/Trikto7e8/solphivia-avatar-ai/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) · [Scarica l’alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2)
+
+
 **Un avatar animato per Android che dà forma a Solphivia, assistente IA e collaboratrice creativa in sviluppo, con fumetto, comandi touch, voce e una roadmap per diversi fornitori di IA.**
 
 > Alpha comunitaria. Il progetto è in evoluzione e non è pronto per una distribuzione stabile. La versione attuale non ha completato la revisione Google Play.

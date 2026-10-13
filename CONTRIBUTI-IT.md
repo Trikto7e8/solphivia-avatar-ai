@@ -15,3 +15,7 @@ Grazie per l'interesse a contribuire. Il repository contiene un prototipo Androi
 2. Mantieni la modifica circoscritta e includi i passaggi per riprodurla e verificarla.
 3. Quando possibile, compila e prova su un dispositivo Android o un emulatore; indica cosa non hai potuto provare.
 4. Non includere output di compilazione generato (`build/`, APK, AAB o chiavi di firma) nelle pull request del codice sorgente.
+
+## Find a first contribution
+
+See [COLLABORATE.md](COLLABORATE.md) for Android, iOS, local-model and testing requests. Use a GitHub noreply commit email; examples must contain synthetic data only.

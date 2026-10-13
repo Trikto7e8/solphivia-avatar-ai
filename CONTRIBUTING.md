@@ -15,3 +15,7 @@ Thanks for considering a contribution. The repository is an early Android protot
 2. Keep changes focused and include steps to reproduce and verify them.
 3. Build and test on an Android device or emulator when possible; state what you could not test.
 4. Do not include generated build output (`build/`, APKs, AABs, signing keys) in source pull requests.
+
+## Find a first contribution
+
+See [COLLABORATE.md](COLLABORATE.md) for Android, iOS, local-model and testing requests. Use a GitHub noreply commit email; examples must contain synthetic data only.
