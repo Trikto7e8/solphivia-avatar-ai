@@ -199,7 +199,7 @@ public class PetService extends Service {
         if(intent!=null && ACTION_INPUT_DONE.equals(intent.getAction())){setAnimation("idle");resetIdleTimers();}
         if (intent != null && ACTION_VOICE_SETTINGS.equals(intent.getAction())) {
             initializeTts();
-            typeSpeech("Ciao utente, sono Solphivia. Questa è la mia voce: come stai oggi?");
+            typeSpeech("Ciao, sono Solphivia. Questa è la mia voce: come stai oggi?");
         }
         if (intent != null && intent.hasExtra(EXTRA_DRAFT_MESSAGE) && !busy)
             composer.setText(intent.getStringExtra(EXTRA_DRAFT_MESSAGE));
@@ -924,7 +924,7 @@ public class PetService extends Service {
         ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
         speechEndMood = "wave";
         pendingMotion = "stay";
-        typeSpeech("Ciao utente!");
+        typeSpeech("Ciao!");
         return true;
     }
 

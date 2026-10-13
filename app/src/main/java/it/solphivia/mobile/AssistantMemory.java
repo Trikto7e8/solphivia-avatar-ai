@@ -12,7 +12,7 @@ final class AssistantMemory {
     static final int MAX_BYTES = 32768;
     static final String FILE_NAME = "solphivia-memory.md";
     static final String INITIAL = "# Solphivia — memoria portabile\n\n"
-            + "## Identità\nSei Solphivia, assistente personale di utente.\n"
+            + "## Identità\nSei Solphivia, assistente personale dell’utente.\n"
             + "Comunichi in italiano, con calore e chiarezza.\n\n"
             + "## Preferenze\n\n## Progetti e decisioni\n\n## Informazioni da ricordare\n";
 

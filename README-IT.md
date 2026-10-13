@@ -64,9 +64,9 @@ I contributi al codice sono benvenuti. Leggi prima `CONTRIBUTING.md` o [la versi
 
 ## Stato delle verifiche
 
-La versione **0.9.2-alpha1** (codice 30) è stata compilata, verificata con Android Lint e installata sul Motorola. I test automatici nella copia isolata sono passati e il 13 ottobre 2026 l’utente ha confermato che funziona, autorizzando questa alpha. Restano miglioramenti successivi e la valutazione della voce: Android ha bloccato eSpeak NG. Vedere [rapporto di verifica](VERIFICA-0.9.2-alpha1.md).
+La versione **0.9.2-alpha2** (codice 31) è stata compilata, verificata con Android Lint e installata sul Motorola. I test automatici nella copia isolata sono passati e il 13 ottobre 2026 l’utente ha confermato che funziona, autorizzando questa alpha. Restano miglioramenti successivi e la valutazione della voce: L’utente ha confermato che eSpeak funziona sul telefono. Vedere [rapporto di verifica](VERIFICA-0.9.2-alpha2.md).
 
-## 0.9.2-alpha1
+## 0.9.2-alpha2
 
 - Memoria personale cifrata sul dispositivo, editor e comando `ricorda:`; import/export cifrato compatibile con AI Memory Vault v1. Anteprima modificabile per ogni invio remoto. Nessuna sincronizzazione automatica e nessun nuovo adattatore LLM.
 - Pulsanti `+` e microfono visibili anche nella schermata interna; dettatura modificabile prima dell’invio e allegati mantenuti nei turni successivi.
@@ -74,4 +74,4 @@ La versione **0.9.2-alpha1** (codice 30) è stata compilata, verificata con Andr
 - Radar DPC aggiornato: dati, timestamp ed errori visibili. Segnala echi vicini, senza stimare direzione o tempo di arrivo.
 - Sonno animato, proporzioni corrette e schermata `☰ → Prova animazioni`; 108 sprite e 1248 combinazioni verificate.
 
-Scarica l’APK dalla [pre-release v0.9.2-alpha1](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha1). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è quello di Solphivia per utente e può essere modificato nell’editor Memoria.
+Scarica l’APK dalla [pre-release v0.9.2-alpha2](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.

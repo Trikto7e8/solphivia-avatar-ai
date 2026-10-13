@@ -622,7 +622,7 @@ public class MainActivity extends Activity {
                 speech.setText(item.optString("content")); return;
             }
         }
-        speech.setText("Ciao utente! Sono qui. Scrivimi quello che vuoi, oppure trascinami un po’ sullo schermo. ✨");
+        speech.setText("Ciao! Sono qui. Scrivimi quello che vuoi, oppure trascinami un po’ sullo schermo. ✨");
     }
 
     private JSONArray loadHistory() {

@@ -27,7 +27,7 @@ public final class VoiceInstrumentation extends Instrumentation {
             CountDownLatch spoken=new CountDownLatch(1);boolean[] success={false};
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener(){public void onStart(String id){}public void onDone(String id){success[0]=true;spoken.countDown();}public void onError(String id){spoken.countDown();}});
             File output=new File(getTargetContext().getExternalFilesDir(null),"english-accent-test.wav");
-            int code=tts.synthesizeToFile(ItalianEnglishAccent.respell("Ciao utente, sono Solphivia. Come stai oggi?"),null,output,"test");
+            int code=tts.synthesizeToFile(ItalianEnglishAccent.respell("Ciao, sono Solphivia. Come stai oggi?"),null,output,"test");
             RevisionChecks.check(code==TextToSpeech.SUCCESS&&spoken.await(30,TimeUnit.SECONDS)&&success[0]&&output.length()>44,"offline speech synthesis produces audio");
             result.putString("stream","PASS: offline English TTS engine="+engine+", voice="+selected.getName()+", WAV "+output.length()+" bytes\n");finish(Activity.RESULT_OK,result);
         }catch(Throwable e){result.putString("stream","FAIL: "+android.util.Log.getStackTraceString(e));finish(Activity.RESULT_CANCELED,result);}
