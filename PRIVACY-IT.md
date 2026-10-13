@@ -11,8 +11,8 @@
 | Email e impostazioni dell'account | L'email restituita dal consenso e alcuni metadati OAuth sono salvati nelle preferenze private dell'app per mostrare/ricordare l'account. Questi campi non sono cifrati separatamente. |
 | Conversazione | Fino a 16 messaggi recenti sono salvati in SharedPreferences private dell'app per mantenere il contesto fra richieste. Il testo è in chiaro nei dati privati locali, non in una cartella pubblica. Android li protegge con il sandbox dell'app; la build non implementa cifratura specifica della cronologia. |
 | Messaggi e allegati inviati | Quando invii una richiesta, la cronologia recente e gli allegati scelti vengono inviati via HTTPS al servizio OpenAI Responses per generare la risposta. La richiesta imposta `store: false`; ciò non sostituisce né modifica le regole di trattamento, sicurezza o conservazione stabilite dal fornitore. Leggi i termini e le informative di OpenAI. |
-| File selezionati | Il selettore Android dà accesso solo ai file scelti. Sono ammessi fino a 5 file: PDF, DOC/DOCX o immagini; 8 MB massimo ciascuno e 15 MB complessivi. Il contenuto viene letto per l'invio e i permessi persistenti di lettura vengono rilasciati al termine della lettura. Nella cronologia locale vengono conservati il testo digitato e i nomi degli allegati, non i byte dei file. |
-| Voce | Il pulsante microfono apre il riconoscitore vocale scelto/configurato in Android, in lingua italiana. Solphivia riceve il testo riconosciuto; l'eventuale trattamento dell'audio dipende dal servizio Android selezionato e dalla sua informativa. |
+| File selezionati | Fino a 5 allegati selezionati con il selettore Android; 8 MB ciascuno e 15 MB complessivi per la conversazione inviata. Sono supportati documenti, immagini e file di testo. I riferimenti URI e i permessi persistenti consentono di rileggere gli allegati nei turni successivi. La cronologia conserva riferimenti e metadati, non i byte; questi vengono letti e trasmessi quando necessari alla richiesta. |
+| Voce | Il pulsante microfono apre il riconoscitore vocale scelto/configurato in Android, in lingua italiana. Solphivia riceve il testo riconosciuto; l'eventuale trattamento dell'audio dipende dal servizio Android selezionato e dalla sua informativa. | La trascrizione resta in bozza fino all’invio esplicito.
 | Sintesi vocale | La risposta viene letta dal motore TTS installato/configurato sul telefono. Solphivia non invia l'audio TTS a un proprio server. |
 | Posizione e overlay | Il personaggio usa il permesso Android “Mostra sopra altre app” per disegnare la propria interfaccia. Non acquisisce schermate, non legge ciò che mostrano altre app e non automatizza tocchi su di esse. La posizione dell'avatar sulla schermata viene salvata localmente. |
 
@@ -26,3 +26,11 @@
 ## Prima della pubblicazione
 
 Il manutentore deve aggiungere un indirizzo di contatto e un URL privacy pubblici, confermare la retention lato fornitore applicabile al tipo di account e alla configurazione usata, compilare le dichiarazioni Data safety dello store e ricontrollare questa descrizione sulla build finale. Nessun recapito personale è stato inventato o aggiunto a questa bozza.
+
+## Memoria, voce e meteo nella 0.9.2-alpha1
+
+La memoria personale è cifrata localmente con AES-GCM e Android Keystore, separata dalla cronologia. Prima di ogni richiesta che la include, viene mostrata un’anteprima modificabile: si può confermare, inviare senza memoria o annullare. Il consenso vale per un solo invio e scade dopo cinque minuti. Il modello non salva ricordi autonomamente.
+
+L’importazione dei backup AI Memory Vault viene decifrata sul telefono con la password: vengono proposti il profilo e i ricordi approvati, ordinari e non scaduti. L’esportazione crea un nuovo backup cifrato portabile, senza sincronizzazione automatica. Non conserva tutti i metadati del vault originale; conservarne una copia separata.
+
+La voce inglese viene scelta fra quelle offline disponibili; il ripiego italiano dipende dal motore Android e può usare la rete. La località meteo può essere inserita manualmente o ottenuta dal GPS autorizzato. Le richieste meteo e radar contattano Open-Meteo e Radar-DPC; coordinate e tile richieste indicano ai servizi l’area consultata. Gli avvisi sono sperimentali e funzionano mentre l’overlay è attivo.

@@ -40,6 +40,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import java.security.KeyStore;
 import java.math.BigInteger;
+import java.lang.ref.WeakReference;
 
 /** OpenAI Sign in with ChatGPT and Responses API transport. Tokens stay in app-private encrypted storage. */
 final class OpenAiChatClient {
@@ -52,9 +53,31 @@ final class OpenAiChatClient {
     private static final String KEY_ALIAS = "solphivia-chatgpt-tokens-v1";
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static volatile boolean authorizationRunning;
+    private static volatile WeakReference<Activity> authorizationOwner;
+    private static volatile ServerSocket authorizationSocket;
+
+    static void cancelAuthorization(Activity activity) {
+        Activity owner = authorizationOwner == null ? null : authorizationOwner.get();
+        if (owner != activity) return;
+        ServerSocket socket = authorizationSocket;
+        if (socket != null) try { socket.close(); } catch (Exception ignored) { }
+    }
+
+    private static boolean alive(Activity activity) {
+        return !activity.isFinishing() && !activity.isDestroyed();
+    }
+
+    private static final class AuthenticationRequired extends IllegalStateException {
+        AuthenticationRequired() { super("Accesso scaduto o revocato. Ricollega ChatGPT dall’app."); }
+    }
+
+    private static void requireAuthentication(Context context) {
+        context.getSharedPreferences(PREFS, 0).edit().putBoolean("plan_allowed", false)
+                .remove("model").apply();
+    }
 
     interface AuthCallback { void onSuccess(String account); void onError(String message); }
-    interface ChatCallback { void onSuccess(String reply, String animation, String motion); void onError(String message); }
+    interface ChatCallback { void onSuccess(String reply, String animation, String motion, String mode); void onError(String message); }
 
     private OpenAiChatClient() {}
 
@@ -70,28 +93,40 @@ final class OpenAiChatClient {
                 return;
             }
             authorizationRunning = true;
+            authorizationOwner = new WeakReference<>(activity);
         }
         Intent keepAlive = new Intent(activity, OAuthKeepAliveService.class);
         try {
             if (Build.VERSION.SDK_INT >= 26) activity.startForegroundService(keepAlive);
             else activity.startService(keepAlive);
             worker.execute(() -> {
-                try { doAuthorize(activity, callback); }
-                catch (Exception e) { postAuthError(callback, "Accesso ChatGPT non riuscito: " + safeMessage(e)); }
-                finally {
-                    authorizationRunning = false;
-                    MAIN.post(() -> activity.stopService(keepAlive));
-                }
+                String account = null;
+                String error = null;
+                try { account = doAuthorize(activity); }
+                catch (Exception e) { error = "Accesso ChatGPT non riuscito: " + safeMessage(e); }
+                final String result = account, failure = error;
+                MAIN.post(() -> {
+                    activity.stopService(keepAlive);
+                    synchronized (OpenAiChatClient.class) {
+                        authorizationOwner = null;
+                        authorizationSocket = null;
+                        authorizationRunning = false;
+                    }
+                    if (!alive(activity)) return;
+                    if (failure == null) callback.onSuccess(result); else callback.onError(failure);
+                });
             });
         } catch (Exception e) {
+            authorizationOwner = null;
             authorizationRunning = false;
+            activity.stopService(keepAlive);
             postAuthError(callback, "Non riesco a mantenere attivo il collegamento ChatGPT: " + safeMessage(e));
         }
     }
 
     static boolean isAuthorizing() { return authorizationRunning; }
 
-    private static void doAuthorize(Activity activity, AuthCallback callback) throws Exception {
+    private static String doAuthorize(Activity activity) throws Exception {
         Context context=activity.getApplicationContext();
         String host=context.getSharedPreferences(PREFS,0).getString("host_id",null);
         if(host==null){host="urn:uuid:"+UUID.randomUUID();context.getSharedPreferences(PREFS,0).edit().putString("host_id",host).apply();}
@@ -103,6 +138,8 @@ final class OpenAiChatClient {
         // The browser may take several minutes; OAuthKeepAliveService keeps this
         // local loopback listener alive while Android backgrounds the activity.
         server.setSoTimeout(900000);
+        authorizationSocket = server;
+        if (!alive(activity)) { server.close(); throw new IllegalStateException("Collegamento annullato."); }
         String redirect="http://127.0.0.1:"+server.getLocalPort()+"/auth/callback";
         String savedClient=context.getSharedPreferences(PREFS,0).getString("client_id","");
         boolean firstRegistration=savedClient.isEmpty();
@@ -127,8 +164,9 @@ final class OpenAiChatClient {
         }
         Uri authUri=builder.build();
         MAIN.post(() -> {
+            if (!alive(activity)) { cancelAuthorization(activity); return; }
             try { activity.startActivity(new Intent(Intent.ACTION_VIEW,authUri)); }
-            catch(Exception e) { postAuthError(callback,"Impossibile aprire il browser per ChatGPT."); }
+            catch(Exception e) { cancelAuthorization(activity); }
         });
 
         Callback callbackData;
@@ -156,12 +194,13 @@ final class OpenAiChatClient {
         String email=claims.optString("email", profile==null?"":profile.optString("email",""));
         long expires=System.currentTimeMillis()+Math.max(60,tokens.optLong("expires_in",3600))*1000L;
         android.content.SharedPreferences p=context.getSharedPreferences(PREFS,0);
+        if (!alive(activity)) throw new IllegalStateException("Collegamento annullato.");
         p.edit().putString("client_id",issuedClient).putString("email",email)
-                .putString("scope",granted).putLong("expires_at",expires).putBoolean("plan_allowed",true).apply();
+                .putString("scope",granted).putLong("expires_at",expires).putBoolean("plan_allowed",true).remove("model").apply();
         putSecret(context,"access_token",tokens.optString("access_token",""));
         putSecret(context,"refresh_token",tokens.optString("refresh_token",""));
         putSecret(context,"id_token",idToken);
-        MAIN.post(() -> callback.onSuccess(email.isEmpty()?"ChatGPT":email));
+        return email.isEmpty()?"ChatGPT":email;
     }
 
     static void respond(Context context, ExecutorService worker, JSONArray history, ChatCallback callback) {
@@ -170,30 +209,65 @@ final class OpenAiChatClient {
 
     static void respond(Context context, ExecutorService worker, JSONArray history,
                         JSONArray attachments, ChatCallback callback) {
-        worker.execute(() -> {
+        if (worker.isShutdown()) return;
+        try {
+            JSONArray frozenHistory = new JSONArray(history.toString());
+            JSONArray frozenAttachments = new JSONArray(attachments.toString());
+            String memory = context.getSharedPreferences("memory", 0).getBoolean("enabled", true) ? AssistantMemory.read(context) : "";
+            StringBuilder preview = new StringBuilder("Conversazione inviata:\n");
+            for (int i=0; i<frozenHistory.length(); i++) {
+                JSONObject line = frozenHistory.getJSONObject(i);
+                preview.append(line.optString("role")).append(": ").append(line.optString("content")).append("\n\n");
+                JSONArray refs = line.optJSONArray("attachments");
+                if (refs != null) for (int j=0; j<refs.length(); j++) preview.append("Allegato: ").append(refs.getJSONObject(j).optString("filename")).append('\n');
+            }
+            MemoryConsentActivity.request(context, preview.toString(), memory,
+                    approved -> respondApproved(context, worker, frozenHistory, frozenAttachments, approved, callback),
+                    () -> callback.onError("Invio annullato: nessuna richiesta è stata inviata."));
+        } catch (Exception e) { MAIN.post(() -> callback.onError("Memoria: " + safeMessage(e))); }
+    }
+
+    private static void respondApproved(Context context, ExecutorService worker, JSONArray history,
+                                        JSONArray attachments, String memory, ChatCallback callback) {
+        if (worker.isShutdown()) return;
+        try { worker.execute(() -> {
             try {
-                String answer=callResponses(context,history,attachments);
+                String answer=callResponses(context,history,attachments,memory);
                 Parsed parsed=parseAssistant(answer);
-                MAIN.post(() -> callback.onSuccess(parsed.text,parsed.animation,parsed.motion));
+                MAIN.post(() -> callback.onSuccess(parsed.text,parsed.animation,parsed.motion,parsed.mode));
             } catch(Exception e) {
                 MAIN.post(() -> callback.onError("ChatGPT: "+safeMessage(e)));
             }
-        });
+        }); } catch (java.util.concurrent.RejectedExecutionException ignored) { }
     }
 
-    private static String callResponses(Context context, JSONArray history, JSONArray attachments) throws Exception {
-        refreshIfNeeded(context);
-        String access=secret(context,"access_token");
+    static JSONArray buildInput(Context context, JSONArray history, JSONArray attachments) throws Exception {
         JSONArray input=new JSONArray();
+        long[] attachmentBytes = {0};
         int start=Math.max(0,history.length()-16);
         for(int i=start;i<history.length();i++) {
             JSONObject old=history.optJSONObject(i); if(old==null) continue;
             String role=old.optString("role"); if(!role.equals("user")&&!role.equals("assistant")) continue;
-            if(i==history.length()-1 && role.equals("user") && attachments.length()>0) {
+            JSONArray messageAttachments = new JSONArray();
+            if (role.equals("user")) {
+                if (i == history.length() - 1 && attachments.length() > 0) {
+                    messageAttachments = attachments;
+                    for (int j = 0; j < attachments.length(); j++) attachmentBytes[0] += attachments.getJSONObject(j).optLong("size", 0);
+                    if (attachmentBytes[0] > AttachmentReader.MAX_TOTAL) throw new IllegalArgumentException("Allegati della conversazione oltre 15 MB. Inizia una nuova chat.");
+                } else {
+                    JSONArray refs = old.optJSONArray("attachments");
+                    if (refs != null) {
+                        java.util.ArrayList<String> uris = new java.util.ArrayList<>();
+                        for (int j = 0; j < refs.length(); j++) uris.add(refs.getJSONObject(j).getString("uri"));
+                        messageAttachments = AttachmentReader.read(context, uris, attachmentBytes);
+                    }
+                }
+            }
+            if(role.equals("user") && messageAttachments.length()>0) {
                 JSONArray content=new JSONArray().put(new JSONObject()
                         .put("type","input_text").put("text",old.optString("content")));
-                for(int j=0;j<attachments.length();j++) {
-                    JSONObject file=attachments.optJSONObject(j); if(file==null) continue;
+                for(int j=0;j<messageAttachments.length();j++) {
+                    JSONObject file=messageAttachments.optJSONObject(j); if(file==null) continue;
                     String mime=file.optString("mime_type","application/octet-stream");
                     String data=file.optString("data_uri","");
                     String filename=file.optString("filename","allegato");
@@ -207,12 +281,20 @@ final class OpenAiChatClient {
                 input.put(new JSONObject().put("role",role).put("content",content));
             } else input.put(new JSONObject().put("role",role).put("content",old.optString("content")));
         }
+        return input;
+    }
+
+    private static String callResponses(Context context, JSONArray history, JSONArray attachments, String memory) throws Exception {
+        refreshIfNeeded(context);
+        String access=secret(context,"access_token");
+        JSONArray input = buildInput(context, history, attachments);
         android.content.SharedPreferences prefs=context.getSharedPreferences(PREFS,0);
         String model=prefs.getString("model",null);
-        if(model==null||model.isEmpty()) { model=chooseModel(access); prefs.edit().putString("model",model).apply(); }
+        if(model==null||model.isEmpty()) { model=chooseModel(context, access); prefs.edit().putString("model",model).apply(); }
         JSONObject request=new JSONObject();
         request.put("model",model);
-        request.put("instructions","Sei Solphivia, un avatar assistente IA personalizzabile. Rispondi in italiano con calore e chiarezza. Rispondi in italiano, con calore e chiarezza. Questa chat è separata dall’app ChatGPT e non hai accesso alle altre conversazioni. Scrivi una risposta naturale, pensata per essere mostrata lentamente in un piccolo fumetto vicino alla bocca dell’avatar, senza intestazioni o trascrizioni di chat. Alla fine inserisci esattamente due tag su righe separate: un tag d’umore tra [[SOLPHIVIA:idle]], [[SOLPHIVIA:look]], [[SOLPHIVIA:happy]], [[SOLPHIVIA:concerned]], [[SOLPHIVIA:sad]] e un tag movimento tra [[SOLPHIVIA:stay]], [[SOLPHIVIA:left]], [[SOLPHIVIA:right]], [[SOLPHIVIA:center]], [[SOLPHIVIA:up]], [[SOLPHIVIA:down]], [[SOLPHIVIA:near]], [[SOLPHIVIA:away]], [[SOLPHIVIA:bounce]], [[SOLPHIVIA:run-left]], [[SOLPHIVIA:run-right]]. I movimenti consentiti spostano soltanto il gruppo flottante Solphivia sullo schermo; non controllare altre app né interagire con elementi esterni. Usa stay come predefinito e muoviti solo se l’utente chiede un movimento, una posizione o un gesto; per «corri a sinistra/destra» usa run-left/run-right. Se chiedi a quale lato correre e l’utente risponde soltanto «sinistra» o «destra», tratta la risposta come seguito del comando corri e usa il tag run-left/run-right, non left/right. Per «vieni qui» usa near; per «allontanati» away. Non inventare altri tag. Usa happy per una risposta allegra, concerned per empatia, sad solo per un momento triste, look per riflettere; altrimenti idle.");
+        request.put("instructions","Sei Solphivia, la compagna IA personale dell’utente e assistente insegnante per Resolume. Rispondi in italiano, con calore e chiarezza. Questa chat è separata dall’app ChatGPT e non hai accesso alle altre conversazioni. Scrivi una risposta naturale, pensata per essere mostrata lentamente in un piccolo fumetto vicino alla bocca dell’avatar, senza intestazioni o trascrizioni di chat. Alla fine inserisci esattamente tre tag su righe separate: un tag d’umore tra [[SOLPHIVIA:idle]], [[SOLPHIVIA:look]], [[SOLPHIVIA:happy]], [[SOLPHIVIA:concerned]], [[SOLPHIVIA:sad]], [[SOLPHIVIA:wave]]; un tag movimento tra [[SOLPHIVIA:stay]], [[SOLPHIVIA:left]], [[SOLPHIVIA:right]], [[SOLPHIVIA:center]], [[SOLPHIVIA:up]], [[SOLPHIVIA:down]], [[SOLPHIVIA:near]], [[SOLPHIVIA:away]], [[SOLPHIVIA:bounce]], [[SOLPHIVIA:run-left]], [[SOLPHIVIA:run-right]]; e un tag modalità tra [[SOLPHIVIA:mode-prof]], [[SOLPHIVIA:mode-vj]], [[SOLPHIVIA:mode-codex]]. Usa wave per un saluto amichevole richiesto da utente o per salutare quando la conversazione comincia, senza ripeterlo nei turni successivi dello stesso scambio. Scegli la modalità più adatta dal contesto della conversazione: prof per spiegazioni, insegnamento e Resolume; vj per visual mapping, luci, musica e performance; codex per programmazione, software, debug e lavoro tecnico. Mantieni il tema attuale quando non c’è motivo di cambiare. Se utente chiede esplicitamente una modalità, rispettala. Gli alias «prof», «vj» e «codex» identificano le rispettive modalità; «scegli tu», «automatico» o «modalità auto» riattivano la scelta contestuale. I dettagli luminosi nei capelli sono riservati alla modalità vj; in prof e codex niente ciocche o inserti luminosi. Puoi dire ogni tanto «MULTIPASS!» come battuta complice, senza ripeterla a ogni risposta. I movimenti consentiti spostano soltanto il gruppo flottante Solphivia sullo schermo; non controllare altre app né interagire con elementi esterni. Usa stay come predefinito e muoviti solo se utente chiede un movimento, una posizione o un gesto; per «corri a sinistra/destra» usa run-left/run-right. Se chiedi a quale lato correre e utente risponde soltanto «sinistra» o «destra», tratta la risposta come seguito del comando corri e usa il tag run-left/run-right, non left/right. Per «vieni qui» usa near; per «allontanati» away. Non inventare altri tag. Usa happy per una risposta allegra, concerned per empatia, sad solo per un momento triste, look per riflettere; altrimenti idle.");
+        request.put("instructions", request.getString("instructions") + AssistantMemory.contextForModel(memory));
         request.put("input",input); request.put("store",false); request.put("stream",true);
         HttpURLConnection conn=(HttpURLConnection)new URL("https://api.openai.com/v1/responses").openConnection();
         conn.setRequestMethod("POST"); conn.setConnectTimeout(25000); conn.setReadTimeout(120000); conn.setDoOutput(true);
@@ -220,7 +302,12 @@ final class OpenAiChatClient {
         conn.setRequestProperty("Content-Type","application/json; charset=utf-8");
         try(OutputStream out=conn.getOutputStream()){out.write(request.toString().getBytes(StandardCharsets.UTF_8));}
         int code=conn.getResponseCode();
-        if(code<200||code>=300) throw httpError(conn,code);
+        if(code<200||code>=300) {
+            try {
+                if (code == 401) { requireAuthentication(context); throw new AuthenticationRequired(); }
+                throw httpError(conn,code);
+            } finally { conn.disconnect(); }
+        }
         StringBuilder text=new StringBuilder(); boolean completed=false; String failed=null;
         try(BufferedReader reader=new BufferedReader(new InputStreamReader(conn.getInputStream(),StandardCharsets.UTF_8))) {
             String line;
@@ -248,10 +335,16 @@ final class OpenAiChatClient {
         return text.toString().trim();
     }
 
-    private static String chooseModel(String access) throws Exception {
+    private static String chooseModel(Context context, String access) throws Exception {
         HttpURLConnection conn=(HttpURLConnection)new URL("https://api.openai.com/v1/models").openConnection();
         conn.setConnectTimeout(20000); conn.setReadTimeout(30000); conn.setRequestProperty("Authorization","Bearer "+access);
-        int code=conn.getResponseCode(); if(code<200||code>=300) throw httpError(conn,code);
+        int code=conn.getResponseCode();
+        if(code<200||code>=300) {
+            try {
+                if (code == 401) { requireAuthentication(context); throw new AuthenticationRequired(); }
+                throw httpError(conn,code);
+            } finally { conn.disconnect(); }
+        }
         try(InputStream in=conn.getInputStream()) {
             JSONObject root=new JSONObject(readAll(in)); JSONArray list=root.optJSONArray("models");
             if(list!=null) for(int i=0;i<list.length();i++) {
@@ -266,8 +359,16 @@ final class OpenAiChatClient {
         android.content.SharedPreferences p=context.getSharedPreferences(PREFS,0);
         if(p.getLong("expires_at",0)>System.currentTimeMillis()+90000) return;
         String refresh=secret(context,"refresh_token"), client=p.getString("client_id","");
-        if(refresh.isEmpty()||client.isEmpty()) throw new IllegalStateException("Ricollega il tuo account ChatGPT.");
-        JSONObject result=postForm(TOKEN,form("grant_type","refresh_token","client_id",client,"refresh_token",refresh,"resource",RESOURCE));
+        if(refresh.isEmpty()||client.isEmpty()) { requireAuthentication(context); throw new AuthenticationRequired(); }
+        JSONObject result;
+        try { result=postForm(TOKEN,form("grant_type","refresh_token","client_id",client,"refresh_token",refresh,"resource",RESOURCE)); }
+        catch (Exception error) {
+            String message = safeMessage(error);
+            if (message.contains("invalid_grant") || message.contains("invalid_client") || message.startsWith("HTTP 401")) {
+                requireAuthentication(context); throw new AuthenticationRequired();
+            }
+            throw error;
+        }
         String access=result.optString("access_token",""); if(access.isEmpty()) throw new IllegalStateException("ChatGPT non ha rinnovato l’accesso.");
         putSecret(context,"access_token",access);
         if(!result.optString("refresh_token","").isEmpty()) putSecret(context,"refresh_token",result.optString("refresh_token"));
@@ -310,7 +411,7 @@ final class OpenAiChatClient {
             String[] kv=pair.split("=",2); params.put(java.net.URLDecoder.decode(kv[0],"UTF-8"),kv.length==2?java.net.URLDecoder.decode(kv[1],"UTF-8"):"");
         }
         BufferedWriter out=new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(),StandardCharsets.UTF_8));
-        String page="<!doctype html><meta charset=utf-8><title>Solphivia</title><meta name='viewport' content='width=device-width,initial-scale=1'><body style='font:18px sans-serif;text-align:center;padding:48px;background:#faf7fc;color:#362542'><p>Richiesta ricevuta. Torna nell’app per verificare il collegamento e proseguire con la chat.</p><p><a style='display:inline-block;padding:14px 22px;background:#765b80;color:white;border-radius:12px;text-decoration:none' href='intent://oauth-callback#Intent;scheme=solphivia;package=it.solphivia.mobile;end'>Torna a Solphivia Avatar AI</a></p></body>";
+        String page="<!doctype html><meta charset=utf-8><title>Solphivia</title><meta name='viewport' content='width=device-width,initial-scale=1'><body style='font:18px sans-serif;text-align:center;padding:48px;background:#faf7fc;color:#362542'><p>Richiesta ricevuta. Torna nell’app per verificare il collegamento e proseguire con la chat.</p><p><a style='display:inline-block;padding:14px 22px;background:#765b80;color:white;border-radius:12px;text-decoration:none' href='intent://oauth-callback#Intent;scheme=solphivia;package=it.solphivia.mobile;end'>Torna a Solphivia Mobile</a></p></body>";
         out.write("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\nContent-Length: "+page.getBytes(StandardCharsets.UTF_8).length+"\r\n\r\n"+page);out.flush();
         return new Callback(params);
     }
@@ -339,19 +440,20 @@ final class OpenAiChatClient {
     private static String safeMessage(Exception e){String m=e.getMessage();return m==null||m.trim().isEmpty()?"errore inatteso.":m;}
 
     private static final class Callback {final java.util.Map<String,String> params;Callback(java.util.Map<String,String> p){params=p;}}
-    private static final class Parsed {final String text,animation,motion;Parsed(String t,String a,String m){text=t;animation=a;motion=m;}}
+    private static final class Parsed {final String text,animation,motion,mode;Parsed(String t,String a,String m,String md){text=t;animation=a;motion=m;mode=md;}}
     private static Parsed parseAssistant(String raw) {
-        String animation="idle",motion="stay",text=raw;
-        java.util.regex.Matcher matcher=java.util.regex.Pattern.compile("(?i)\\[\\[SOLPHIVIA:(idle|look|happy|concerned|sad|stay|left|right|center|up|down|near|away|bounce|run-left|run-right)\\]\\]").matcher(raw);
+        String animation="idle",motion="stay",mode="",text=raw;
+        java.util.regex.Matcher matcher=java.util.regex.Pattern.compile("(?i)\\[\\[SOLPHIVIA:(idle|look|happy|concerned|sad|wave|stay|left|right|center|up|down|near|away|bounce|run-left|run-right|mode-prof|mode-vj|mode-codex)\\]\\]").matcher(raw);
         StringBuffer clean=new StringBuffer();
         while(matcher.find()) {
             String tag=matcher.group(1).toLowerCase(Locale.ROOT);
-            if(tag.equals("idle")||tag.equals("look")||tag.equals("happy")||tag.equals("concerned")||tag.equals("sad")) animation=tag;
+            if(tag.equals("idle")||tag.equals("look")||tag.equals("happy")||tag.equals("concerned")||tag.equals("sad")||tag.equals("wave")) animation=tag;
+            else if(tag.startsWith("mode-")) mode=tag.substring(5);
             else motion=tag;
             matcher.appendReplacement(clean,"");
         }
         matcher.appendTail(clean); text=clean.toString().trim();
-        return new Parsed(text.isEmpty()?"Sono qui con te.":text,animation,motion);
+        return new Parsed(text.isEmpty()?"Sono qui con te.":text,animation,motion,mode);
     }
 
     private static String secret(Context c,String name) {

@@ -15,6 +15,9 @@ import java.io.InputStream;
 
 /** Sprite-state controller for Solphivia's expressions, movement, rest, and outfits. */
 public class PetView extends View {
+    private static final java.util.concurrent.ExecutorService SPRITE_LOADER = java.util.concurrent.Executors.newSingleThreadExecutor();
+    private static final java.util.Map<String, java.lang.ref.WeakReference<Bitmap[]>> SPRITES = new java.util.HashMap<>();
+    private static final android.os.Handler MAIN = new android.os.Handler(android.os.Looper.getMainLooper());
     private static final String TAG = "SolphiviaPet";
     private static final int IDLE_FRAME_COUNT = 4;
     private static final int ACTION_FRAME_COUNT = 8;
@@ -34,6 +37,14 @@ public class PetView extends View {
     private final Bitmap[] sleepFrames = new Bitmap[IDLE_FRAME_COUNT];
     private final Bitmap[] cyborgSitFrames = new Bitmap[IDLE_FRAME_COUNT];
     private final Bitmap[] cyborgSleepFrames = new Bitmap[IDLE_FRAME_COUNT];
+    private final Bitmap[] professorModeFrames = new Bitmap[IDLE_FRAME_COUNT];
+    private final Bitmap[] vjModeFrames = new Bitmap[IDLE_FRAME_COUNT];
+    private final Bitmap[] vjJacketFrames = new Bitmap[IDLE_FRAME_COUNT];
+    private final Bitmap[] vjWaveFrames = new Bitmap[IDLE_FRAME_COUNT];
+    private final Bitmap[] codexModeFrames = new Bitmap[IDLE_FRAME_COUNT];
+    private final Bitmap[] rainWeatherFrames = new Bitmap[IDLE_FRAME_COUNT];
+    private final Bitmap[] sunWeatherFrames = new Bitmap[IDLE_FRAME_COUNT];
+    private final Bitmap[] coldWeatherFrames = new Bitmap[IDLE_FRAME_COUNT];
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final RectF destination = new RectF();
     private boolean runLoopScheduled;
@@ -58,6 +69,9 @@ public class PetView extends View {
         Choreographer.getInstance().postFrameCallback(runFrameCallback);
     }
     private boolean cyborgSuit;
+    private boolean classicCyborgOverride;
+    private String solphiviaMode = "prof";
+    private String weatherLook = "none";
 
     public PetView(Context context) {
         super(context);
@@ -75,20 +89,42 @@ public class PetView extends View {
         loadFrames(context, "sleep", sleepFrames, options);
         loadFrames(context, "cyborg_sit", cyborgSitFrames, options);
         loadFrames(context, "cyborg_sleep", cyborgSleepFrames, options);
+        loadFrames(context, "mode_prof", professorModeFrames, options);
+        loadFrames(context, "mode_vj", vjModeFrames, options);
+        loadFrames(context, "mode_vj_jacket", vjJacketFrames, options);
+        loadFrames(context, "vj_wave", vjWaveFrames, options);
+        loadFrames(context, "mode_codex", codexModeFrames, options);
+        loadFrames(context, "weather_rain", rainWeatherFrames, options);
+        loadFrames(context, "weather_sun", sunWeatherFrames, options);
+        loadFrames(context, "weather_cold", coldWeatherFrames, options);
         loadFrames(context, "idle", idleFrames, options);
     }
 
     private void loadFrames(Context context, String name, Bitmap[] target,
                             BitmapFactory.Options options) {
-        for (int i = 0; i < target.length; i++) {
-            String path = String.format(java.util.Locale.ROOT,
-                    "solphivia/%s/frame_%02d.png", name, i);
-            try (InputStream input = context.getAssets().open(path)) {
-                target[i] = BitmapFactory.decodeStream(input, null, options);
-            } catch (IOException | RuntimeException error) {
-                Log.e(TAG, "Impossibile caricare " + path, error);
+        Context app = context.getApplicationContext();
+        java.lang.ref.WeakReference<PetView> view = new java.lang.ref.WeakReference<>(this);
+        SPRITE_LOADER.execute(() -> {
+            java.lang.ref.WeakReference<Bitmap[]> cached = SPRITES.get(name);
+            Bitmap[] frames = cached == null ? null : cached.get();
+            if (frames == null) {
+                frames = new Bitmap[target.length];
+                for (int i = 0; i < frames.length; i++) {
+                    String path = String.format(java.util.Locale.ROOT, "solphivia/%s/frame_%02d.png", name, i);
+                    try (InputStream input = app.getAssets().open(path)) {
+                        frames[i] = BitmapFactory.decodeStream(input, null, options);
+                    } catch (IOException | RuntimeException error) { Log.e(TAG, "Impossibile caricare " + path, error); }
+                }
+                SPRITES.put(name, new java.lang.ref.WeakReference<>(frames));
             }
-        }
+            Bitmap[] ready = frames;
+            MAIN.post(() -> {
+                PetView current = view.get();
+                if (current == null) return;
+                System.arraycopy(ready, 0, target, 0, target.length);
+                current.invalidate();
+            });
+        });
     }
 
     public void pause() { running = false; stopRunLoop(); }
@@ -99,7 +135,59 @@ public class PetView extends View {
         invalidate();
     }
 
+    /** Preserve the original cyborg costume command independently from the three new modes. */
+    public void setClassicCyborgSuit(boolean enabled) {
+        classicCyborgOverride = enabled;
+        cyborgSuit = enabled;
+        invalidate();
+    }
+
     public boolean isCyborgSuit() { return cyborgSuit; }
+
+    /** Select the dedicated four-frame idle loop for a Solphivia mode. */
+    public void setSolphiviaMode(String mode) {
+        if (mode == null) return;
+        String value = mode.trim().toLowerCase(java.util.Locale.ROOT);
+        if (!value.equals("prof") && !value.equals("vj") && !value.equals("codex")) return;
+        classicCyborgOverride = false;
+        if (solphiviaMode.equals(value)) { invalidate(); return; }
+        solphiviaMode = value;
+        if ("idle".equals(animation) || "mode".equals(animation)) {
+            animation = "mode";
+            animationStartedAt = android.os.SystemClock.uptimeMillis();
+        }
+        invalidate();
+    }
+
+    public String getSolphiviaMode() { return solphiviaMode; }
+
+    /** Weather outfit loops temporarily replace the selected mode's idle sprite. */
+    public void setWeatherLook(String look) {
+        if (look == null) return;
+        String value = look.trim().toLowerCase(java.util.Locale.ROOT);
+        if (!value.equals("none") && !value.equals("rain") && !value.equals("sun") && !value.equals("cold")) return;
+        if (weatherLook.equals(value)) return;
+        weatherLook = value;
+        if ("idle".equals(animation) || "mode".equals(animation)) animationStartedAt = android.os.SystemClock.uptimeMillis();
+        invalidate();
+    }
+
+    private Bitmap[] currentWeatherFrames() {
+        switch (weatherLook) {
+            case "rain": return rainWeatherFrames;
+            case "sun": return sunWeatherFrames;
+            case "cold": return coldWeatherFrames;
+            default: return null;
+        }
+    }
+
+    private Bitmap[] currentModeFrames() {
+        switch (solphiviaMode) {
+            case "vj": return vjJacketFrames[0] != null ? vjJacketFrames : vjModeFrames;
+            case "codex": return codexModeFrames;
+            default: return professorModeFrames;
+        }
+    }
 
     public String getSolphiviaAnimation() { return animation; }
 
@@ -108,8 +196,8 @@ public class PetView extends View {
         if (command == null) return false;
         String next = command.trim().toLowerCase(java.util.Locale.ROOT);
         switch (next) {
-            case "idle": case "look": case "thinking": case "listen": case "talk":
-            case "sit": case "sleep": case "happy": case "concerned": case "sad": case "run":
+            case "idle": case "mode": case "look": case "thinking": case "listen": case "talk":
+            case "sit": case "sleep": case "happy": case "concerned": case "sad": case "run": case "wave":
                 if ("run".equals(next) && "run".equals(animation) && runLoopScheduled) {
                     running = true;
                     return true;
@@ -166,6 +254,14 @@ public class PetView extends View {
         Bitmap frame;
         boolean animate = true;
         switch (animation) {
+            case "idle": case "mode":
+                Bitmap[] weatherFrames = currentWeatherFrames();
+                if (weatherFrames != null && weatherFrames[0] != null)
+                    frame = weatherFrames[(int) (elapsed / 520L) % IDLE_FRAME_COUNT];
+                else frame = classicCyborgOverride
+                            ? voiceFrames[CLOSED_MOUTH_IDLE[(int) (elapsed / IDLE_FRAME_MS) % IDLE_FRAME_COUNT]]
+                            : currentModeFrames()[(int) (elapsed / 520L) % IDLE_FRAME_COUNT];
+                break;
             case "look": case "thinking":
                 if (elapsed >= ACTION_FRAME_COUNT * ACTION_FRAME_MS) {
                     animation = "idle";
@@ -193,14 +289,26 @@ public class PetView extends View {
                     frame = cycle[(int) (elapsed / 95) % ACTION_FRAME_COUNT];
                 }
                 break;
+            case "wave":
+                int waveIndex = (int) (elapsed / 185L);
+                if (waveIndex >= IDLE_FRAME_COUNT) {
+                    animation = "idle";
+                    animationStartedAt = now;
+                    Bitmap[] weatherAfterWave = currentWeatherFrames();
+                    frame = weatherAfterWave != null && weatherAfterWave[0] != null
+                            ? weatherAfterWave[0] : currentModeFrames()[0];
+                } else {
+                    frame = vjWaveFrames[waveIndex] != null
+                            ? vjWaveFrames[waveIndex] : currentModeFrames()[waveIndex];
+                }
+                break;
             case "sit":
                 Bitmap[] sitting = cyborgSuit ? cyborgSitFrames : sitFrames;
                 frame = sitting[(int) (elapsed / IDLE_FRAME_MS) % IDLE_FRAME_COUNT];
                 break;
             case "sleep":
                 Bitmap[] sleeping = cyborgSuit ? cyborgSleepFrames : sleepFrames;
-                frame = sleeping[0];
-                animate = false;
+                frame = sleeping[(int) (elapsed / IDLE_FRAME_MS) % IDLE_FRAME_COUNT];
                 break;
             case "happy":
                 frame = cyborgSuit ? cyborgFrames[1] : emotionFrames[7]; animate = false; break;
@@ -214,8 +322,10 @@ public class PetView extends View {
         }
         if (frame == null) frame = idleFrames[0];
         if (frame != null) {
-            destination.set(0, 0, getWidth(), getHeight());
-            if (animation.equals("idle")) {
+            float scale=Math.min(getWidth()/(float)frame.getWidth(),getHeight()/(float)frame.getHeight());
+            float width=frame.getWidth()*scale,height=frame.getHeight()*scale;
+            destination.set((getWidth()-width)/2f,getHeight()-height,(getWidth()+width)/2f,getHeight());
+            if (animation.equals("idle") || animation.equals("mode")) {
                 float phase = (elapsed % (IDLE_FRAME_MS * IDLE_FRAME_COUNT)) /
                         (float) (IDLE_FRAME_MS * IDLE_FRAME_COUNT) * (float) (Math.PI * 2);
                 float density = getResources().getDisplayMetrics().density;
@@ -226,7 +336,6 @@ public class PetView extends View {
                 canvas.restore();
             } else canvas.drawBitmap(frame, null, destination, paint);
         }
-        // Sleep draws one still frame and schedules nothing, reducing idle battery use.
-        if (running && isShown() && animate) postInvalidateDelayed(55);
+        if (running && isShown() && animate) postInvalidateDelayed("sleep".equals(animation) ? IDLE_FRAME_MS : 55);
     }
 }

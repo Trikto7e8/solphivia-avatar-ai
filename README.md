@@ -66,4 +66,14 @@ Code contributions are welcome. Please read `CONTRIBUTING.md` first. Do not post
 
 ## Current verification status
 
-The 0.8.9 source includes a fix intended to refresh an existing Home-screen shortcut's icon and sets the app name to **Solphivia Avatar AI**. That source has not yet been rebuilt or tested on a physical device; treat it as experimental.
+Version **0.9.2-alpha1** (code 30) was built, passed Android Lint and isolated Motorola regression tests, and was installed on the Motorola. On 13 October 2026 the user confirmed it works and approved this alpha. Further improvements and listening evaluation remain; Android blocked eSpeak NG installation. See the [verification report](VERIFICA-0.9.2-alpha1.md).
+
+## 0.9.2-alpha1
+
+- Memoria personale cifrata sul dispositivo, editor e comando `ricorda:`; import/export cifrato compatibile con AI Memory Vault v1. Anteprima modificabile per ogni invio remoto. Nessuna sincronizzazione automatica e nessun nuovo adattatore LLM.
+- Pulsanti `+` e microfono visibili anche nella schermata interna; dettatura modificabile prima dell’invio e allegati mantenuti nei turni successivi.
+- Scelta del motore TTS e accento inglese con voce offline, quando disponibile. eSpeak NG è separato e non incluso nell’APK.
+- Radar DPC aggiornato: dati, timestamp ed errori visibili. Segnala echi vicini, senza stimare direzione o tempo di arrivo.
+- Sonno animato, proporzioni corrette e schermata `☰ → Prova animazioni`; 108 sprite e 1248 combinazioni verificate.
+
+Scarica l’APK dalla [pre-release v0.9.2-alpha1](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha1). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è quello di Solphivia per utente e può essere modificato nell’editor Memoria.

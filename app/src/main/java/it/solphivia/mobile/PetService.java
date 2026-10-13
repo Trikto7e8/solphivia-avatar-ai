@@ -10,6 +10,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
@@ -47,16 +49,32 @@ import org.json.JSONObject;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Locale;
 import java.text.Normalizer;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 /** Home-screen overlay containing Solphivia, her speech bubble, and the chat composer. */
 public class PetService extends Service {
     public static final String ACTION_ANIMATE = "it.solphivia.mobile.action.ANIMATE";
+    public static final String ACTION_MODE = "it.solphivia.mobile.action.MODE";
+    public static final String ACTION_VOICE_SETTINGS = "it.solphivia.mobile.action.VOICE_SETTINGS";
+    public static final String ACTION_INPUT_DONE = "it.solphivia.mobile.action.INPUT_DONE";
+    public static final String ACTION_WEATHER_LOCATION = "it.solphivia.mobile.action.WEATHER_LOCATION";
     public static final String EXTRA_ANIMATION = "animation";
+    public static final String EXTRA_MODE = "mode";
     public static final String EXTRA_SEND_MESSAGE = "send_message";
+    public static final String EXTRA_DRAFT_MESSAGE = "draft_message";
+    public static final String EXTRA_LATITUDE = "weather_latitude";
+    public static final String EXTRA_LONGITUDE = "weather_longitude";
+    public static final String EXTRA_PLACE = "weather_place";
     private static final String ACTION_STOP = "it.solphivia.mobile.action.STOP";
     private static final String ACTION_PICK_VOICE = "it.solphivia.mobile.action.VOICE_INPUT";
     private static final String ACTION_PICK_FILES = "it.solphivia.mobile.action.PICK_FILES";
@@ -64,11 +82,17 @@ public class PetService extends Service {
     private static final String EXTRA_URIS = "attachment_uris";
     private static final int PANEL_W = 300;
     private static final int PANEL_H = 180;
+    private static final long METEORINA_REFRESH_MS = 5 * 60 * 1000L;
+    private static final long WEATHER_FORECAST_REFRESH_MS = 30 * 60 * 1000L;
     private static final long REST_AFTER_MS = 5_000L;
     private static final long SLEEP_AFTER_MS = 5_000L;
 
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private final ExecutorService weatherWorker = Executors.newSingleThreadExecutor();
+    private volatile boolean destroyed;
+    private volatile long weatherRevision;
+    private final java.util.concurrent.atomic.AtomicBoolean weatherRunning = new java.util.concurrent.atomic.AtomicBoolean();
     private WindowManager wm;
     private FrameLayout panel;
     private PetView pet;
@@ -77,6 +101,13 @@ public class PetService extends Service {
     private TextView speech;
     private EditText composer;
     private TextView sendButton;
+    private TextView weatherBadge;
+    private TextView radarBadge;
+    private final ArrayList<String> pendingFiles = new ArrayList<>();
+    private TextView filesButton;
+    private final Deque<RadarSample> radarHistory = new ArrayDeque<>();
+    private String radarLocationKey = "";
+    private long lastForecastRefreshElapsed;
     private String speechTarget = "";
     private String pendingMotion = "stay";
     private String animation = "idle";
@@ -94,6 +125,7 @@ public class PetService extends Service {
     private String speechEndMood = "idle";
     private TextToSpeech tts;
     private boolean ttsInitializationComplete;
+    private int ttsGeneration;
     private boolean ttsReady;
     private boolean englishAccentActive;
     private boolean ttsPending;
@@ -105,12 +137,36 @@ public class PetService extends Service {
     private float previousTouchX;
     private long touchRevision;
     private long speechTouchRevision;
+    private final Runnable weatherRefreshTask = new Runnable() {
+        @Override public void run() {
+            if (!getSharedPreferences("weather", 0).getBoolean("enabled", false)) return;
+            refreshWeather(false);
+            main.postDelayed(this, METEORINA_REFRESH_MS);
+        }
+    };
+
+    private static final class RadarSample {
+        final long timeMs;
+        final double nearestEchoKm;
+        RadarSample(long timeMs, double nearestEchoKm) {
+            this.timeMs = timeMs;
+            this.nearestEchoKm = nearestEchoKm;
+        }
+    }
 
     @Override public void onCreate() {
         super.onCreate();
+        VoicePreferences.initialize(this);
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+        initializeTts();
+    }
+
+    private void initializeTts() {
+        if (tts != null) { tts.stop(); tts.shutdown(); }
+        ttsReady = false; ttsInitializationComplete = false;
+        int generation=++ttsGeneration;
         tts = new TextToSpeech(this, status -> main.post(() -> {
-            if (tts == null) return;
+            if (tts == null || destroyed || generation!=ttsGeneration) return;
             ttsInitializationComplete = true;
             if (status != TextToSpeech.SUCCESS) { ttsReady = false; ttsPending = false; pendingUtterance = null; finishSpokenLine(); return; }
             configureTtsVoice();
@@ -118,13 +174,16 @@ public class PetService extends Service {
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override public void onStart(String id) { }
                 @Override public void onDone(String id) { finishTtsUtterance(id); }
-                @Override public void onError(String id) { finishTtsUtterance(id); }
+                @Override public void onError(String id) {
+                    if(id!=null && (id.equals("solphivia-"+currentUtteranceSerial) || id.startsWith("solphivia-"+currentUtteranceSerial+"-part-")))
+                        finishTtsUtterance("solphivia-"+currentUtteranceSerial);
+                }
             });
             if (ttsReady && pendingUtterance != null) {
                 String text = pendingUtterance; long serial = currentUtteranceSerial; pendingUtterance = null;
                 startTtsUtterance(text, serial);
             }
-        }));
+        }), getSharedPreferences("pet", 0).getString("tts_engine", "").isEmpty() ? null : getSharedPreferences("pet", 0).getString("tts_engine", ""));
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int id) {
@@ -136,12 +195,32 @@ public class PetService extends Service {
         if (!Settings.canDrawOverlays(this)) { stopSelf(); return START_NOT_STICKY; }
         startForegroundNotification();
         if (panel == null) createOverlay();
+        if (panel == null) return START_NOT_STICKY;
+        if(intent!=null && ACTION_INPUT_DONE.equals(intent.getAction())){setAnimation("idle");resetIdleTimers();}
+        if (intent != null && ACTION_VOICE_SETTINGS.equals(intent.getAction())) {
+            initializeTts();
+            typeSpeech("Ciao utente, sono Solphivia. Questa è la mia voce: come stai oggi?");
+        }
+        if (intent != null && intent.hasExtra(EXTRA_DRAFT_MESSAGE) && !busy)
+            composer.setText(intent.getStringExtra(EXTRA_DRAFT_MESSAGE));
         if (intent != null && ACTION_ATTACHMENTS.equals(intent.getAction())) {
             ArrayList<String> uris = intent.getStringArrayListExtra(EXTRA_URIS);
             if (uris != null && !uris.isEmpty()) main.post(() -> sendMessageWithAttachments(uris));
         }
         if (intent != null && ACTION_ANIMATE.equals(intent.getAction()) && typingTask == null && !busy) {
             setAnimation(intent.getStringExtra(EXTRA_ANIMATION));
+        }
+        if (intent != null && ACTION_MODE.equals(intent.getAction()) && pet != null) {
+            String mode = intent.getStringExtra(EXTRA_MODE);
+            pet.setCyborgSuit("vj".equals(mode));
+            pet.setSolphiviaMode(mode);
+            if (typingTask == null && !busy) setAnimation("mode");
+        }
+        if (intent != null && ACTION_WEATHER_LOCATION.equals(intent.getAction())) {
+            double lat = intent.getDoubleExtra(EXTRA_LATITUDE, Double.NaN);
+            double lon = intent.getDoubleExtra(EXTRA_LONGITUDE, Double.NaN);
+            String place = intent.getStringExtra(EXTRA_PLACE);
+            if (Double.isFinite(lat) && Double.isFinite(lon)) saveWeatherLocation(lat, lon, place == null ? "Posizione GPS" : place);
         }
         if (intent != null && intent.hasExtra(EXTRA_SEND_MESSAGE) && composer != null) {
             String message = intent.getStringExtra(EXTRA_SEND_MESSAGE);
@@ -215,8 +294,31 @@ public class PetService extends Service {
         FrameLayout.LayoutParams petLp = new FrameLayout.LayoutParams(dp(90), dp(112), Gravity.TOP | Gravity.LEFT);
         petLp.leftMargin = dp(194); petLp.topMargin = 0;
         panel.addView(pet, petLp);
-        pet.setCyborgSuit(getSharedPreferences("pet", 0).getBoolean("cyborg_suit", false));
+        String activeMode = getSharedPreferences("pet", 0).getString("active_mode", "prof");
+        pet.setCyborgSuit("vj".equals(activeMode));
+        pet.setSolphiviaMode(activeMode);
+        if (getSharedPreferences("pet", 0).getBoolean("costume_override", false)) pet.setClassicCyborgSuit(true);
         pet.setOnTouchListener(this::onPetTouch);
+
+        weatherBadge = createComposerAction("🌦 Meteo", "Attiva o aggiorna Solphivia Meteorina");
+        weatherBadge.setTextSize(12);
+        FrameLayout.LayoutParams weatherLp = new FrameLayout.LayoutParams(dp(82), dp(34), Gravity.TOP | Gravity.LEFT);
+        weatherLp.leftMargin = dp(7); weatherLp.topMargin = dp(88);
+        panel.addView(weatherBadge, weatherLp);
+        weatherBadge.setOnClickListener(v -> openInputActivity(CompanionInputActivity.ACTION_WEATHER_SETUP));
+        radarBadge = createComposerAction("Radar —", "Stato radar SRI della Protezione Civile");
+        radarBadge.setTextSize(10);
+        FrameLayout.LayoutParams radarLp = new FrameLayout.LayoutParams(dp(93), dp(34), Gravity.TOP | Gravity.LEFT);
+        radarLp.leftMargin=dp(93); radarLp.topMargin=dp(88); panel.addView(radarBadge,radarLp);
+        radarBadge.setOnClickListener(v -> {
+            String detail = getSharedPreferences("weather",0).getString("radar_status", "Attiva Meteorina per consultare il radar.");
+            setSpeech(detail + " Fonte: Radar-DPC, CC BY-SA. Rilevamento sperimentale, non allerta ufficiale.");
+            refreshWeather(false);
+        });
+        TextView memoryAction=createComposerAction("☰", "Apri memoria e impostazioni voce");
+        FrameLayout.LayoutParams menuLp=new FrameLayout.LayoutParams(dp(36),dp(34),Gravity.TOP|Gravity.LEFT);
+        menuLp.leftMargin=dp(251);menuLp.topMargin=dp(88); panel.addView(memoryAction,menuLp);
+        memoryAction.setOnClickListener(v -> openInputActivity(CompanionInputActivity.ACTION_SETTINGS));
 
         FrameLayout composerRow = new FrameLayout(this);
         FrameLayout.LayoutParams rowLp = new FrameLayout.LayoutParams(dp(292), dp(46), Gravity.TOP | Gravity.LEFT);
@@ -251,11 +353,12 @@ public class PetService extends Service {
         });
         composerRow.addView(composer, new FrameLayout.LayoutParams(-1, -1));
 
-        TextView filesButton = createComposerAction("＋", "Aggiungi PDF, Word o immagini");
+        filesButton = createComposerAction("＋", "Aggiungi PDF, Word, testo o immagini");
         FrameLayout.LayoutParams filesLp = new FrameLayout.LayoutParams(dp(36), dp(36), Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         filesLp.rightMargin = dp(82);
         composerRow.addView(filesButton, filesLp);
         filesButton.setOnClickListener(v -> openInputActivity(ACTION_PICK_FILES));
+        filesButton.setOnLongClickListener(v -> { pendingFiles.clear(); updateFilesButton(); setSpeech("Allegati rimossi dalla bozza."); return true; });
 
         TextView micButton = createComposerAction("🎙", "Detta un messaggio");
         FrameLayout.LayoutParams micLp = new FrameLayout.LayoutParams(dp(36), dp(36), Gravity.RIGHT | Gravity.CENTER_VERTICAL);
@@ -295,13 +398,16 @@ public class PetService extends Service {
                 return insets;
             });
         }
-        try { wm.addView(panel, lp); }
+        try { wm.addView(panel, lp); getSharedPreferences("pet", 0).edit().putBoolean("overlay_active", true).apply(); }
         catch (RuntimeException error) { panel = null; pet = null; stopSelf(); return; }
         panel.requestApplyInsets();
         composer.setOnClickListener(v -> composer.requestFocus());
         panel.setFocusableInTouchMode(true);
         panel.requestFocus();
         typeSpeech("Ciao, io sono Solphivia. Come posso aiutarti?");
+        refreshWeather(true);
+        main.removeCallbacks(weatherRefreshTask);
+        if (getSharedPreferences("weather", 0).getBoolean("enabled", false)) main.postDelayed(weatherRefreshTask, METEORINA_REFRESH_MS);
     }
 
     private boolean onPetTouch(View view, MotionEvent event) {
@@ -359,11 +465,14 @@ public class PetService extends Service {
         button.setText(label); button.setTextSize(19); button.setTextColor(0xFF155B66);
         button.setGravity(Gravity.CENTER); button.setContentDescription(description);
         button.setBackground(shape(0xFFDDFBFF, dp(20), 0xFF9BE9F1));
-        button.setElevation(dp(4));
+        // Composer elevation is 5dp; actions must be above it to be visible and tappable.
+        button.setElevation(dp(7));
         return button;
     }
 
     private void openInputActivity(String action) {
+        if (destroyed || busy) return;
+        if (ACTION_PICK_VOICE.equals(action)) { setSpeech("Ti ascolto…"); cancelIdleTimers(); setAnimation("listen"); }
         try { startActivity(new Intent(this, CompanionInputActivity.class).setAction(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
         catch (RuntimeException error) { setSpeech("Non riesco ad aprire questa funzione sul telefono."); }
     }
@@ -371,20 +480,65 @@ public class PetService extends Service {
     private void sendMessage() {
         if (busy) return;
         String text = composer.getText().toString().trim();
-        if (text.isEmpty()) return;
-        submitMessage(text, new ArrayList<>());
+        if (text.isEmpty() && pendingFiles.isEmpty()) return;
+        if (text.isEmpty()) text="Puoi esaminare questi allegati e aiutarmi?";
+        submitMessage(text, new ArrayList<>(pendingFiles));
     }
 
     private void sendMessageWithAttachments(ArrayList<String> uris) {
         if (busy || uris == null || uris.isEmpty()) return;
-        String text = composer.getText().toString().trim();
-        if (text.isEmpty()) text = "Puoi esaminare questi allegati e aiutarmi?";
-        submitMessage(text, uris);
+        for(String uri:uris) if(!pendingFiles.contains(uri) && pendingFiles.size()<5) pendingFiles.add(uri);
+        updateFilesButton();
+        setSpeech(pendingFiles.size()+" allegati pronti. Scrivi la richiesta e premi ➜. Tieni premuto + per rimuoverli.");
+    }
+
+    private void updateFilesButton() {
+        if(filesButton!=null) { filesButton.setText(pendingFiles.isEmpty()?"＋":"+"+pendingFiles.size()); filesButton.setContentDescription(pendingFiles.size()+" allegati selezionati. Tieni premuto per rimuoverli."); }
     }
 
     private void submitMessage(String text, ArrayList<String> attachmentUris) {
-        if (handleVoiceModeCommand(text)) return;
-        if (isShutdownCommand(text)) {
+        if (destroyed) return;
+        if(attachmentUris.isEmpty()) {
+            String memoryReply=MemoryCommands.handle(this,text);
+            if(memoryReply!=null){composer.setText("");typeSpeech(memoryReply);return;}
+        }
+        if (attachmentUris.isEmpty() && normalizeCommand(text).equals("memoria")) {
+            composer.setText("");
+            startActivity(new Intent(this, MemoryActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            return;
+        }
+        if (attachmentUris.isEmpty() && normalizeCommand(text).equals("impostazioni voce")) {
+            composer.setText("");
+            startActivity(new Intent(this, VoiceSettingsActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            return;
+        }
+        if (attachmentUris.isEmpty() && normalizeCommand(text).equals("nuova chat")) {
+            getSharedPreferences("chat", 0).edit().remove("history").apply();
+            composer.setText(""); setSpeech("Nuova chat pronta."); return;
+        }
+        String normalized = Normalizer.normalize(text.toLowerCase(Locale.ROOT), Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        boolean disableWeather = normalized.equals("disattiva meteo") || normalized.equals("spegni meteorina");
+        if (!disableWeather && ReviewRules.weatherSetup(text, !attachmentUris.isEmpty())) {
+            composer.setText("");
+            ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
+            openInputActivity(CompanionInputActivity.ACTION_WEATHER_SETUP);
+            return;
+        }
+        if (disableWeather && attachmentUris.isEmpty()) {
+            weatherRevision++;
+            getSharedPreferences("weather", 0).edit().putBoolean("enabled", false).apply();
+            main.removeCallbacks(weatherRefreshTask);
+            if (pet != null) pet.setWeatherLook("none");
+            if (weatherBadge != null) weatherBadge.setText("🌦 Meteo");
+            if (radarBadge != null) radarBadge.setText("Radar —");
+            getSharedPreferences("weather",0).edit().putString("radar_status","Meteorina disattivata.").apply();
+            composer.setText("");
+            setSpeech("Va bene, metto in pausa la Meteorina.");
+            return;
+        }
+        if (attachmentUris.isEmpty() && handleGreetingCommand(text)) return;
+        if (attachmentUris.isEmpty() && handleVoiceModeCommand(text)) return;
+        if (attachmentUris.isEmpty() && isShutdownCommand(text)) {
             composer.setText("");
             ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
             getSharedPreferences("pet", 0).edit().putBoolean("overlay_off", true).apply();
@@ -406,68 +560,243 @@ public class PetService extends Service {
             dispatchMessage(text, new JSONArray());
             return;
         }
-        worker.execute(() -> {
+        try {
+            worker.execute(() -> {
+                try {
+                    JSONArray attachments = readAttachments(attachmentUris);
+                    main.post(() -> { if (!destroyed) dispatchMessage(text, attachments); });
+                } catch (Exception error) {
+                    main.post(() -> {
+                        if (destroyed) return;
+                        busy = false; composer.setEnabled(true); sendButton.setEnabled(true);
+                        setSpeech("Non riesco a leggere uno degli allegati. Prova con PDF, DOCX o immagini più piccole.");
+                        resetIdleTimers();
+                    });
+                }
+            });
+        } catch (java.util.concurrent.RejectedExecutionException error) {
+            if (!destroyed) {
+                busy = false; composer.setEnabled(true); sendButton.setEnabled(true);
+                setSpeech("Il servizio si è fermato prima di leggere l’allegato.");
+            }
+        }
+    }
+
+    private void saveWeatherLocation(double lat, double lon, String place) {
+        weatherRevision++;
+        getSharedPreferences("weather", 0).edit().putBoolean("enabled", true)
+                .putLong("latitude", Double.doubleToLongBits(lat))
+                .putLong("longitude", Double.doubleToLongBits(lon))
+                .putString("place", place).apply();
+        if (weatherBadge != null) weatherBadge.setText("🌦 Aggiorna");
+        refreshWeather(true);
+        main.removeCallbacks(weatherRefreshTask);
+        main.postDelayed(weatherRefreshTask, METEORINA_REFRESH_MS);
+    }
+
+    private void refreshWeather(boolean announce) {
+        if (destroyed) return;
+        android.content.SharedPreferences p = getSharedPreferences("weather", 0);
+        if (!p.getBoolean("enabled", false)) return;
+        double lat = Double.longBitsToDouble(p.getLong("latitude", Double.doubleToLongBits(Double.NaN)));
+        double lon = Double.longBitsToDouble(p.getLong("longitude", Double.doubleToLongBits(Double.NaN)));
+        if (!Double.isFinite(lat) || !Double.isFinite(lon)) return;
+        if (!weatherRunning.compareAndSet(false, true)) {
+            if (announce) main.postDelayed(() -> { if (!destroyed) refreshWeather(true); }, 1000);
+            return;
+        }
+        final long revision = weatherRevision;
+        final String location = p.getString("place", "la tua località");
+        try { weatherWorker.execute(() -> {
             try {
-                JSONArray attachments = readAttachments(attachmentUris);
-                main.post(() -> dispatchMessage(text, attachments));
+            long nowElapsed = android.os.SystemClock.elapsedRealtime();
+            boolean refreshForecast = announce || lastForecastRefreshElapsed == 0 ||
+                    nowElapsed - lastForecastRefreshElapsed >= WEATHER_FORECAST_REFRESH_MS;
+            if (refreshForecast) try {
+                String address = String.format(Locale.ROOT,
+                        "https://api.open-meteo.com/v1/forecast?latitude=%.5f&longitude=%.5f&current=temperature_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&hourly=precipitation_probability,precipitation,weather_code&forecast_days=2&timezone=auto",
+                        lat, lon);
+                JSONObject root = getWeatherJson(address);
+                JSONObject current = root.getJSONObject("current");
+                JSONObject hourly = root.getJSONObject("hourly");
+                double temp = current.optDouble("temperature_2m", Double.NaN);
+                double feels = current.optDouble("apparent_temperature", temp);
+                double rain = current.optDouble("precipitation", 0);
+                double wind = current.optDouble("wind_speed_10m", 0);
+                int code = current.optInt("weather_code", -1);
+                boolean day = current.optInt("is_day", 1) == 1;
+                int probability = 0;
+                int first = 0;
+                JSONArray times = hourly.optJSONArray("time");
+                JSONArray probabilities = hourly.optJSONArray("precipitation_probability");
+                String currentTime = current.optString("time", "");
+                if (times != null && probabilities != null) {
+                    for (int i = 0; i < times.length(); i++) if (times.optString(i).compareTo(currentTime) >= 0) { first = i; break; }
+                    for (int i = first; i < Math.min(first + 6, probabilities.length()); i++) {
+                        int value = probabilities.optInt(i, 0);
+                        if (value > probability) probability = value;
+                    }
+                }
+                String weatherLook = weatherLook(code, temp, day, rain);
+                String description = weatherDescription(code);
+                String summary = String.format(Locale.ITALY, "%s: %.0f°, percepiti %.0f°, %s. Pioggia nelle prossime 6 ore: %d%%; vento %.0f km/h. Fonti: Open-Meteo e radar SRI della Protezione Civile.",
+                        location, temp, feels, description.toLowerCase(Locale.ITALY), probability, wind);
+                main.post(() -> {
+                    if (!weatherCurrent(revision)) return;
+                    if (pet != null) pet.setWeatherLook(weatherLook);
+                    if (weatherBadge != null) weatherBadge.setText(String.format(Locale.ROOT, "%s %.0f°", weatherIcon(code), temp));
+                    if (announce && !busy && typingTask == null) setSpeech(summary);
+                    if (pet != null && ("sit".equals(animation) || "sleep".equals(animation))) setAnimation("idle");
+                });
+                lastForecastRefreshElapsed = nowElapsed;
             } catch (Exception error) {
                 main.post(() -> {
-                    busy = false; composer.setEnabled(true); sendButton.setEnabled(true);
-                    setSpeech("Non riesco a leggere uno degli allegati. Prova con PDF, DOCX o immagini più piccole.");
-                    resetIdleTimers();
+                    if (!weatherCurrent(revision)) return;
+                    if (weatherBadge != null) weatherBadge.setText("🌦 Riprova");
+                    if (announce && !busy) setSpeech("Non riesco ad aggiornare il meteo. Controlla la connessione e riprova.");
                 });
             }
+            try {
+                if (weatherCurrent(revision)) updateRadarNowcast(lat, lon, revision, location);
+            } catch (Exception error) {
+                android.util.Log.w("SolphiviaMeteorina", "Aggiornamento radar non riuscito", error);
+                main.post(() -> {
+                    if (!weatherCurrent(revision)) return;
+                    showRadarStatus("Radar !", "Radar non disponibile: " + (error.getMessage()==null ? "errore di rete" : error.getMessage()), revision);
+                });
+            }
+            } finally { weatherRunning.set(false); }
+        }); } catch (java.util.concurrent.RejectedExecutionException error) {
+            weatherRunning.set(false);
+        }
+    }
+
+    private boolean weatherCurrent(long revision) {
+        return !destroyed && weatherRevision == revision && getSharedPreferences("weather", 0).getBoolean("enabled", false);
+    }
+
+    /** Compares successive national radar scans for an explicitly uncertain nowcast. */
+    private void updateRadarNowcast(double lat, double lon, long revision, String place) throws Exception {
+        String locationKey = String.format(Locale.ROOT, "%.3f,%.3f", lat, lon);
+        if (!locationKey.equals(radarLocationKey)) {
+            radarHistory.clear();
+            radarLocationKey = locationKey;
+        }
+        long scanTime = RadarClient.latestTime();
+        if (!ReviewRules.freshRadar(scanTime, System.currentTimeMillis())) {
+            radarHistory.clear(); showRadarStatus("Radar vecchio", "L’ultima scansione radar è troppo vecchia. Nessun avviso basato su questi dati.", revision); return;
+        }
+        if (scanTime <= 0 || (!radarHistory.isEmpty() && radarHistory.peekLast().timeMs >= scanTime)) return;
+        double nearestKm = RadarClient.read(lat, lon, scanTime).nearestKm;
+        if (!weatherCurrent(revision)) return;
+        radarHistory.addLast(new RadarSample(scanTime, nearestKm));
+        while (radarHistory.size() > 4) radarHistory.removeFirst();
+        String clock = new SimpleDateFormat("HH:mm", Locale.ITALY).format(new java.util.Date(scanTime));
+        showRadarStatus("Radar " + clock, "Scansione SRI delle " + clock + ". " +
+                (Double.isFinite(nearestKm) ? "Precipitazione stimata ≥1 mm/h a circa " + Math.round(nearestKm) + " km."
+                : "Nessun pixel ≥1 mm/h rilevato entro 60 km; non garantisce assenza di pioggia o copertura completa."), revision);
+        if (weatherCurrent(revision)) evaluateRadarHistory(revision, place);
+    }
+
+    private void showRadarStatus(String label, String detail, long revision) {
+        main.post(() -> {
+            if (!weatherCurrent(revision)) return;
+            getSharedPreferences("weather",0).edit().putString("radar_status",detail).apply();
+            if (radarBadge != null) { radarBadge.setText(label); radarBadge.setContentDescription(detail); }
         });
     }
 
+    private void evaluateRadarHistory(long revision, String place) {
+        if (radarHistory.size() < 3) return;
+        RadarSample[] samples = radarHistory.toArray(new RadarSample[0]);
+        RadarSample first = samples[samples.length - 3];
+        RadarSample middle = samples[samples.length - 2];
+        RadarSample last = samples[samples.length - 1];
+        long span = last.timeMs - first.timeMs;
+        if (span < 8 * 60 * 1000L || span > 25 * 60 * 1000L) return;
+        if (!Double.isFinite(first.nearestEchoKm) || !Double.isFinite(middle.nearestEchoKm) || !Double.isFinite(last.nearestEchoKm)) return;
+        if (!ReviewRules.nearbyEcho(first.nearestEchoKm) || !ReviewRules.nearbyEcho(middle.nearestEchoKm) ||
+                !ReviewRules.nearbyEcho(last.nearestEchoKm)) return;
+        long now = System.currentTimeMillis();
+        android.content.SharedPreferences prefs = getSharedPreferences("weather", 0);
+        if (now - prefs.getLong("radar_last_alert", 0L) < 45 * 60 * 1000L) return;
+        String message = String.format(Locale.ITALY,
+                "Meteorina: rilevamento sperimentale di echi radar DPC entro circa %d km da %s in tre scansioni. Non determina direzione o arrivo della pioggia.",
+                Math.round(last.nearestEchoKm), place);
+        main.post(() -> {
+            if (!weatherCurrent(revision) || !ReviewRules.freshRadar(last.timeMs, System.currentTimeMillis())) return;
+            prefs.edit().putLong("radar_last_alert", now).apply();
+            if (weatherBadge != null) weatherBadge.setContentDescription("Echi radar nelle vicinanze; direzione non determinata");
+            if (!busy && typingTask == null) setSpeech(message);
+            postRadarNotification(message);
+        });
+    }
+
+    private void postRadarNotification(String message) {
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (manager == null) return;
+        manager.createNotificationChannel(new NotificationChannel("meteorina", "Avvisi Meteorina", NotificationManager.IMPORTANCE_DEFAULT));
+        PendingIntent open = PendingIntent.getActivity(this, 22,
+                new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        Notification notification = new Notification.Builder(this, "meteorina")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Solphivia Meteorina")
+                .setContentText(message)
+                .setStyle(new Notification.BigTextStyle().bigText(message))
+                .setContentIntent(open).setAutoCancel(true).build();
+        try { manager.notify(22, notification); }
+        catch (SecurityException error) { android.util.Log.i("SolphiviaMeteorina", "Notifiche non autorizzate", error); }
+    }
+
+    private JSONObject getWeatherJson(String address) throws Exception {
+        HttpURLConnection connection = (HttpURLConnection) new URL(address).openConnection();
+        connection.setConnectTimeout(12000); connection.setReadTimeout(15000);
+        connection.setRequestProperty("Accept", "application/json");
+        try {
+            int code = connection.getResponseCode();
+            InputStream stream = code >= 200 && code < 300 ? connection.getInputStream() : connection.getErrorStream();
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096]; int count;
+            while ((count = stream.read(buffer)) != -1) bytes.write(buffer, 0, count);
+            if (code < 200 || code >= 300) throw new IllegalStateException("HTTP " + code);
+            return new JSONObject(new String(bytes.toByteArray(), StandardCharsets.UTF_8));
+        } finally { connection.disconnect(); }
+    }
+
+    private String weatherLook(int code, double temp, boolean day, double rain) {
+        if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95 || rain > 0.1) return "rain";
+        if ((code >= 71 && code <= 77) || code == 85 || code == 86 || temp < 10) return "cold";
+        if (day && temp >= 27 && code == 0) return "sun";
+        return "none";
+    }
+    private String weatherIcon(int code) {
+        if (code >= 95) return "⛈️";
+        if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return "☂️";
+        if (code == 0) return "☀️";
+        if (code <= 2) return "🌤️";
+        return "☁️";
+    }
+    private String weatherDescription(int code) {
+        if (code == 0) return "Sereno";
+        if (code == 1) return "Prevalentemente sereno";
+        if (code == 2) return "Parzialmente nuvoloso";
+        if (code == 3) return "Nuvoloso";
+        if (code == 45 || code == 48) return "Nebbia";
+        if (code >= 51 && code <= 57) return "Pioviggine";
+        if (code >= 61 && code <= 67) return "Pioggia";
+        if (code >= 71 && code <= 77) return "Neve";
+        if (code >= 80 && code <= 82) return "Rovesci";
+        if (code >= 95) return "Temporale";
+        return "Condizioni variabili";
+    }
+
     private JSONArray readAttachments(ArrayList<String> uris) throws Exception {
-        JSONArray result = new JSONArray();
-        long total = 0;
-        for (String raw : uris) {
-            Uri uri = Uri.parse(raw);
-            try {
-            String name = "allegato";
-            long declaredSize = -1;
-            try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
-                if (cursor != null && cursor.moveToFirst()) {
-                    int nameColumn = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                    int sizeColumn = cursor.getColumnIndex(OpenableColumns.SIZE);
-                    if (nameColumn >= 0) name = cursor.getString(nameColumn);
-                    if (sizeColumn >= 0 && !cursor.isNull(sizeColumn)) declaredSize = cursor.getLong(sizeColumn);
-                }
-            }
-            if (declaredSize > 8L * 1024 * 1024) throw new IllegalArgumentException("Allegato oltre 8 MB");
-            String mime = getContentResolver().getType(uri);
-            if (mime == null) mime = "application/octet-stream";
-            byte[] bytes;
-            try (InputStream input = getContentResolver().openInputStream(uri);
-                 ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-                if (input == null) throw new IllegalStateException("File non accessibile");
-                byte[] buffer = new byte[8192]; int read;
-                while ((read = input.read(buffer)) != -1) {
-                    total += read;
-                    if (total > 15L * 1024 * 1024) throw new IllegalArgumentException("Allegati oltre 15 MB complessivi");
-                    output.write(buffer, 0, read);
-                }
-                bytes = output.toByteArray();
-            }
-            if (bytes.length == 0) throw new IllegalArgumentException("Allegato vuoto");
-            JSONObject item = new JSONObject();
-            item.put("filename", name);
-            item.put("mime_type", mime);
-            item.put("data_uri", "data:" + mime + ";base64," + Base64.encodeToString(bytes, Base64.NO_WRAP));
-            result.put(item);
-            } finally {
-                // The picker grants temporary access to a user-selected document.
-                // Release any persistable grant as soon as its bytes are read.
-                try { getContentResolver().releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); }
-                catch (SecurityException ignored) { }
-            }
-        }
-        return result;
+        return AttachmentReader.read(this, uris, new long[]{0});
     }
 
     private void dispatchMessage(String text, JSONArray attachments) {
+        if (destroyed) return;
         String storedText = text;
         if (attachments.length() > 0) {
             StringBuilder names = new StringBuilder("\n[Allegati: ");
@@ -477,11 +806,23 @@ public class PetService extends Service {
             }
             storedText += names.append(']').toString();
         }
-        saveMessage("user", storedText);
-        OpenAiChatClient.respond(this, worker, loadHistory(), attachments, new OpenAiChatClient.ChatCallback() {
-            @Override public void onSuccess(String reply, String mood, String motion) {
+        JSONArray history = loadHistory();
+        try {
+            history.put(new JSONObject().put("role", "user").put("content", storedText)
+                    .put("attachments", AttachmentReader.references(attachments)));
+            while (history.length() > 16) history.remove(0);
+        } catch (Exception error) {
+            busy = false; composer.setEnabled(true); sendButton.setEnabled(true);
+            setSpeech("Non riesco a conservare gli allegati. Riprova."); return;
+        }
+        OpenAiChatClient.respond(this, worker, history, attachments, new OpenAiChatClient.ChatCallback() {
+            @Override public void onSuccess(String reply, String mood, String motion, String mode) {
                 main.post(() -> {
+                    if (destroyed) return;
+                    getSharedPreferences("chat", 0).edit().putString("history", history.toString()).apply();
+                    pendingFiles.clear();updateFilesButton();
                     busy = false; composer.setEnabled(true); sendButton.setEnabled(true);
+                    applyContextualMode(PetService.this, mode, pet);
                     pendingMotion = preserveRunIntent(motion);
                     saveMessage("assistant", reply);
                     speechEndMood = mood == null ? "idle" : mood;
@@ -490,8 +831,10 @@ public class PetService extends Service {
             }
             @Override public void onError(String message) {
                 main.post(() -> {
+                    if (destroyed) return;
                     busy = false; composer.setEnabled(true); sendButton.setEnabled(true);
-                    setAnimation("concerned"); setSpeech("C’è stato un problema. Quando vuoi, riprova.");
+                    composer.setText(text);
+                    setAnimation("concerned"); setSpeech(message);
                     resetIdleTimers();
                 });
             }
@@ -499,6 +842,7 @@ public class PetService extends Service {
     }
 
     private void typeSpeech(String text) {
+        if (destroyed) return;
         if (typingTask != null) { main.removeCallbacks(typingTask); typingTask = null; }
         if (tts != null) tts.stop();
         pendingUtterance = null;
@@ -557,26 +901,48 @@ public class PetService extends Service {
         if (endMood == null || endMood.equals("idle")) setAnimation("idle");
         else {
             setAnimation(endMood);
-            main.postDelayed(() -> { if (!busy && pet != null && typingTask == null && touchRevision == revision && endMood.equals(animation)) setAnimation("idle"); }, 900);
+            long animationHoldMs = "wave".equals(endMood) ? 1100L : 900L;
+            main.postDelayed(() -> { if (!busy && pet != null && typingTask == null && touchRevision == revision && endMood.equals(animation)) setAnimation("idle"); }, animationHoldMs);
         }
         main.postDelayed(() -> { if (pet != null && touchRevision == revision && typingTask == null && !ttsPending) moveOverlay(motion); }, 300);
         resetIdleTimers();
     }
 
     private void setSpeech(String text) {
+        if (destroyed) return;
         if (typingTask != null) { main.removeCallbacks(typingTask); typingTask = null; }
         if (tts != null) tts.stop();
         pendingUtterance = null; ttsPending = false; speechTypingDone = true; speechFinalized = true;
         speechTarget = text; speech.setText(text); setAnimation("idle"); resetIdleTimers();
     }
 
+    private boolean handleGreetingCommand(String text) {
+        String value = normalizeCommand(text).replaceAll("[.!?,;:]+", " ").replaceAll("\\s+", " ").trim();
+        if (!(value.equals("saluta") || value.equals("fai ciao") || value.equals("saluta con la mano") ||
+                value.equals("ciao con la mano") || value.equals("saluta utente"))) return false;
+        composer.setText("");
+        ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
+        speechEndMood = "wave";
+        pendingMotion = "stay";
+        typeSpeech("Ciao utente!");
+        return true;
+    }
+
     private void startTtsUtterance(String text, long serial) {
+        if (!getSharedPreferences("pet", 0).getBoolean("read_aloud", true)) { ttsPending = false; finishSpokenLine(); return; }
         if (tts == null || !ttsReady || text == null) { ttsPending = false; finishSpokenLine(); return; }
         applySystemTtsSettings();
         String id = "solphivia-" + serial;
         String spokenText = englishAccentActive ? ItalianEnglishAccent.respell(text) : text;
-        int result = tts.speak(spokenText, TextToSpeech.QUEUE_FLUSH, null, id);
-        if (result == TextToSpeech.ERROR) { ttsPending = false; finishSpokenLine(); }
+        int limit=Math.max(100,TextToSpeech.getMaxSpeechInputLength()-1);
+        for(int start=0;start<spokenText.length();) {
+            int end=Math.min(start+limit,spokenText.length());
+            if(end<spokenText.length() && Character.isLowSurrogate(spokenText.charAt(end)))end--;
+            int result=tts.speak(spokenText.substring(start,end),start==0?TextToSpeech.QUEUE_FLUSH:TextToSpeech.QUEUE_ADD,null,end==spokenText.length()?id:id+"-part-"+start);
+            if(result==TextToSpeech.ERROR) {tts.stop();ttsPending=false;finishSpokenLine();break;}
+            start=end;
+        }
+        if(spokenText.isEmpty()){ttsPending=false;finishSpokenLine();}
     }
 
     private void applySystemTtsSettings() {
@@ -650,6 +1016,7 @@ public class PetService extends Service {
 
     private void finishTtsUtterance(String id) {
         main.post(() -> {
+            if (destroyed) return;
             if (id == null || !id.equals("solphivia-" + currentUtteranceSerial)) return;
             ttsPending = false;
             finishSpokenLine();
@@ -657,9 +1024,11 @@ public class PetService extends Service {
     }
 
     private void applyCostumeCommand(String text) {
+        if (applyModeCommand(this, text, pet)) return;
         Boolean cyborg = requestedCyborgSuit(text);
         if (cyborg != null) {
-            if (pet != null) pet.setCyborgSuit(cyborg);
+            getSharedPreferences("pet", 0).edit().putBoolean("costume_override", cyborg).apply();
+            if (pet != null) pet.setClassicCyborgSuit(cyborg);
             getSharedPreferences("pet", 0).edit().putBoolean("cyborg_suit", cyborg).apply();
         }
     }
@@ -692,6 +1061,63 @@ public class PetService extends Service {
         if (text == null) return "";
         return Normalizer.normalize(text.toLowerCase(Locale.ITALIAN).replace('’', '\''), Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "").trim();
+    }
+
+    /** Resolve short mode aliases without mistaking unrelated mentions for a mode change. */
+    public static String requestedModeCommand(String text) {
+        String value = normalizeCommand(text).replaceAll("[.!?,;:]+", " ").replaceAll("\\s+", " ").trim();
+        if (value.isEmpty()) return null;
+        if (value.equals("auto") || value.equals("automatico") || value.equals("scegli tu") ||
+                value.equals("modalita auto") || value.equals("modalita automatica") ||
+                value.equals("scegli tu la modalita") || value.equals("fai tu") ||
+                value.equals("lascia scegliere a te")) return "auto";
+        if (value.equals("prof") || value.equals("proffffff") || value.equals("professoressa") || value.equals("modalita prof") ||
+                value.equals("modalita proffffff") || value.startsWith("modalita prof ") ||
+                value.equals("modalita professoressa") || value.equals("passa a prof") ||
+                value.startsWith("passa a prof ") || value.equals("mettiti da prof") ||
+                value.equals("look prof") || value.startsWith("prof ")) return "prof";
+        if (value.equals("vj") || value.equals("visual jockey") || value.equals("modalita vj") ||
+                value.equals("modalita visual jockey") || value.equals("passa a vj") ||
+                value.startsWith("modalita vj ") || value.startsWith("visual jockey ") ||
+                value.startsWith("passa a vj ") || value.equals("look vj") || value.startsWith("vj ")) return "vj";
+        if (value.equals("codex") || value.equals("codex ultra ultra work") || value.equals("modalita codex") ||
+                value.equals("modalita codex ultra ultra work") || value.startsWith("modalita codex ") ||
+                value.equals("passa a codex") || value.startsWith("passa a codex ") ||
+                value.equals("look codex") || value.startsWith("codex ")) return "codex";
+        return null;
+    }
+
+    /** Explicit aliases pin a mode; "auto" lets the model choose one from the conversation. */
+    public static boolean applyModeCommand(Context context, String text, PetView localView) {
+        String mode = requestedModeCommand(text);
+        if (mode == null) return false;
+        context.getSharedPreferences("pet", 0).edit().putBoolean("costume_override", false).apply();
+        context.getSharedPreferences("pet", 0).edit().putString("mode_preference", mode).apply();
+        if (!"auto".equals(mode)) applyActiveMode(context, mode, localView);
+        return true;
+    }
+
+    /** Use the model's context tag only while the user has left automatic mode enabled. */
+    public static void applyContextualMode(Context context, String mode, PetView localView) {
+        if (context.getSharedPreferences("pet", 0).getBoolean("costume_override", false)) return;
+        if (mode == null || !(mode.equals("prof") || mode.equals("vj") || mode.equals("codex"))) return;
+        if (!"auto".equals(context.getSharedPreferences("pet", 0).getString("mode_preference", "auto"))) return;
+        applyActiveMode(context, mode, localView);
+    }
+
+    private static void applyActiveMode(Context context, String mode, PetView localView) {
+        boolean luminousVj = "vj".equals(mode);
+        context.getSharedPreferences("pet", 0).edit().putString("active_mode", mode)
+                .putBoolean("cyborg_suit", luminousVj).apply();
+        if (localView != null) {
+            localView.setCyborgSuit(luminousVj);
+            localView.setSolphiviaMode(mode);
+            localView.setAnimation("mode");
+        }
+        if (context.getSharedPreferences("pet", 0).getBoolean("overlay_active", false)) {
+            Intent intent = new Intent(context, PetService.class).setAction(ACTION_MODE).putExtra(EXTRA_MODE, mode);
+            if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent); else context.startService(intent);
+        }
     }
 
     private void wakeFromRest() {
@@ -843,6 +1269,9 @@ public class PetService extends Service {
     }
 
     @Override public void onDestroy() {
+        destroyed = true;
+        weatherRevision++;
+        getSharedPreferences("pet", 0).edit().putBoolean("overlay_active", false).apply();
         main.removeCallbacksAndMessages(null);
         cancelIdleTimers();
         if (typingTask != null) main.removeCallbacks(typingTask);
@@ -851,6 +1280,7 @@ public class PetService extends Service {
             movementAnimator.cancel(); movementAnimator = null;
         }
         worker.shutdownNow();
+        weatherWorker.shutdownNow();
         if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }
         if (pet != null) pet.pause();
         if (panel != null) { try { wm.removeView(panel); } catch (IllegalArgumentException ignored) { } panel = null; pet = null; }
