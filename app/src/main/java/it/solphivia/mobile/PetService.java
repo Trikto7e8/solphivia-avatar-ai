@@ -63,6 +63,29 @@ import java.nio.charset.StandardCharsets;
 
 /** Home-screen overlay containing Solphivia, her speech bubble, and the chat composer. */
 public class PetService extends Service {
+    private static boolean internalChatVisible;
+    private static PetService activeInstance;
+    private boolean overlayAttached;
+
+    static void setInternalChatVisible(boolean visible) {
+        internalChatVisible = visible;
+        if (activeInstance != null) activeInstance.updateOverlayVisibility();
+    }
+
+    private void updateOverlayVisibility() {
+        if (panel == null || destroyed) return;
+        if (internalChatVisible && overlayAttached) {
+            wm.removeViewImmediate(panel);
+            overlayAttached = false;
+        } else if (!internalChatVisible && !overlayAttached && Settings.canDrawOverlays(this)) {
+            try { wm.addView(panel, lp); overlayAttached = true; }
+            catch (RuntimeException error) { stopSelf(); }
+        }
+    }
+
+    private void updateOverlayLayout() {
+        if (overlayAttached) wm.updateViewLayout(panel, lp);
+    }
     public static final String ACTION_ANIMATE = "it.solphivia.mobile.action.ANIMATE";
     public static final String ACTION_MODE = "it.solphivia.mobile.action.MODE";
     public static final String ACTION_VOICE_SETTINGS = "it.solphivia.mobile.action.VOICE_SETTINGS";
@@ -156,6 +179,7 @@ public class PetService extends Service {
 
     @Override public void onCreate() {
         super.onCreate();
+        activeInstance = this;
         VoicePreferences.initialize(this);
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         initializeTts();
@@ -297,6 +321,7 @@ public class PetService extends Service {
         String activeMode = getSharedPreferences("pet", 0).getString("active_mode", "prof");
         pet.setCyborgSuit("vj".equals(activeMode));
         pet.setSolphiviaMode(activeMode);
+        pet.setWeatherLook(getSharedPreferences("weather",0).getString("avatar_look","none"));
         if (getSharedPreferences("pet", 0).getBoolean("costume_override", false)) pet.setClassicCyborgSuit(true);
         pet.setOnTouchListener(this::onPetTouch);
 
@@ -393,12 +418,15 @@ public class PetService extends Service {
                     imeVisible = false; lp.y = restingY; clampPanel();
                 }
                 if (previousY != lp.y) {
-                    try { wm.updateViewLayout(panel, lp); } catch (RuntimeException ignored) { }
+                    try { updateOverlayLayout(); } catch (RuntimeException ignored) { }
                 }
                 return insets;
             });
         }
-        try { wm.addView(panel, lp); getSharedPreferences("pet", 0).edit().putBoolean("overlay_active", true).apply(); }
+        try {
+            if (!internalChatVisible) { wm.addView(panel, lp); overlayAttached = true; }
+            getSharedPreferences("pet", 0).edit().putBoolean("overlay_active", true).apply();
+        }
         catch (RuntimeException error) { panel = null; pet = null; stopSelf(); return; }
         panel.requestApplyInsets();
         composer.setOnClickListener(v -> composer.requestFocus());
@@ -431,7 +459,7 @@ public class PetService extends Service {
                     previousTouchX = event.getRawX();
                     lp.x = oldX + Math.round(dx); lp.y = oldY + Math.round(dy);
                     clampPanel();
-                    try { wm.updateViewLayout(panel, lp); } catch (RuntimeException ignored) { }
+                    try { updateOverlayLayout(); } catch (RuntimeException ignored) { }
                 }
                 return true;
             case MotionEvent.ACTION_UP:
@@ -528,6 +556,7 @@ public class PetService extends Service {
             weatherRevision++;
             getSharedPreferences("weather", 0).edit().putBoolean("enabled", false).apply();
             main.removeCallbacks(weatherRefreshTask);
+            getSharedPreferences("weather",0).edit().putString("avatar_look","none").apply();
             if (pet != null) pet.setWeatherLook("none");
             if (weatherBadge != null) weatherBadge.setText("🌦 Meteo");
             if (radarBadge != null) radarBadge.setText("Radar —");
@@ -643,6 +672,7 @@ public class PetService extends Service {
                         location, temp, feels, description.toLowerCase(Locale.ITALY), probability, wind);
                 main.post(() -> {
                     if (!weatherCurrent(revision)) return;
+                    getSharedPreferences("weather",0).edit().putString("avatar_look",weatherLook).apply();
                     if (pet != null) pet.setWeatherLook(weatherLook);
                     if (weatherBadge != null) weatherBadge.setText(String.format(Locale.ROOT, "%s %.0f°", weatherIcon(code), temp));
                     if (announce && !busy && typingTask == null) setSpeech(summary);
@@ -901,7 +931,7 @@ public class PetService extends Service {
         if (endMood == null || endMood.equals("idle")) setAnimation("idle");
         else {
             setAnimation(endMood);
-            long animationHoldMs = "wave".equals(endMood) ? 1100L : 900L;
+            long animationHoldMs = ("nod".equals(endMood) || "explain".equals(endMood) || "celebrate".equals(endMood)) ? 1800L : "wave".equals(endMood) ? 1100L : 900L;
             main.postDelayed(() -> { if (!busy && pet != null && typingTask == null && touchRevision == revision && endMood.equals(animation)) setAnimation("idle"); }, animationHoldMs);
         }
         main.postDelayed(() -> { if (pet != null && touchRevision == revision && typingTask == null && !ttsPending) moveOverlay(motion); }, 300);
@@ -959,23 +989,7 @@ public class PetService extends Service {
         int language = tts.setLanguage(locale);
         ttsReady = language != TextToSpeech.LANG_MISSING_DATA && language != TextToSpeech.LANG_NOT_SUPPORTED;
         englishAccentActive = requestedEnglish && ttsReady;
-        android.speech.tts.Voice best = null;
-        int bestScore = Integer.MIN_VALUE;
-        if (ttsReady && tts.getVoices() != null) {
-            for (android.speech.tts.Voice voice : tts.getVoices()) {
-                if (!locale.getLanguage().equalsIgnoreCase(voice.getLocale().getLanguage())) continue;
-                // The English test voice must be installed locally; keep the existing Italian
-                // device voice selection unchanged when the user chooses the normal mode.
-                if (requestedEnglish && voice.isNetworkConnectionRequired()) continue;
-                int score = voice.getQuality();
-                if (requestedEnglish && "GB".equalsIgnoreCase(voice.getLocale().getCountry())) score += 1000;
-                if (!requestedEnglish && "IT".equalsIgnoreCase(voice.getLocale().getCountry())) score += 1000;
-                if (best == null || score > bestScore) {
-                    best = voice;
-                    bestScore = score;
-                }
-            }
-        }
+        android.speech.tts.Voice best = ttsReady ? SpeechVoiceSelection.select(tts, locale, requestedEnglish) : null;
         boolean voiceSelected = best != null && tts.setVoice(best) == TextToSpeech.SUCCESS;
         if (requestedEnglish && !voiceSelected) {
             // Keep the app usable when the phone has no offline English voice installed.
@@ -1071,6 +1085,7 @@ public class PetService extends Service {
                 value.equals("modalita auto") || value.equals("modalita automatica") ||
                 value.equals("scegli tu la modalita") || value.equals("fai tu") ||
                 value.equals("lascia scegliere a te")) return "auto";
+        if (value.equals("meteorina") || value.equals("modalita meteorina") || value.equals("look meteorina") || value.equals("passa a meteorina")) return "meteorina";
         if (value.equals("prof") || value.equals("proffffff") || value.equals("professoressa") || value.equals("modalita prof") ||
                 value.equals("modalita proffffff") || value.startsWith("modalita prof ") ||
                 value.equals("modalita professoressa") || value.equals("passa a prof") ||
@@ -1100,8 +1115,13 @@ public class PetService extends Service {
     /** Use the model's context tag only while the user has left automatic mode enabled. */
     public static void applyContextualMode(Context context, String mode, PetView localView) {
         if (context.getSharedPreferences("pet", 0).getBoolean("costume_override", false)) return;
-        if (mode == null || !(mode.equals("prof") || mode.equals("vj") || mode.equals("codex"))) return;
+        if (mode == null || !(mode.equals("prof") || mode.equals("vj") || mode.equals("codex") || mode.equals("meteorina"))) return;
         if (!"auto".equals(context.getSharedPreferences("pet", 0).getString("mode_preference", "auto"))) return;
+        android.content.SharedPreferences prefs=context.getSharedPreferences("pet",0);
+        if (mode.equals(prefs.getString("active_mode","prof"))) return;
+        long now=System.currentTimeMillis(),last=prefs.getLong("context_mode_changed_at",0);
+        if (now>=last && now-last<20000L) return;
+        prefs.edit().putLong("context_mode_changed_at",now).apply();
         applyActiveMode(context, mode, localView);
     }
 
@@ -1112,6 +1132,7 @@ public class PetService extends Service {
         if (localView != null) {
             localView.setCyborgSuit(luminousVj);
             localView.setSolphiviaMode(mode);
+            localView.setWeatherLook(context.getSharedPreferences("weather",0).getString("avatar_look","none"));
             localView.setAnimation("mode");
         }
         if (context.getSharedPreferences("pet", 0).getBoolean("overlay_active", false)) {
@@ -1202,7 +1223,7 @@ public class PetService extends Service {
             lp.y = command.equals("bounce") ? fromY - Math.round((float) Math.sin(Math.PI * t) * dp(36))
                     : Math.round(fromY + (targetY - fromY) * t);
             clampPanel();
-            try { wm.updateViewLayout(panel, lp); } catch (RuntimeException ignored) { }
+            try { updateOverlayLayout(); } catch (RuntimeException ignored) { }
         });
         movementAnimator.addListener(new android.animation.AnimatorListenerAdapter() {
             private boolean cancelled;
@@ -1265,11 +1286,12 @@ public class PetService extends Service {
 
     @Override public void onConfigurationChanged(android.content.res.Configuration config) {
         super.onConfigurationChanged(config);
-        if (panel != null) { clampPanel(); restingY = lp.y; wm.updateViewLayout(panel, lp); }
+        if (panel != null) { clampPanel(); restingY = lp.y; updateOverlayLayout(); }
     }
 
     @Override public void onDestroy() {
         destroyed = true;
+        if (activeInstance == this) activeInstance = null;
         weatherRevision++;
         getSharedPreferences("pet", 0).edit().putBoolean("overlay_active", false).apply();
         main.removeCallbacksAndMessages(null);
@@ -1283,7 +1305,7 @@ public class PetService extends Service {
         weatherWorker.shutdownNow();
         if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }
         if (pet != null) pet.pause();
-        if (panel != null) { try { wm.removeView(panel); } catch (IllegalArgumentException ignored) { } panel = null; pet = null; }
+        if (panel != null) { if (overlayAttached) { try { wm.removeView(panel); } catch (IllegalArgumentException ignored) { } } overlayAttached = false; panel = null; pet = null; }
         stopForeground(true);
         super.onDestroy();
     }

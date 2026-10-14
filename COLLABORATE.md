@@ -32,7 +32,7 @@ Sai sviluppare, fare test, migliorare accessibilità o documentazione? Scegli un
 
 ## Share the project
 
-Try the [latest alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2), star the repository if it is useful, and share this page with people interested in Android, SwiftUI, accessibility or local AI. Describe it as a community alpha, not a finished App Store/Google Play product.
+Try the [latest alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha4), star the repository if it is useful, and share this page with people interested in Android, SwiftUI, accessibility or local AI. Describe it as a community alpha, not a finished App Store/Google Play product.
 
 ## Licenses and personal data
 

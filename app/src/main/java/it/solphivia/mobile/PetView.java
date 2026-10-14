@@ -148,7 +148,7 @@ public class PetView extends View {
     public void setSolphiviaMode(String mode) {
         if (mode == null) return;
         String value = mode.trim().toLowerCase(java.util.Locale.ROOT);
-        if (!value.equals("prof") && !value.equals("vj") && !value.equals("codex")) return;
+        if (!value.equals("prof") && !value.equals("vj") && !value.equals("codex") && !value.equals("meteorina")) return;
         classicCyborgOverride = false;
         if (solphiviaMode.equals(value)) { invalidate(); return; }
         solphiviaMode = value;
@@ -173,6 +173,7 @@ public class PetView extends View {
     }
 
     private Bitmap[] currentWeatherFrames() {
+        if (!"meteorina".equals(solphiviaMode) || classicCyborgOverride) return null;
         switch (weatherLook) {
             case "rain": return rainWeatherFrames;
             case "sun": return sunWeatherFrames;
@@ -198,6 +199,7 @@ public class PetView extends View {
         switch (next) {
             case "idle": case "mode": case "look": case "thinking": case "listen": case "talk":
             case "sit": case "sleep": case "happy": case "concerned": case "sad": case "run": case "wave":
+            case "nod": case "explain": case "celebrate":
                 if ("run".equals(next) && "run".equals(animation) && runLoopScheduled) {
                     running = true;
                     return true;
@@ -263,7 +265,7 @@ public class PetView extends View {
                             : currentModeFrames()[(int) (elapsed / 520L) % IDLE_FRAME_COUNT];
                 break;
             case "look": case "thinking":
-                if (elapsed >= ACTION_FRAME_COUNT * ACTION_FRAME_MS) {
+                if ("look".equals(animation) && elapsed >= ACTION_FRAME_COUNT * ACTION_FRAME_MS) {
                     animation = "idle";
                     animationStartedAt = now;
                     frame = voiceFrames[CLOSED_MOUTH_IDLE[0]];
@@ -271,6 +273,12 @@ public class PetView extends View {
                     int calm = CLOSED_MOUTH_IDLE[(int) (elapsed / IDLE_FRAME_MS) % IDLE_FRAME_COUNT];
                     frame = voiceFrames[calm];
                 } else frame = lookFrames[(int) (elapsed / ACTION_FRAME_MS) % ACTION_FRAME_COUNT];
+                break;
+            case "nod": case "explain": case "celebrate":
+                Bitmap[] contextualFrames = currentWeatherFrames();
+                if (contextualFrames == null || contextualFrames[0] == null) contextualFrames=currentModeFrames();
+                frame=classicCyborgOverride ? voiceFrames[CLOSED_MOUTH_IDLE[0]] : contextualFrames[(int)(elapsed / 520L) % IDLE_FRAME_COUNT];
+                if (elapsed >= 1800L) { animation="idle";animationStartedAt=now; }
                 break;
             case "listen":
                 if (cyborgSuit) {
@@ -325,7 +333,15 @@ public class PetView extends View {
             float scale=Math.min(getWidth()/(float)frame.getWidth(),getHeight()/(float)frame.getHeight());
             float width=frame.getWidth()*scale,height=frame.getHeight()*scale;
             destination.set((getWidth()-width)/2f,getHeight()-height,(getWidth()+width)/2f,getHeight());
-            if (animation.equals("idle") || animation.equals("mode")) {
+            boolean reduced=getContext().getSharedPreferences("pet",0).getBoolean("reduced_animations",false);
+            if (!reduced && (animation.equals("nod") || animation.equals("explain") || animation.equals("celebrate"))) {
+                float phase=(float)(Math.min(elapsed,1800L) / 1800.0 * Math.PI * 2);
+                canvas.save();
+                if (animation.equals("nod")) canvas.scale(1f,1f-0.025f*(float)Math.sin(phase)*(float)Math.sin(phase),getWidth()/2f,getHeight());
+                else if (animation.equals("explain")) canvas.rotate(1.5f*(float)Math.sin(phase),getWidth()/2f,getHeight()*0.65f);
+                else canvas.translate(0,-getResources().getDisplayMetrics().density*5f*(float)Math.sin(phase)*(float)Math.sin(phase));
+                canvas.drawBitmap(frame,null,destination,paint);canvas.restore();
+            } else if (!reduced && (animation.equals("idle") || animation.equals("mode"))) {
                 float phase = (elapsed % (IDLE_FRAME_MS * IDLE_FRAME_COUNT)) /
                         (float) (IDLE_FRAME_MS * IDLE_FRAME_COUNT) * (float) (Math.PI * 2);
                 float density = getResources().getDisplayMetrics().density;

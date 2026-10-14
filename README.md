@@ -4,7 +4,7 @@
 
 An animated companion on your Android screen. Talk, type, attach a file, and keep your assistant's personal memory under your control.
 
-**[Try the Android alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2)** · **[Help build Solphivia](COLLABORATE.md)** · [Leggi in italiano](README-IT.md)
+**[Try the Android alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha4)** · **[Help build Solphivia](COLLABORATE.md)** · [Leggi in italiano](README-IT.md)
 
 > Community alpha · Android available for testing · Google Play and iOS are work ahead.
 
@@ -24,7 +24,7 @@ Actual character frames from the Android app. Artwork is reserved under [ASSETS-
 
 ## Start in a few minutes
 
-1. Get the APK from the [alpha release](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2). This is a debug test build, not a store release.
+1. Get the APK from the [alpha release](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha4). This is a debug test build, not a store release.
 2. Follow the [Italian setup guide](AVVIO-RAPIDO-IT.md), enable the overlay and choose an installed Android speech engine.
 3. Try the avatar and share a [reproducible test report](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6) using synthetic examples.
 
@@ -90,7 +90,17 @@ Code contributions are welcome. Please read `CONTRIBUTING.md` first. Do not post
 
 ## Current verification status
 
-Version **0.9.2-alpha2** (code 31) was built, passed Android Lint and isolated Motorola regression tests, and was installed on the Motorola. On 13 October 2026 the user confirmed it works and approved this alpha. Further improvements and listening evaluation remain; voice quality depends on the selected Android engine and installed voices. See the [verification report](VERIFICA-0.9.2-alpha2.md).
+Version **0.9.2-alpha4** (code 33) was built, passed Android Lint and isolated Motorola regression tests, and was installed on the Motorola. The alpha4 update was tested and installed on 14 October 2026. Further improvements and listening evaluation remain; voice quality depends on the selected Android engine and installed voices. See the [verification report](VERIFICA-0.9.2-alpha4.md).
+
+## New in alpha4
+
+- One avatar at a time: the floating window hides while the internal chat is visible and returns when you leave.
+- Keeps the voice selected in the Android speech engine instead of choosing another equivalent variant.
+- Contextual Prof, VJ, Codex and Meteorina modes, with manual outfit priority and a 20-second interval between automatic changes.
+- Three brief gestures: nod, explain and celebrate, animated from existing sprites; reduced-motion option in the preview.
+- Existing sitting and sleep states preserved; thinking remains active while a response is pending.
+
+Use `scegli tu` or `modalità auto` to enable contextual outfit choice. Explicit `prof`, `vj`, `codex` or `meteorina` commands pin the outfit. Contextual suggestions come from the conversation, not observation of other apps. See [the behavior notes](docs/CONTEXTUAL-AVATAR-DECISIONS.md).
 
 ## 0.9.2-alpha2
 
@@ -100,4 +110,4 @@ Version **0.9.2-alpha2** (code 31) was built, passed Android Lint and isolated M
 - Radar DPC aggiornato: dati, timestamp ed errori visibili. Segnala echi vicini, senza stimare direzione o tempo di arrivo.
 - Sonno animato, proporzioni corrette e schermata `☰ → Prova animazioni`; 108 sprite e 1248 combinazioni verificate.
 
-Scarica l’APK dalla [pre-release v0.9.2-alpha2](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.
+Scarica l’APK dalla [pre-release v0.9.2-alpha2](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha4). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.

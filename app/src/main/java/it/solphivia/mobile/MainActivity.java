@@ -147,6 +147,7 @@ public class MainActivity extends Activity {
         String activeMode = getSharedPreferences("pet", 0).getString("active_mode", "prof");
         inlinePet.setCyborgSuit("vj".equals(activeMode));
         inlinePet.setSolphiviaMode(activeMode);
+        inlinePet.setWeatherLook(getSharedPreferences("weather",0).getString("avatar_look","none"));
         if (getSharedPreferences("pet", 0).getBoolean("costume_override", false)) inlinePet.setClassicCyborgSuit(true);
         inlinePet.setContentDescription("Avatar di Solphivia: trascina per spostarla, fai uno swipe per farla correre");
         FrameLayout.LayoutParams petParams = new FrameLayout.LayoutParams(dp(220), dp(220), Gravity.CENTER);
@@ -660,6 +661,23 @@ public class MainActivity extends Activity {
     private void openUsageSettings() {
         try { startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://chatgpt.com/settings/usage"))); }
         catch(Exception e) { Toast.makeText(this,"Apri ChatGPT → Impostazioni → Utilizzo",Toast.LENGTH_LONG).show(); }
+    }
+
+    @Override protected void onStart() {
+        super.onStart();
+        PetService.setInternalChatVisible(true);
+    }
+
+    @Override protected void onStop() {
+        super.onStop();
+        if (!isChangingConfigurations()) {
+            PetService.setInternalChatVisible(false);
+            if (!authBrowser && !homeShortcutPromptPending && Settings.canDrawOverlays(this)
+                    && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
+                Intent service = new Intent(this, PetService.class);
+                if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
+            }
+        }
     }
 
     @Override protected void onResume() {

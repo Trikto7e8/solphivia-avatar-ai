@@ -4,7 +4,7 @@
 
 Una compagna animata sullo schermo Android. Puoi parlarle, scriverle, allegare un file e personalizzare la memoria dell'assistente mantenendone il controllo.
 
-**[Prova l’alpha Android](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2)** · **[Aiutaci a farla crescere](COLLABORATE.md)** · [Read in English](README.md)
+**[Prova l’alpha Android](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha4)** · **[Aiutaci a farla crescere](COLLABORATE.md)** · [Read in English](README.md)
 
 > Alpha comunitaria · Android disponibile per le prove · Google Play e iOS sono obiettivi da realizzare.
 
@@ -24,7 +24,7 @@ Fotogrammi reali del personaggio nell’app Android. Le illustrazioni restano ri
 
 ## Comincia in pochi minuti
 
-1. Scarica l’APK dalla [release alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2). È una build debug di prova, non una versione degli store.
+1. Scarica l’APK dalla [release alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha4). È una build debug di prova, non una versione degli store.
 2. Segui la [guida al primo avvio](AVVIO-RAPIDO-IT.md), attiva l’avatar flottante e scegli un motore vocale Android installato.
 3. Prova l’avatar e condividi un [test riproducibile](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6) con esempi inventati.
 
@@ -90,7 +90,17 @@ I contributi al codice sono benvenuti. Leggi prima `CONTRIBUTING.md` o [la versi
 
 ## Stato delle verifiche
 
-La versione **0.9.2-alpha2** (codice 31) è stata compilata, verificata con Android Lint e installata sul Motorola. I test automatici nella copia isolata sono passati e il 13 ottobre 2026 l’utente ha confermato che funziona, autorizzando questa alpha. Restano miglioramenti successivi e la valutazione della voce: il timbro dipende dal motore Android scelto e dalle voci installate. Vedere [rapporto di verifica](VERIFICA-0.9.2-alpha2.md).
+La versione **0.9.2-alpha4** (codice 33) è stata compilata, verificata con Android Lint e installata sul Motorola. I test automatici nella copia isolata sono passati e l’aggiornamento alpha4 è stato verificato e installato il 14 ottobre 2026. Restano miglioramenti successivi e la valutazione della voce: il timbro dipende dal motore Android scelto e dalle voci installate. Vedere [rapporto di verifica](VERIFICA-0.9.2-alpha4.md).
+
+## Novità nell’alpha4
+
+- Una Solphivia alla volta: la finestra flottante si nasconde nella chat interna e torna quando esci.
+- Rispetta la voce selezionata nel motore Android, senza sostituirla con un’altra variante equivalente.
+- Abiti contestuali Prof, VJ, Codex e Meteorina, con priorità ai comandi manuali e almeno 20 secondi tra cambi automatici.
+- Tre gesti brevi: cenno, inclinazione di spiegazione e piccolo rimbalzo di gioia, animando gli sprite esistenti. Opzione Movimenti ridotti nell’anteprima.
+- Seduta e sonno conservati; riflessione attiva mentre si prepara la risposta.
+
+Scrivi `scegli tu` o `modalità auto` per la scelta contestuale. I comandi espliciti `prof`, `vj`, `codex` o `meteorina` fissano l’abito. Il contesto viene dalla conversazione, non dall’osservazione delle altre app. Vedi [le note sul comportamento](docs/CONTEXTUAL-AVATAR-DECISIONS.md).
 
 ## 0.9.2-alpha2
 
@@ -100,4 +110,4 @@ La versione **0.9.2-alpha2** (codice 31) è stata compilata, verificata con Andr
 - Radar DPC aggiornato: dati, timestamp ed errori visibili. Segnala echi vicini, senza stimare direzione o tempo di arrivo.
 - Sonno animato, proporzioni corrette e schermata `☰ → Prova animazioni`; 108 sprite e 1248 combinazioni verificate.
 
-Scarica l’APK dalla [pre-release v0.9.2-alpha2](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.
+Scarica l’APK dalla [pre-release v0.9.2-alpha2](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha4). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.

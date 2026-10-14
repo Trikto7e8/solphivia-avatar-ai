@@ -17,6 +17,12 @@ import java.util.concurrent.ExecutorService;
 
 /** Offline integration checks. Run only on a dedicated emulator/test installation. */
 public final class RegressionInstrumentation extends Instrumentation {
+    private volatile Activity resumedMain;
+    private final java.util.concurrent.CountDownLatch mainResumed=new java.util.concurrent.CountDownLatch(1);
+    @Override public void callActivityOnResume(Activity activity) {
+        super.callActivityOnResume(activity);
+        if(activity instanceof MainActivity){resumedMain=activity;mainResumed.countDown();}
+    }
     @Override public void callActivityOnCreate(Activity activity, Bundle state) {
         super.callActivityOnCreate(activity, state);
         if (activity instanceof MainActivity) try {
@@ -68,8 +74,9 @@ public final class RegressionInstrumentation extends Instrumentation {
                 check(!pet.isCyborgSuit(), "explicit mode must release costume override");
                 pet.pause();
             });
-            Activity activity = startActivitySync(new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            waitForIdleSync();
+            runOnMainSync(()->context.startActivity(new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)));
+            check(mainResumed.await(15,java.util.concurrent.TimeUnit.SECONDS),"connection screen resumed within timeout");
+            Activity activity=resumedMain;
             check(!activity.isFinishing(), "disconnected account keeps connection screen accessible");
             check(android.provider.Settings.canDrawOverlays(context), "test setup requires overlay app-op");
             for (int i = 0; i < 3; i++) {
@@ -82,7 +89,6 @@ public final class RegressionInstrumentation extends Instrumentation {
                 check(running, "overlay greeting starts foreground service");
                 context.stopService(new Intent(context, PetService.class));
                 android.os.SystemClock.sleep(300);
-                waitForIdleSync();
             }
             runOnMainSync(activity::finish);
             result.putString("stream", revisionResult+"\nPASS: single-use memory consent, cancel and send without memory; attachment follow-up, metadata-only history, byte limits, stopped executor, costume persistence/reset, connection screen, three overlay greeting/start/stop cycles\n");

@@ -57,14 +57,35 @@ final class RevisionChecks {
                 Bitmap bitmap=Bitmap.createBitmap(180,224,Bitmap.Config.ARGB_8888);Canvas canvas=new Canvas(bitmap);
                 Field started=PetView.class.getDeclaredField("animationStartedAt");started.setAccessible(true);
                 int states=0;
-                for(String mode:new String[]{"prof","vj","codex"})for(boolean cyborg:new boolean[]{false,true})for(String weather:new String[]{"none","rain","sun","cold"}){
+                for(String mode:new String[]{"prof","vj","codex","meteorina"})for(boolean cyborg:new boolean[]{false,true})for(String weather:new String[]{"none","rain","sun","cold"}){
                     pet.setSolphiviaMode(mode);pet.setCyborgSuit(cyborg);pet.setWeatherLook(weather);
-                    for(String state:new String[]{"idle","mode","look","thinking","listen","talk","sit","sleep","happy","concerned","sad","run","wave"}){
+                    for(String state:new String[]{"idle","mode","look","thinking","listen","talk","sit","sleep","happy","concerned","sad","run","wave","nod","explain","celebrate"}){
                         check(pet.setAnimation(state),"valid state "+state);
                         for(int elapsed:new int[]{0,200,800,1600}){started.setLong(pet,android.os.SystemClock.uptimeMillis()-elapsed);bitmap.eraseColor(0);pet.draw(canvas);check(nonempty(bitmap),"render "+mode+"/"+weather+"/"+state);states++;}
                     }
                 }
                 check(!pet.setAnimation("invalid"),"invalid animation rejected");
+                context.getSharedPreferences("pet",0).edit().putString("mode_preference","auto")
+                        .putBoolean("costume_override",false).putLong("context_mode_changed_at",0).putString("active_mode","prof").apply();
+                PetService.applyContextualMode(context,"meteorina",pet);
+                check("meteorina".equals(pet.getSolphiviaMode()),"automatic Meteorina mode");
+                PetService.applyContextualMode(context,"codex",pet);
+                check("meteorina".equals(pet.getSolphiviaMode()),"automatic outfit change cooldown");
+                PetService.applyModeCommand(context,"prof",pet);
+                PetService.applyContextualMode(context,"vj",pet);
+                check("prof".equals(pet.getSolphiviaMode()),"manual outfit beats context");
+                PetService.applyModeCommand(context,"modalita auto",pet);
+                context.getSharedPreferences("pet",0).edit().putLong("context_mode_changed_at",0).apply();
+                PetService.applyContextualMode(context,"invented-mode",pet);
+                check("prof".equals(pet.getSolphiviaMode()),"invalid mode ignored");
+                PetService.applyContextualMode(context,"codex",pet);
+                check("codex".equals(pet.getSolphiviaMode()),"automatic choice resumes");
+                for(String gesture:new String[]{"nod","explain","celebrate"}){
+                    pet.setAnimation(gesture);started.setLong(pet,android.os.SystemClock.uptimeMillis()-2000);
+                    pet.draw(canvas);check("idle".equals(pet.getSolphiviaAnimation()),"gesture finishes: "+gesture);
+                }
+                pet.setAnimation("thinking");started.setLong(pet,android.os.SystemClock.uptimeMillis()-5000);pet.draw(canvas);
+                check("thinking".equals(pet.getSolphiviaAnimation()),"thinking persists until response");
                 pet.setCyborgSuit(false);pet.setAnimation("sleep");started.setLong(pet,android.os.SystemClock.uptimeMillis());pet.draw(canvas);int[] first=new int[180*224];bitmap.getPixels(first,0,180,0,0,180,224);
                 started.setLong(pet,android.os.SystemClock.uptimeMillis()-800);bitmap.eraseColor(0);pet.draw(canvas);int[] second=new int[first.length];bitmap.getPixels(second,0,180,0,0,180,224);
                 check(!Arrays.equals(first,second),"sleep advances frames");
@@ -75,7 +96,7 @@ final class RevisionChecks {
         long time=RadarClient.latestTime();check(ReviewRules.freshRadar(time,System.currentTimeMillis()),"live radar is recent");
         RadarClient.Sample sample=RadarClient.read(41.9028,12.4964,time);
         android.util.Log.i("SolphiviaRevision","PASS live DPC SRI for Rome, time="+time+", nearestKm="+sample.nearestKm);
-        return "PASS: encrypted local memory, JS-to-Android vault import, bad-password/tamper rejection, consent filters, portable export; 108 sprites, 1248 rendered animation combinations, sleep progression; live DPC SRI Rome scan="+time+", nearestKm="+sample.nearestKm;
+        return "PASS: encrypted local memory, JS-to-Android vault import, bad-password/tamper rejection, consent filters, portable export; 108 sprites, 2048 rendered animation combinations, sleep progression; live DPC SRI Rome scan="+time+", nearestKm="+sample.nearestKm;
     }
     static byte[] read(InputStream in)throws IOException{try(in;ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1)out.write(b,0,n);return out.toByteArray();}}
     private static boolean nonempty(Bitmap b){int[] row=new int[b.getWidth()];for(int y=0;y<b.getHeight();y++){b.getPixels(row,0,row.length,0,y,row.length,1);for(int p:row)if((p>>>24)!=0)return true;}return false;}

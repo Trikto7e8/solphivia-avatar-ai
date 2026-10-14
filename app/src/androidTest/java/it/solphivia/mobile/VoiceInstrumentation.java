@@ -14,15 +14,16 @@ public final class VoiceInstrumentation extends Instrumentation {
         try{
             RevisionChecks.check(getTargetContext().getPackageName().endsWith(".verification"),"isolated package required");
             VoicePreferences.initialize(getTargetContext());
-            String engine=getTargetContext().getSharedPreferences("pet",0).getString("tts_engine","");
+            String engine="com.google.android.tts";
             CountDownLatch init=new CountDownLatch(1);int[] status={-1};
             runOnMainSync(()->holder[0]=new TextToSpeech(getTargetContext(),code->{status[0]=code;init.countDown();},engine.isEmpty()?null:engine));
             RevisionChecks.check(init.await(20,TimeUnit.SECONDS)&&status[0]==TextToSpeech.SUCCESS,"TTS initialization");
-            TextToSpeech tts=holder[0];Voice selected=null;
-            for(Voice voice:tts.getVoices())if(voice.getLocale().getLanguage().equals("en")&&!voice.isNetworkConnectionRequired()){
-                if(selected==null||voice.getLocale().getCountry().equals("GB"))selected=voice;
-            }
+            TextToSpeech tts=holder[0];
+            RevisionChecks.check(tts.setLanguage(java.util.Locale.UK)>=0,"British English available");
+            Voice preferred=tts.getVoice();
+            Voice selected=SpeechVoiceSelection.select(tts,java.util.Locale.UK,true);
             RevisionChecks.check(selected!=null,"offline English voice installed");
+            RevisionChecks.check(preferred!=null&&selected.getName().equals(preferred.getName()),"user-selected British voice preserved");
             RevisionChecks.check(tts.setVoice(selected)==TextToSpeech.SUCCESS,"offline voice selection");
             CountDownLatch spoken=new CountDownLatch(1);boolean[] success={false};
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener(){public void onStart(String id){}public void onDone(String id){success[0]=true;spoken.countDown();}public void onError(String id){spoken.countDown();}});

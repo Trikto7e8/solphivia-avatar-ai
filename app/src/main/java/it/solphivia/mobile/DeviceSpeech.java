@@ -25,12 +25,7 @@ final class DeviceSpeech {
             boolean english=prefs.getBoolean("english_accent",false);
             Locale locale=english?Locale.UK:Locale.ITALIAN;
             int result=tts.setLanguage(locale);
-            android.speech.tts.Voice best=null;int score=Integer.MIN_VALUE;
-            if(tts.getVoices()!=null)for(android.speech.tts.Voice voice:tts.getVoices()){
-                if(!locale.getLanguage().equals(voice.getLocale().getLanguage()) || (english&&voice.isNetworkConnectionRequired()))continue;
-                int value=voice.getQuality()+(locale.getCountry().equals(voice.getLocale().getCountry())?1000:0);
-                if(value>score){best=voice;score=value;}
-            }
+            android.speech.tts.Voice best=SpeechVoiceSelection.select(tts,locale,english);
             if(best!=null && tts.setVoice(best)==TextToSpeech.SUCCESS)result=TextToSpeech.LANG_AVAILABLE;
             else if(english){english=false;result=tts.setLanguage(Locale.ITALIAN);}
             if(result<0)return;
