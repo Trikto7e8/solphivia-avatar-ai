@@ -1,8 +1,22 @@
+<p align="center"><img src="docs/media/solphivia-cover.svg" alt="Help build Solphivia: Android, voice and portable memory" width="100%" /></p>
+
 # Help build Solphivia / Aiutaci a far crescere Solphivia
 
 Solphivia is an animated AI assistant with a working Android alpha: chat, voice, attachments, encrypted portable memory and an avatar. We want to make it reliable, let users choose local or cloud models, and design a serious iPhone version.
 
 We are looking for Android/Google Play contributors, iOS/SwiftUI developers, local-LLM integrators, accessibility reviewers, translators and testers. A focused review or one reproducible bug report is useful too.
+
+## Pick your first contribution / Scegli da dove iniziare
+
+| Your interest / Il tuo interesse | A useful first step / Un primo passo utile |
+| --- | --- |
+| Testing & accessibility | Test microphone, attachments or large fonts on one Android device; share a reproducible report in [#6](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6). |
+| Android & Google Play | Read the [release readiness review](docs/ANDROID_RELEASE_READINESS_REVIEW.md), then discuss a focused change in [#3](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/3). |
+| iOS & SwiftUI | Help define a native experience and its platform limits in [#4](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/4). |
+| Local AI & voice | Propose a small provider adapter or a measured speech experiment in [#5](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/5). |
+| Documentation & translation | Improve one setup step or translate a short guide through a focused pull request. |
+
+Tell us which task you want to try, your proposed approach and what hardware you can test. Please use synthetic examples; no real memories, voice samples or account details are needed.
 
 ## Where to start
 

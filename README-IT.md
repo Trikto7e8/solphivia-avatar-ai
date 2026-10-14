@@ -1,17 +1,36 @@
-# Solphivia Avatar AI
+<p align="center"><img src="docs/media/solphivia-cover.svg" alt="Solphivia: avatar IA per Android con chat, voce e memoria portabile" width="100%" /></p>
 
-## Cerchiamo collaboratori: Android, iOS e IA locale
+# Ti presento Solphivia
 
-Ci aiuti a portare Solphivia su Google Play e a progettare una vera versione iOS? Cerchiamo sviluppatori Android/SwiftUI, persone esperte di modelli locali, tester e contributi per l’accessibilità. L’alpha Android è disponibile; iOS e nuove integrazioni sono da costruire.
+Una compagna animata sullo schermo Android. Puoi parlarle, scriverle, allegare un file e personalizzare la memoria dell'assistente mantenendone il controllo.
 
-**[Partecipa al progetto](COLLABORATE.md)** · [Richieste di aiuto](https://github.com/Trikto7e8/solphivia-avatar-ai/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) · [Scarica l’alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2)
+**[Prova l’alpha Android](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2)** · **[Aiutaci a farla crescere](COLLABORATE.md)** · [Read in English](README.md)
 
+> Alpha comunitaria · Android disponibile per le prove · Google Play e iOS sono obiettivi da realizzare.
 
-**Un avatar animato per Android che dà forma a Solphivia, assistente IA e collaboratrice creativa in sviluppo, con fumetto, comandi touch, voce e una roadmap per diversi fornitori di IA.**
+## Un personaggio che accompagna la conversazione
 
-> Alpha comunitaria. Il progetto è in evoluzione e non è pronto per una distribuzione stabile. La versione attuale non ha completato la revisione Google Play.
+<table><tr>
+<td align="center"><img src="app/src/main/assets/solphivia/idle/frame_00.png" width="170" alt="Solphivia con il suo abito quotidiano" /><br/><b>Compagna quotidiana</b></td>
+<td align="center"><img src="app/src/main/assets/solphivia/mode_vj/frame_00.png" width="170" alt="Solphivia nel costume cyborg ciano e viola" /><br/><b>Modalità cyborg</b></td>
+<td align="center"><img src="app/src/main/assets/solphivia/listen/frame_00.png" width="170" alt="Solphivia nell’animazione di ascolto" /><br/><b>Pronta ad ascoltare</b></td>
+</tr></table>
 
-**Guide:** [primo avvio e collegamento a ChatGPT](AVVIO-RAPIDO-IT.md) · [privacy](PRIVACY-IT.md) · [compilazione e caricamento su GitHub](BUILD-E-GITHUB-IT.md) · [presentazione del progetto](PRESENTAZIONE-IT.md)
+Fotogrammi reali del personaggio nell’app Android. Le illustrazioni restano riservate secondo la [licenza degli asset](LICENZA-ASSET-IT.md).
+
+| Personalizzala | Mantieni il controllo | Costruiamola insieme |
+| --- | --- | --- |
+| Avatar trascinabile, animazioni, chat e voce Android. | Memoria locale cifrata, anteprima modificabile prima della condivisione ed export cifrato Memory Vault. | Miglioriamo Android, accessibilità e test; progettiamo i collegamenti ai modelli locali e la versione iOS. |
+
+## Comincia in pochi minuti
+
+1. Scarica l’APK dalla [release alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2). È una build debug di prova, non una versione degli store.
+2. Segui la [guida al primo avvio](AVVIO-RAPIDO-IT.md), attiva l’avatar flottante e scegli un motore vocale Android installato.
+3. Prova l’avatar e condividi un [test riproducibile](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6) con esempi inventati.
+
+**Vuoi partecipare?** Puoi iniziare dai [test](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6), dalla [preparazione Android](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/3), dallo [studio iOS](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/4) o dai [fornitori di modelli](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/5). Anche un piccolo contributo concreto ci aiuta.
+
+**Esplora:** [Collaborazione](COLLABORATE.md) · [Privacy](PRIVACY-IT.md) · [Come contribuire](CONTRIBUTI-IT.md) · [AI Memory Vault](https://github.com/Trikto7e8/AI-memory-vault)
 
 ## Funzioni attuali
 
@@ -71,7 +90,7 @@ I contributi al codice sono benvenuti. Leggi prima `CONTRIBUTING.md` o [la versi
 
 ## Stato delle verifiche
 
-La versione **0.9.2-alpha2** (codice 31) è stata compilata, verificata con Android Lint e installata sul Motorola. I test automatici nella copia isolata sono passati e il 13 ottobre 2026 l’utente ha confermato che funziona, autorizzando questa alpha. Restano miglioramenti successivi e la valutazione della voce: L’utente ha confermato che eSpeak funziona sul telefono. Vedere [rapporto di verifica](VERIFICA-0.9.2-alpha2.md).
+La versione **0.9.2-alpha2** (codice 31) è stata compilata, verificata con Android Lint e installata sul Motorola. I test automatici nella copia isolata sono passati e il 13 ottobre 2026 l’utente ha confermato che funziona, autorizzando questa alpha. Restano miglioramenti successivi e la valutazione della voce: il timbro dipende dal motore Android scelto e dalle voci installate. Vedere [rapporto di verifica](VERIFICA-0.9.2-alpha2.md).
 
 ## 0.9.2-alpha2
 

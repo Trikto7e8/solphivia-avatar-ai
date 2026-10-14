@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/media/solphivia-cover.svg" alt="Solphivia Mobile: chat, voce e memoria portabile" width="100%" /></p>
+
 # Solphivia Avatar AI
 
 ## Descrizione breve

@@ -1,19 +1,36 @@
-# Solphivia Avatar AI
+<p align="center"><img src="docs/media/solphivia-cover.svg" alt="Solphivia: animated AI companion for Android, with chat, voice and portable memory" width="100%" /></p>
 
-## Contributors wanted: Android, iOS and local AI
+# Meet Solphivia
 
-Help take Solphivia from a working Android alpha to a robust Google Play release, a native iOS experience and selectable local/cloud models. Android engineers, SwiftUI developers, testers and accessibility contributors are welcome.
+An animated companion on your Android screen. Talk, type, attach a file, and keep your assistant's personal memory under your control.
 
-**[Join the collaboration](COLLABORATE.md)** · [Help wanted](https://github.com/Trikto7e8/solphivia-avatar-ai/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) · [Download the alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2)
+**[Try the Android alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2)** · **[Help build Solphivia](COLLABORATE.md)** · [Leggi in italiano](README-IT.md)
 
+> Community alpha · Android available for testing · Google Play and iOS are work ahead.
 
-**An animated Android AI assistant with a chat bubble, touch controls, speech, and a provider-based AI roadmap.**
+## A character that moves with the conversation
 
-**Leggi in italiano:** [README-IT.md](README-IT.md) · [Italian quick start](AVVIO-RAPIDO-IT.md)
+<table><tr>
+<td align="center"><img src="app/src/main/assets/solphivia/idle/frame_00.png" width="170" alt="Solphivia in her everyday outfit" /><br/><b>Everyday companion</b></td>
+<td align="center"><img src="app/src/main/assets/solphivia/mode_vj/frame_00.png" width="170" alt="Solphivia wearing the cyan and purple cyborg suit" /><br/><b>Cyborg mode</b></td>
+<td align="center"><img src="app/src/main/assets/solphivia/listen/frame_00.png" width="170" alt="Solphivia in her listening animation" /><br/><b>Ready to listen</b></td>
+</tr></table>
 
-> Community alpha. This is an evolving project, not a production-ready release. The current source has not completed Google Play review.
+Actual character frames from the Android app. Artwork is reserved under [ASSETS-LICENSE.md](ASSETS-LICENSE.md).
 
-**Guide in Italian:** [first-use and ChatGPT connection](AVVIO-RAPIDO-IT.md) · [privacy details](PRIVACY-IT.md) · [build and GitHub upload](BUILD-E-GITHUB-IT.md) · [project presentation](PRESENTAZIONE-IT.md)
+| Make it yours | Keep control | Build together |
+| --- | --- | --- |
+| Draggable avatar, animations, chat and Android speech. | Local encrypted memory, editable sharing previews and encrypted Memory Vault export. | Help improve Android, accessibility and testing; design local-model adapters and iOS. |
+
+## Start in a few minutes
+
+1. Get the APK from the [alpha release](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha2). This is a debug test build, not a store release.
+2. Follow the [Italian setup guide](AVVIO-RAPIDO-IT.md), enable the overlay and choose an installed Android speech engine.
+3. Try the avatar and share a [reproducible test report](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6) using synthetic examples.
+
+**Want to contribute?** Start with [testing](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6), [Android release readiness](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/3), [iOS feasibility](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/4) or [model providers](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/5). Small, focused contributions are welcome.
+
+**Explore:** [Collaboration](COLLABORATE.md) · [Privacy](PRIVACY-IT.md) · [Contributing](CONTRIBUTING.md) · [AI Memory Vault](https://github.com/Trikto7e8/AI-memory-vault)
 
 ## What it does today
 
@@ -73,7 +90,7 @@ Code contributions are welcome. Please read `CONTRIBUTING.md` first. Do not post
 
 ## Current verification status
 
-Version **0.9.2-alpha2** (code 31) was built, passed Android Lint and isolated Motorola regression tests, and was installed on the Motorola. On 13 October 2026 the user confirmed it works and approved this alpha. Further improvements and listening evaluation remain; The user has confirmed that eSpeak works on the phone. See the [verification report](VERIFICA-0.9.2-alpha2.md).
+Version **0.9.2-alpha2** (code 31) was built, passed Android Lint and isolated Motorola regression tests, and was installed on the Motorola. On 13 October 2026 the user confirmed it works and approved this alpha. Further improvements and listening evaluation remain; voice quality depends on the selected Android engine and installed voices. See the [verification report](VERIFICA-0.9.2-alpha2.md).
 
 ## 0.9.2-alpha2
 
