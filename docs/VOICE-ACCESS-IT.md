@@ -4,13 +4,13 @@
 
 - `CompanionInputActivity`: dettatura esistente tramite `ACTION_RECOGNIZE_SPEECH`, con ritorno alla chat o all’overlay. Non è una parola di attivazione.
 - `DeviceSpeech`, `PetService`, `SpeechVoiceSelection`, `VoicePreferences`: TTS e selezione delle voci già presenti. Voice Access riusa il selettore offline, con ciclo di vita TTS proprio e callback di fine saluto.
-- `PetService`: avatar in overlay e servizio foreground special-use; Voice Access non aggiunge ascolto all’overlay né un nuovo servizio.
+- `PetService`: avatar in overlay e servizio foreground special-use; Voice Access non aggiunge una seconda finestra dell’avatar.
 - Profilo OAuth e dati personali del vault non sono usati. Il nome scelto per Voice Access vive solo nelle preferenze locali `voice_access`.
 - Il manifest aveva permessi overlay, rete, posizione e notifiche. Questa funzione usa il permesso `RECORD_AUDIO` richiesto da Android e visibilità mirata del riconoscitore e di WhatsApp.
 
 ## Implementato
 
-Dall’icona di avvio si apre solo Solphivia flottante: la schermata chat non resta dietro e il riconoscitore locale attende **Hola, Solphivia!**. L’attività trasparente mantiene il microfono in primo piano e lascia passare i tocchi alla bolla e ai controlli dell’avatar. Al primo uso Android chiede il normale permesso microfono. Al saluto Solphivia si anima e risponde con TTS **Hola, Marco!** usando il nome locale già salvato (ripiego: “Marco”), poi ascolta i comandi. Dopo una risposta torna ad ascoltare il comando successivo. Dire **Fermati** (anche **Basta**, **Stop** o **Smetti**) interrompe la sessione fino al prossimo avvio di Solphivia. Uscendo dall’app o bloccando il telefono il microfono si spegne; quando Solphivia torna in primo piano, l’attesa riparte. Se il permesso overlay manca, si apre la schermata principale per consentirne l’attivazione.
+Dall’icona di avvio si apre solo Solphivia flottante: la schermata chat non resta dietro e il riconoscitore offline resta in attesa di **Hola, Solphivia!** tramite un unico flusso audio locale. Al primo uso Android chiede il permesso microfono; il modello italiano Vosk (48 MB) viene scaricato una volta solo con Wi-Fi e conservato nei dati privati dell’app. Al saluto Solphivia si anima e risponde con TTS **Hola, Marco!** usando il nome locale già salvato (ripiego: “Marco”), poi ascolta i comandi. Dopo una risposta torna ad ascoltare il comando successivo. Dire **Fermati** (anche **Basta**, **Stop** o **Smetti**) interrompe la sessione fino al prossimo avvio di Solphivia. Uscendo dall’app o bloccando il telefono il microfono si spegne; quando Solphivia torna in primo piano, l’attesa riparte. Se il permesso overlay manca, si apre la schermata principale per consentirne l’attivazione.
 
 - **Apri WhatsApp**: apre l’app.
 - **Condividi Ciao Marco su WhatsApp**: ShareBridge mostra un’anteprima modificabile. Solo dopo **Apri condivisione WhatsApp** passa il testo a WhatsApp; destinatario e invio finale si scelgono lì.
@@ -23,15 +23,15 @@ Le azioni Android sopra sono un insieme limitato di comandi locali, con conferma
 
 ## Privacy, consumo e accessibilità
 
-- Audio e comandi locali non sono salvati dal modulo. Se chiedi una risposta libera, la trascrizione e la risposta vengono aggiunte alla cronologia chat già esistente e inviate tramite il collegamento ChatGPT dell’app; il testo resta nelle preferenze locali della chat. Il nome è salvato separatamente nelle preferenze `voice_access`. AI Memory Vault e contatti non vengono consultati.
-- Usa solo `createOnDeviceSpeechRecognizer` quando Android lo supporta; non c’è fallback online nella v0.1. Su Android 13+ la frase di attivazione richiede una sessione segmentata, che mantiene un’unica sessione di ascolto fra le pause quando il servizio vocale la supporta. Sui servizi che ignorano questa opzione o su Android 12 la sessione può terminare e ripartire con i normali suoni Android. Se il riconoscitore locale o il modello italiano non è disponibile, Solphivia mostra l’errore nella bolla e chiude la sessione. Android 8–11 non è supportato per il percorso vocale locale.
+- Il riconoscimento del saluto e dei comandi è elaborato sul telefono da Vosk; i campioni audio non vengono inviati né salvati. Il modello si scarica una volta via Wi-Fi e rimane nei dati privati dell’app. Se chiedi una risposta libera, la trascrizione e la risposta vengono aggiunte alla cronologia chat già esistente e inviate tramite il collegamento ChatGPT dell’app; il testo resta nelle preferenze locali della chat. Il nome è salvato separatamente nelle preferenze `voice_access`. AI Memory Vault e contatti non vengono consultati.
+- Il microfono usa un’unica registrazione `AudioRecord` per tutta la sessione in primo piano, invece di riavviare `SpeechRecognizer` alle pause. Il modello italiano piccolo è Apache-2.0; il download è consentito solo su Wi-Fi. Senza Wi-Fi al primo avvio, l’avatar resta visibile e attende la connessione. Se download, spazio o microfono falliscono, mostra un messaggio e non avvia il loop.
 - TTS italiano con voce dichiarata offline; se assente, installarla nelle impostazioni Android e riaprire Solphivia.
-- L’attesa della frase di attivazione e dei comandi resta attiva finché Solphivia è in primo piano; gli errori del riconoscitore usano un’attesa crescente e si fermano dopo cinque errori consecutivi, evitando riavvii acustici senza fine. Nessun wake lock, biometria o ascolto a schermo spento. **Fermati** sospende l’ascolto fino al successivo avvio dell’app. Uscita, blocco e rotazione fermano il microfono; al ritorno in primo piano l’attesa riparte. Le callback obsolete vengono ignorate. Un’anteprima aperta viene scartata quando l’app perde il primo piano.
+- L’attesa del saluto e dei comandi resta attiva finché Solphivia è in primo piano. Nessun wake lock, biometria o ascolto a schermo spento. **Fermati** sospende l’ascolto fino al successivo avvio dell’app. Uscita e blocco fermano il microfono; al ritorno in primo piano l’attesa riparte. Durante la voce TTS e l’attesa di una risposta ChatGPT il flusso audio resta locale ma non viene passato al riconoscitore; anteprima e azioni con conferma chiudono il microfono. Un’anteprima aperta viene scartata quando l’app perde il primo piano.
 - La sessione aggiorna l’unico avatar flottante, la sua bolla e i suoi controlli già presenti; le conferme per effetti sul dispositivo restano dialoghi Android nativi. La verifica manuale con TalkBack e font grandi resta necessaria.
 
 ## Prova su Android
 
-Usare un emulatore o telefono di prova Android 12+ (API 31), con modello italiano on-device e voce TTS italiana offline. Compilare con JDK 17 e SDK 35:
+Usare un emulatore o telefono di prova Android 8+ (API 26), con Wi-Fi disponibile al primo avvio e voce TTS italiana offline. Compilare con JDK 17+ e SDK 35:
 
 ```sh
 ./gradlew -PverificationBuild assembleDebug assembleDebugAndroidTest lintDebug
@@ -40,15 +40,15 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 L’APK di verifica usa `it.solphivia.mobile.verification`, separato dall’installazione personale.
 
-1. Aprire Solphivia e, al primo uso, consentire il microfono ad Android. Verificare che appaia solo l’avatar flottante con bolla e controlli, senza schermata chat o seconda finestra Solphivia; l’indicatore microfono Android deve essere attivo. Dire “Hola, Solphivia!”, verificare risposta TTS e animazione, poi “Apri WhatsApp”. Verificare che il microfono si spenga prima dell’apertura e riparta tornando a Solphivia.
+1. Al primo avvio consentire il microfono e attendere il download del modello (solo Wi-Fi; circa 48 MB). Verificare che l’avatar mostri l’avanzamento, poi che compaia una sola Solphivia flottante senza schermata chat o seconda finestra. Lasciare l’app in silenzio per almeno un minuto: l’indicatore microfono deve restare stabile, senza riaperture o suoni ripetuti. Dire “Hola, Solphivia!”, verificare risposta TTS e animazione, poi “Apri WhatsApp”.
 2. Ripetere e dire “Cerca gatti sul web”: annullare e ripetere confermando. Provare poi “Metti un timer di 5 minuti”, “Sveglia alle 7:30” e “Crea un appuntamento visita dentistica”; controllare che ciascuna azione chieda conferma e lasci l’ultima modifica all’app Android.
 3. Con ChatGPT collegato, dire una richiesta libera, verificare risposta TTS e che Solphivia torni ad ascoltare. Verificare la cronologia chat locale e il collegamento ChatGPT. Senza collegamento, il modulo deve spiegare il requisito a voce.
 4. Ripetere con “Condividi Ci vediamo alle 18 su WhatsApp”. Modificare il testo, annullare: nessuna apertura. Ripetere, confermare: verificare testo e scelta destinatario in WhatsApp, senza inviare a persone reali.
 5. Senza WhatsApp installato: errore leggibile, nessun crash o apertura del browser.
 6. Negare/revocare il permesso microfono, disattivare il microfono dalle impostazioni privacy, provare senza riconoscitore/TTS: messaggio di errore e nessun ascolto nascosto.
 7. Silenzio e frase errata: l’attesa del saluto continua, senza effetti. “Fermati” arresta il microfono.
-8. Durante attesa e ascolto, provare Home, blocco schermo e rotazione. Verificare indicatore microfono spento, niente comando tardivo e ripartenza solo tornando in Solphivia.
-9. Android 12+: provare con il riconoscitore on-device e modello italiano disponibili e poi assenti. Provare in modalità aereo con i modelli locali installati.
+8. Durante attesa e ascolto, provare Home e blocco schermo. Verificare che il microfono si spenga, che non arrivi un comando tardivo e che l’attesa riparta tornando in Solphivia.
+9. Dopo il download, disattivare Wi-Fi e ripetere il saluto: il riconoscimento deve funzionare offline. Al primo avvio senza Wi-Fi, verificare che non parta alcun download su rete mobile e che l’avatar spieghi cosa manca.
 10. TalkBack, caratteri grandi e orientamento orizzontale: verificare etichette, anteprima e conferma. Provare anche con overlay preesistente attivo: eventuale audio di altre funzioni non deve produrre un invio.
 
 La CI verifica parser, compilazione degli APK e lint. Non simula un motore vocale reale né certifica il comportamento di WhatsApp: i passaggi sopra sono collaudo manuale richiesto prima del rilascio.
@@ -68,4 +68,4 @@ La CI verifica parser, compilazione degli APK e lint. Non simula un motore vocal
 - **0.3 (previsto):** plugin MCP sperimentale, documentazione, test, informativa privacy e valutazione della candidatura alla directory OpenAI. Nessuna candidatura o integrazione MCP è inclusa o promessa come approvata.
 - **AI Memory Vault:** lavoro distinto; nessuna migrazione o lettura/scrittura introdotta.
 
-Riferimenti: [SpeechRecognizer](https://developer.android.com/reference/android/speech/SpeechRecognizer), [fine TTS](https://developer.android.com/reference/android/speech/tts/UtteranceProgressListener), [condivisione Android](https://developer.android.com/training/sharing/send).
+Riferimenti: [Vosk Android](https://alphacephei.com/vosk/android), [modello italiano Vosk e licenza](https://alphacephei.com/vosk/models), [libreria Vosk Android](https://github.com/alphacep/vosk-api), [fine TTS](https://developer.android.com/reference/android/speech/tts/UtteranceProgressListener), [condivisione Android](https://developer.android.com/training/sharing/send).

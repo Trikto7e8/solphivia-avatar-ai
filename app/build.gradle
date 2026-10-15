@@ -7,3 +7,4 @@ android {
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
  defaultConfig { testInstrumentationRunner project.findProperty('testRunner') ?: 'it.solphivia.mobile.RegressionInstrumentation' }
 }
+dependencies { implementation 'com.alphacephei:vosk-android:0.3.75' }
