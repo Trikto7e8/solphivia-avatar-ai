@@ -59,6 +59,7 @@ public final class VoiceAccessActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         ScrollView scroll = new ScrollView(this);
+        scroll.setBackgroundColor(Color.WHITE);
         setupRoot = scroll;
         LinearLayout page = new LinearLayout(this); page.setOrientation(LinearLayout.VERTICAL);
         int padding = (int)(20 * getResources().getDisplayMetrics().density);
@@ -82,6 +83,7 @@ public final class VoiceAccessActivity extends Activity {
         avatarSpeech.setBackground(roundRect(0xFFF8F5F9, dp(18), 0xFFEDE4EF));
         FrameLayout.LayoutParams bubbleParams = new FrameLayout.LayoutParams(-1, -2, android.view.Gravity.TOP);
         avatarStage.addView(avatarSpeech, bubbleParams);
+        avatarStage.setVisibility(android.view.View.GONE);
         page.addView(avatarStage, new LinearLayout.LayoutParams(-1, dp(250)));
         TextView info = new TextView(this);
         info.setText("Inserisci il tuo nome e premi Avvia una volta. La schermata scompare: Solphivia resta nella sua bolla flottante, seduta e in ascolto di «Hola, Solphivia!». Dopo il saluto ascolta il comando. Puoi dire «Fermati» in qualsiasi momento per spegnere il microfono.\nDopo il saluto puoi dire «Apri WhatsApp» oppure «Condividi Ciao Marco su WhatsApp». ShareBridge mostra un’anteprima modificabile; confermi l’apertura di WhatsApp, scegli il destinatario e decidi lì se inviare. Ogni singolo ascolto dura al massimo 15 secondi. Uscire dall’app o bloccare lo schermo interrompe la sessione. Il nome resta sul telefono, separato da AI Memory Vault. Audio e trascrizioni non vengono salvati dal modulo.");
@@ -137,18 +139,18 @@ public final class VoiceAccessActivity extends Activity {
     /** Keep the activity alive for foreground microphone access while the existing home avatar remains visible. */
     private void enterOverlaySession() {
         if (setupRoot != null) setupRoot.setVisibility(android.view.View.GONE);
+        setContentView(new android.view.View(this));
         getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         getWindow().getDecorView().setBackgroundColor(Color.TRANSPARENT);
-        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                | android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
         PetService.setVoiceAccessPresentation("Sono qui. Di' «Hola, Solphivia!» quando sei pronto.", "sit");
     }
 
     private void restoreSetupScreen() {
-        getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                | android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
         getWindow().setBackgroundDrawableResource(android.R.color.white);
-        if (setupRoot != null) setupRoot.setVisibility(android.view.View.VISIBLE);
+        if (setupRoot != null) {
+            setupRoot.setVisibility(android.view.View.VISIBLE);
+            setContentView(setupRoot);
+        }
     }
 
     private void presentAvatar(String text, String pose) {
