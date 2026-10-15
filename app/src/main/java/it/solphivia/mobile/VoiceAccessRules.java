@@ -13,5 +13,5 @@ final class VoiceAccessRules {
         String value = normalize(text);
         return "apri whatsapp".equals(value) || "apri whats app".equals(value);
     }
-    static String greeting(String name) { return "Hola, " + name.trim() + "!"; }
+    static boolean stop(String text) {\n        String value = normalize(text);\n        return "fermati".equals(value) || "fermati solphivia".equals(value)\n                || "basta".equals(value) || "smetti".equals(value) || "stop".equals(value);\n    }\n    static String greeting(String name) { return "Hola, " + name.trim() + "!"; }
 }
