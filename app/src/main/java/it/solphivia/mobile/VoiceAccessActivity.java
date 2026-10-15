@@ -94,7 +94,7 @@ public final class VoiceAccessActivity extends Activity {
         status = new TextView(this); status.setTextSize(20);
         status.setAccessibilityLiveRegion(android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE); page.addView(status);
         start = new Button(this); start.setText("Avvia e attendi il saluto"); page.addView(start);
-        stop = new Button(this); stop.setText("Interrompi"); page.addView(stop);
+        stop = new Button(this); stop.setText("Fermati"); page.addView(stop);
         start.setMinHeight((int)(48 * getResources().getDisplayMetrics().density));
         stop.setMinHeight((int)(48 * getResources().getDisplayMetrics().density));
         start.setOnClickListener(v -> begin()); stop.setOnClickListener(v -> finishSession("Ascolto interrotto."));
@@ -145,7 +145,7 @@ public final class VoiceAccessActivity extends Activity {
                     if (token != generation) return;
                     if (next == Phase.WAKE) {
                         status.setText("In attesa di «Hola, Solphivia!»… Premi Interrompi per spegnere il microfono.");
-                        avatarSpeech.setText("Sono qui. Di' «Hola, Solphivia!» quando sei pronto."); avatar.setAnimation("listen");
+                        avatarSpeech.setText("Sono qui. Di' «Hola, Solphivia!» quando sei pronto."); avatar.setAnimation("sit");
                     } else { status.setText("In ascolto: dimmi cosa vuoi fare."); avatarSpeech.setText("Ti ascolto…"); avatar.setAnimation("listen"); }
                 }
                 public void onBeginningOfSpeech() { }
@@ -171,6 +171,10 @@ public final class VoiceAccessActivity extends Activity {
                     String text = matches == null || matches.isEmpty() ? "" : matches.get(0);
                     wakeFailures = 0;
                     ++generation; releaseRecognizer(); main.removeCallbacks(timeout);
+                    if (VoiceAccessRules.stop(text)) {
+                        finishSession("Va bene, mi fermo. Premi Avvia quando vuoi riattivarmi.");
+                        return;
+                    }
                     if (next == Phase.WAKE) {
                         if (!VoiceAccessRules.wake(text)) {
                             status.setText("Saluto non riconosciuto. Resto in attesa di «Hola, Solphivia!»…");
