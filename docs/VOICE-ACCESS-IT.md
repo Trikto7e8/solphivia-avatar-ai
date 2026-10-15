@@ -10,7 +10,7 @@
 
 ## Implementato
 
-Dalla home aprire **Voice Access** oppure, con avatar flottante attivo, **☰ → Voice Access e ShareBridge**. L’overlay viene nascosto mentre la schermata è visibile. Inserire un nome e premere **Avvia ascolto**. Dopo il consenso Android al microfono, premere nuovamente Avvia. Dire **Hola, Solphivia!**: il riconoscimento del saluto intero produce **Hola, Marco!** (o il nome scelto). Il microfono viene riaperto per un solo comando dopo la fine effettiva del TTS:
+Dalla home aprire **Voice Access** oppure, con avatar flottante attivo, **☰ → Voice Access e ShareBridge**. L’overlay viene nascosto mentre la schermata è visibile. Inserire un nome e premere una volta **Avvia e attendi il saluto**. Dopo il consenso Android al microfono, Voice Access resta in attesa di **Hola, Solphivia!**. Silenzio e frasi diverse non interrompono l’attesa: il riconoscitore viene riaperto automaticamente entro la sessione in primo piano. Quando riconosce il saluto, Solphivia dice **Hola, Marco!** (o il nome scelto) e poi ascolta un comando.
 
 - **Apri WhatsApp**: Intent di avvio del pacchetto `com.whatsapp`.
 - **Condividi Ciao Marco su WhatsApp**: ShareBridge estrae il testo e mostra un’anteprima modificabile. Solo **Apri condivisione WhatsApp** passa il testo a `ACTION_SEND`, `text/plain`, con pacchetto WhatsApp esplicito. Il destinatario e l’invio finale si scelgono in WhatsApp. Annullare non apre altre app. La conferma vocale e l’invio automatico non sono implementati.
@@ -40,7 +40,7 @@ L’APK di verifica usa `it.solphivia.mobile.verification`, separato dall’inst
 2. Ripetere con “Condividi Ci vediamo alle 18 su WhatsApp”. Modificare il testo, annullare: nessuna apertura. Ripetere, confermare: verificare testo e scelta destinatario in WhatsApp, senza inviare a persone reali.
 3. Senza WhatsApp installato: errore leggibile, nessun crash o apertura del browser.
 4. Negare/revocare il permesso microfono, disattivare il microfono dalle impostazioni privacy, provare senza riconoscitore/TTS: messaggio di errore e nessun ascolto nascosto.
-5. Silenzio, frase errata, “invia un messaggio”, comandi non supportati: stop senza effetti. Dopo 15 secondi nessun riavvio.
+5. Silenzio e frase errata: l’attesa del saluto continua, senza effetti. Comandi non supportati ritornano all’attesa. “Interrompi” arresta il microfono; dopo otto errori consecutivi il modulo si ferma e mostra lo stato.
 6. Durante saluto e ascolto: Interrompi, Home, blocco schermo e rotazione. Verificare indicatore microfono spento, niente comando tardivo e riavvio solo manuale. Ripetere rapidamente Avvia/Interrompi per verificare callback obsolete.
 7. Android 8–11: consenso al servizio di sistema obbligatorio; Android 12+: testare sia locale disponibile sia assente. Provare in modalità aereo con modelli locali installati.
 8. TalkBack, caratteri grandi e orientamento orizzontale: verificare etichette, scorrimento, anteprima e conferma. Provare anche con overlay preesistente attivo: eventuale audio di altre funzioni non deve produrre un invio.

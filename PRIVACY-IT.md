@@ -22,7 +22,7 @@
 
 La schermata Voice Access richiede il microfono solo dopo Avvia. Due ascolti limitati a 15 secondi riconoscono il saluto e un comando; uscita o sospensione interrompono la sessione. Nessun ascolto continuo, identificazione biometrica o accesso ad AI Memory Vault. Il nome scelto viene conservato in preferenze private separate; audio, trascrizioni e anteprime non vengono salvati dal modulo.
 
-Il riconoscimento locale è preferito sui dispositivi compatibili. L’uso del riconoscitore di sistema richiede una scelta esplicita e può comportare elaborazione online da parte del suo fornitore. Il saluto usa una voce italiana dichiarata offline. ShareBridge mostra il testo modificabile e passa quel testo a WhatsApp soltanto dopo la conferma “Apri condivisione WhatsApp”; destinatario e invio finale vengono scelti dentro WhatsApp, secondo la sua informativa. Nessun invio automatico. [Dettagli e prove](docs/VOICE-ACCESS-IT.md).
+Il riconoscimento locale è preferito sui dispositivi compatibili. Dopo l’avvio volontario, l’ascolto della frase di attivazione resta attivo mentre Voice Access è in primo piano e sbloccato; ogni richiesta è limitata a 15 secondi e silenzio/errori vengono ritentati fino a otto errori consecutivi. Interrompi, uscita e blocco schermo fermano l’attesa. L’uso del riconoscitore di sistema richiede una scelta esplicita e può comportare elaborazione online da parte del suo fornitore. Il saluto usa una voce italiana dichiarata offline. ShareBridge mostra il testo modificabile e passa quel testo a WhatsApp soltanto dopo la conferma “Apri condivisione WhatsApp”; destinatario e invio finale vengono scelti dentro WhatsApp, secondo la sua informativa. Nessun invio automatico. [Dettagli e prove](docs/VOICE-ACCESS-IT.md).
 
 ### Controlli generali
 

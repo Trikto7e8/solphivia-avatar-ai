@@ -30,9 +30,14 @@ public final class VoiceAccessActivity extends Activity {
     private CheckBox network;
     private boolean resumed, ttsReady;
     private int generation;
+    private int wakeFailures;
+    private boolean listeningRequested;
     private String utterance;
     private android.app.AlertDialog previewDialog;
     private final Runnable timeout = () -> finishSession("Tempo scaduto. Premi Avvia per riprovare.");
+    private final Runnable retryWake = () -> {
+        if (listeningRequested && foregroundUnlocked() && phase == Phase.WAKE) listen(Phase.WAKE);
+    };
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -42,7 +47,7 @@ public final class VoiceAccessActivity extends Activity {
         page.setPadding(padding, padding, padding, padding); scroll.addView(page);
         TextView title = new TextView(this); title.setText("Solphivia Voice Access · v0.1"); title.setTextSize(24); page.addView(title);
         TextView info = new TextView(this);
-        info.setText("Premi Avvia, poi di’ Hola, Solphivia! Dopo il saluto puoi dire Apri WhatsApp oppure Condividi Ciao Marco su WhatsApp. ShareBridge mostra un’anteprima modificabile: confermi l’apertura di WhatsApp, scegli il destinatario e decidi lì se inviare. Ogni ascolto dura al massimo 15 secondi. Uscire dalla schermata interrompe la sessione.\nIl nome resta sul telefono, separato da AI Memory Vault. Audio e trascrizioni non vengono salvati dall’app.");
+        info.setText("Inserisci il tuo nome e premi Avvia e attendi il saluto. Il microfono resta in attesa di Hola, Solphivia! finché non lo riconosce. Solo allora Solphivia risponde e ascolta il comando. Dopo il saluto puoi dire Apri WhatsApp oppure Condividi Ciao Marco su WhatsApp. ShareBridge mostra un’anteprima modificabile: confermi l’apertura di WhatsApp, scegli il destinatario e decidi lì se inviare. Ogni ascolto dura al massimo 15 secondi. Uscire dalla schermata interrompe la sessione.\nIl nome resta sul telefono, separato da AI Memory Vault. Audio e trascrizioni non vengono salvati dall’app.");
         info.setTextSize(18); page.addView(info);
         TextView label = new TextView(this); label.setText("Come ti chiami?"); page.addView(label);
         name = new EditText(this); name.setId(android.view.View.generateViewId()); label.setLabelFor(name.getId());
@@ -54,7 +59,7 @@ public final class VoiceAccessActivity extends Activity {
         page.addView(network);
         status = new TextView(this); status.setTextSize(20);
         status.setAccessibilityLiveRegion(android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE); page.addView(status);
-        start = new Button(this); start.setText("Avvia ascolto"); page.addView(start);
+        start = new Button(this); start.setText("Avvia e attendi il saluto"); page.addView(start);
         stop = new Button(this); stop.setText("Interrompi"); page.addView(stop);
         start.setMinHeight((int)(48 * getResources().getDisplayMetrics().density));
         stop.setMinHeight((int)(48 * getResources().getDisplayMetrics().density));
@@ -67,7 +72,7 @@ public final class VoiceAccessActivity extends Activity {
                 android.speech.tts.Voice voice = SpeechVoiceSelection.select(tts, Locale.ITALIAN, true);
                 ttsReady = voice != null && tts.setVoice(voice) == TextToSpeech.SUCCESS;
             }
-            status.setText(ttsReady ? "Pronto. Premi Avvia per ascoltare." : "Voce italiana offline non disponibile. Installala nelle impostazioni TTS e riapri Voice Access.");
+            status.setText(ttsReady ? (listeningRequested ? "In attesa di «Hola, Solphivia!»…" : "Pronto. Premi Avvia e attendi il saluto.") : "Voce italiana offline non disponibile. Installala nelle impostazioni TTS e riapri Voice Access.");
         }));
         tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             public void onStart(String id) { }
@@ -88,7 +93,7 @@ public final class VoiceAccessActivity extends Activity {
             requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 71); return;
         }
         getSharedPreferences("voice_access", 0).edit().putString("name", name.getText().toString().trim()).apply();
-        listen(Phase.WAKE);
+        listeningRequested = true; wakeFailures = 0; listen(Phase.WAKE);
     }
 
     private void listen(Phase next) {
@@ -102,32 +107,56 @@ public final class VoiceAccessActivity extends Activity {
             if (!local && !SpeechRecognizer.isRecognitionAvailable(this)) { finishSession("Nessun riconoscitore vocale disponibile."); return; }
             recognizer = local ? SpeechRecognizer.createOnDeviceSpeechRecognizer(this) : SpeechRecognizer.createSpeechRecognizer(this);
             recognizer.setRecognitionListener(new RecognitionListener() {
-                public void onReadyForSpeech(Bundle b) { if (token == generation) status.setText(next == Phase.WAKE ? "In ascolto: di’ Hola, Solphivia!" : "In ascolto: Apri WhatsApp oppure Condividi [testo] su WhatsApp"); }
+                public void onReadyForSpeech(Bundle b) {
+                    if (token != generation) return;
+                    if (next == Phase.WAKE) {
+                        status.setText("In attesa di «Hola, Solphivia!»… Premi Interrompi per spegnere il microfono.");
+                    } else status.setText("In ascolto: Apri WhatsApp oppure Condividi [testo] su WhatsApp");
+                }
                 public void onBeginningOfSpeech() { }
                 public void onRmsChanged(float rms) { }
                 public void onBufferReceived(byte[] buffer) { }
                 public void onEndOfSpeech() { }
                 public void onPartialResults(Bundle b) { }
                 public void onEvent(int type, Bundle b) { }
-                public void onError(int error) { if (token == generation) finishSession("Ascolto terminato (codice " + error + "). Premi Avvia per riprovare."); }
+                public void onError(int error) {
+                    if (token != generation) return;
+                    if (next == Phase.WAKE && listeningRequested && foregroundUnlocked()
+                            && error != SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS
+                            && error != SpeechRecognizer.ERROR_CLIENT && ++wakeFailures <= 8) {
+                        releaseRecognizer(); main.removeCallbacks(timeout);
+                        status.setText("Il riconoscitore è in pausa. Riprovo l’attesa del saluto…");
+                        main.postDelayed(retryWake, Math.min(2500, 500L * wakeFailures));
+                    } else finishSession("Ascolto terminato. Premi Avvia per riprovare (codice " + error + ").");
+                }
                 public void onResults(Bundle results) {
                     if (token != generation) return;
                     if (!foregroundUnlocked()) { finishSession("Ascolto interrotto."); return; }
                     ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                     String text = matches == null || matches.isEmpty() ? "" : matches.get(0);
+                    wakeFailures = 0;
                     ++generation; releaseRecognizer(); main.removeCallbacks(timeout);
                     if (next == Phase.WAKE) {
-                        if (!VoiceAccessRules.wake(text)) { finishSession("Saluto non riconosciuto. Premi Avvia e di’ Hola, Solphivia!"); return; }
+                        if (!VoiceAccessRules.wake(text)) {
+                            status.setText("Saluto non riconosciuto. Resto in attesa di «Hola, Solphivia!»…");
+                            listen(Phase.WAKE); return;
+                        }
                         phase = Phase.GREETING; utterance = "voice-access-" + generation;
                         String greeting = VoiceAccessRules.greeting(name.getText().toString()); status.setText(greeting);
                         main.postDelayed(timeout, 15000);
                         if (tts.speak(greeting, TextToSpeech.QUEUE_FLUSH, null, utterance) == TextToSpeech.ERROR) finishSession("Risposta vocale non disponibile.");
                     } else {
-                        finishSession("Comando non supportato. Puoi dire Apri WhatsApp oppure Condividi [testo] su WhatsApp.");
-                        if (VoiceAccessRules.openWhatsApp(text)) openWhatsApp();
-                        else {
+                        if (VoiceAccessRules.openWhatsApp(text)) {
+                            finishSession("WhatsApp aperto. Ascolto terminato."); openWhatsApp();
+                        } else {
                             String draft = ShareBridge.preview(text);
-                            if (draft != null) showSharePreview(draft);
+                            if (draft != null) {
+                                finishSession("Microfono spento. Controlla il testo prima di condividere.");
+                                showSharePreview(draft);
+                            } else {
+                                status.setText("Comando non riconosciuto. Torno in attesa di «Hola, Solphivia!»…");
+                                listen(Phase.WAKE);
+                            }
                         }
                     }
                 }
@@ -137,7 +166,9 @@ public final class VoiceAccessActivity extends Activity {
                     .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "it-IT")
                     .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
                     .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
-            status.setText("Preparazione ascolto…"); main.postDelayed(timeout, 15000); recognizer.startListening(intent);
+            status.setText("Preparazione ascolto…");
+            if (next != Phase.WAKE) main.postDelayed(timeout, 15000);
+            recognizer.startListening(intent);
         } catch (RuntimeException error) { finishSession("Riconoscimento non disponibile. Controlla permesso microfono e servizio vocale."); }
     }
 
@@ -181,20 +212,25 @@ public final class VoiceAccessActivity extends Activity {
                 && !getSystemService(android.app.KeyguardManager.class).isKeyguardLocked();
     }
     private void finishSession(String message) {
-        ++generation; phase = Phase.IDLE; utterance = null; main.removeCallbacks(timeout);
+        listeningRequested = false; ++generation; phase = Phase.IDLE; utterance = null;
+        main.removeCallbacks(timeout); main.removeCallbacks(retryWake);
         releaseRecognizer(); if (tts != null) tts.stop();
         start.setEnabled(true); stop.setEnabled(false); name.setEnabled(true); network.setEnabled(true); status.setText(message);
     }
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
         super.onRequestPermissionsResult(request, permissions, grants);
-        if (request == 71) status.setText(grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED
-                ? "Microfono consentito. Premi Avvia." : "Microfono negato. Puoi consentirlo nelle impostazioni dell’app.");
+        if (request == 71) {
+            if (grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED) begin();
+            else status.setText("Microfono negato. Puoi consentirlo nelle impostazioni dell’app.");
+        }
     }
     @Override protected void onResume() { super.onResume(); resumed = true; }
     @Override protected void onStart() { super.onStart(); PetService.setInternalChatVisible(true); }
     @Override protected void onStop() { PetService.setInternalChatVisible(false); super.onStop(); }
+    @Override protected void onStart() { super.onStart(); PetService.setInternalChatVisible(true); }
+    @Override protected void onStop() { PetService.setInternalChatVisible(false); super.onStop(); }
     @Override protected void onPause() {
-        resumed = false; finishSession("Ascolto interrotto. Premi Avvia per ripartire.");
+        resumed = false; finishSession("Ascolto interrotto. Premi Avvia e attendi il saluto per ripartire.");
         if (previewDialog != null) previewDialog.dismiss();
         super.onPause();
     }
