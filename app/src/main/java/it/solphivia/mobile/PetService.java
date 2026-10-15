@@ -78,9 +78,19 @@ public class PetService extends Service {
         if (activeInstance != null) activeInstance.updateOverlayVisibility();
     }
 
+    static void setVoiceAccessPresentation(String text, String pose) {
+        PetService service = activeInstance;
+        if (service == null || service.destroyed || service.pet == null || service.speech == null) return;
+        if (text != null) {
+            service.speechTarget = text;
+            service.speech.setText(text);
+        }
+        if (pose != null) service.setAnimation(pose);
+    }
+
     private void updateOverlayVisibility() {
         if (panel == null || destroyed) return;
-        boolean hideOverlay = internalChatVisible || voiceAccessVisible;
+        boolean hideOverlay = internalChatVisible;
         if (hideOverlay && overlayAttached) {
             wm.removeViewImmediate(panel);
             overlayAttached = false;

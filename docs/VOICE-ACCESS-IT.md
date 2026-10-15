@@ -10,7 +10,7 @@
 
 ## Implementato
 
-Dalla home aprire **Voice Access** oppure, con avatar flottante attivo, **☰ → Voice Access e ShareBridge**. L’avatar resta visibile nella schermata. Inserire un nome e premere **Avvia e attendi il saluto**: solo dopo il consenso Android al microfono e l’avvio volontario, Solphivia attende **Hola, Solphivia!**. Al saluto risponde con TTS **Hola, Marco!** (o il nome scelto), quindi ascolta il comando. Dopo una risposta di Solphivia, torna automaticamente in ascolto per un altro comando. La schermata deve rimanere in primo piano e il telefono sbloccato.
+Dalla home aprire **Voice Access** oppure, con avatar flottante attivo, **☰ → Voice Access e ShareBridge**. Inserire un nome e premere **Avvia e attendi il saluto**. Dopo il consenso Android al microfono, la schermata di configurazione scompare e resta visibile l’avatar flottante esistente, seduto mentre attende **Hola, Solphivia!**. Al saluto risponde con TTS **Hola, Marco!** (o il nome scelto), si anima e ascolta il comando. Dopo una risposta di Solphivia torna in ascolto per il comando successivo. Dire **Fermati** (anche **Basta**, **Stop** o **Smetti**) arresta il microfono e chiude la sessione; per riattivarla si usa di nuovo **Voice Access** dal menu dell’avatar. L’app deve restare in primo piano e il telefono sbloccato.
 
 - **Apri WhatsApp**: apre l’app.
 - **Condividi Ciao Marco su WhatsApp**: ShareBridge mostra un’anteprima modificabile. Solo dopo **Apri condivisione WhatsApp** passa il testo a WhatsApp; destinatario e invio finale si scelgono lì.
@@ -26,7 +26,7 @@ Le azioni Android sopra sono un insieme limitato di comandi locali, con conferma
 - Audio e comandi locali non sono salvati dal modulo. Se chiedi una risposta libera, la trascrizione e la risposta vengono aggiunte alla cronologia chat già esistente e inviate tramite il collegamento ChatGPT dell’app; il testo resta nelle preferenze locali della chat. Il nome è salvato separatamente nelle preferenze `voice_access`. AI Memory Vault e contatti non vengono consultati.
 - Preferenza per `createOnDeviceSpeechRecognizer` da Android 12 quando disponibile. Se non disponibile, nessun fallback silenzioso: occorre selezionare il consenso al riconoscitore di sistema, che potrebbe inviare audio al proprio fornitore. Il consenso non viene conservato tra nuove aperture. La disponibilità del servizio locale non garantisce l’installazione del modello italiano: eventuali errori fermano la sessione.
 - TTS italiano con voce dichiarata offline; se assente, installarla nelle impostazioni Android e riaprire la schermata.
-- Massimo 15 secondi per ciascun ascolto e per il saluto, nessun ciclo di tentativi, wake lock, biometria o ascolto a schermo spento. Interrompi, uscita, sospensione e rotazione annullano la sessione; il ritorno non riattiva il microfono. Le callback obsolete vengono ignorate. Un’anteprima aperta viene scartata quando la schermata perde il primo piano.
+- Massimo 15 secondi per ciascun ascolto e per il saluto, niente wake lock, biometria o ascolto a schermo spento. La frase di attivazione resta in attesa mentre l’app è aperta; errori ripetuti interrompono la sessione. **Fermati**, uscita, sospensione e rotazione annullano la sessione; il ritorno non riattiva il microfono. Le callback obsolete vengono ignorate. Un’anteprima aperta viene scartata quando la schermata perde il primo piano.
 - Controlli Android nativi, nome etichettato, stato testuale annunciabile da TalkBack, pulsanti di almeno 48 dp e pagina scorrevole. La verifica manuale con TalkBack e font grandi resta necessaria.
 
 ## Prova su Android
@@ -40,14 +40,14 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 L’APK di verifica usa `it.solphivia.mobile.verification`, separato dall’installazione personale.
 
-1. Inserire “Marco”, consentire il microfono e avviare. Dire “Hola, Solphivia!”, verificare risposta TTS e avatar, poi “Apri WhatsApp”. Verificare che il microfono si spenga prima dell’apertura.
+1. Inserire “Marco”, consentire il microfono e avviare. Verificare che la schermata si nasconda e resti l’avatar flottante seduto. Dire “Hola, Solphivia!”, verificare risposta TTS e animazione, poi “Apri WhatsApp”. Verificare che il microfono si spenga prima dell’apertura.
 2. Ripetere e dire “Cerca gatti sul web”: annullare e ripetere confermando. Provare poi “Metti un timer di 5 minuti”, “Sveglia alle 7:30” e “Crea un appuntamento visita dentistica”; controllare che ciascuna azione chieda conferma e lasci l’ultima modifica all’app Android.
 3. Con ChatGPT collegato, dire una richiesta libera, verificare risposta TTS e che Solphivia torni ad ascoltare. Verificare la cronologia chat locale e il collegamento ChatGPT. Senza collegamento, il modulo deve spiegare il requisito a voce.
 4. Ripetere con “Condividi Ci vediamo alle 18 su WhatsApp”. Modificare il testo, annullare: nessuna apertura. Ripetere, confermare: verificare testo e scelta destinatario in WhatsApp, senza inviare a persone reali.
 3. Senza WhatsApp installato: errore leggibile, nessun crash o apertura del browser.
 4. Negare/revocare il permesso microfono, disattivare il microfono dalle impostazioni privacy, provare senza riconoscitore/TTS: messaggio di errore e nessun ascolto nascosto.
 6. Silenzio e frase errata: l’attesa del saluto continua, senza effetti. “Interrompi” arresta il microfono; dopo otto errori consecutivi il modulo si ferma e mostra lo stato.
-6. Durante saluto e ascolto: Interrompi, Home, blocco schermo e rotazione. Verificare indicatore microfono spento, niente comando tardivo e riavvio solo manuale. Ripetere rapidamente Avvia/Interrompi per verificare callback obsolete.
+6. Durante attesa e ascolto: dire “Fermati”, poi provare Home, blocco schermo e rotazione. Verificare indicatore microfono spento, niente comando tardivo e riavvio solo dal menu Voice Access. Ripetere rapidamente Avvia/Fermati per verificare callback obsolete.
 7. Android 8–11: consenso al servizio di sistema obbligatorio; Android 12+: testare sia locale disponibile sia assente. Provare in modalità aereo con modelli locali installati.
 8. TalkBack, caratteri grandi e orientamento orizzontale: verificare etichette, scorrimento, anteprima e conferma. Provare anche con overlay preesistente attivo: eventuale audio di altre funzioni non deve produrre un invio.
 
