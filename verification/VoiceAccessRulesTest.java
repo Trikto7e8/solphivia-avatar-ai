@@ -13,6 +13,9 @@ public final class VoiceAccessRulesTest {
         check(VoiceAccessRules.openWhatsApp("apri whats app"));
         check(!VoiceAccessRules.openWhatsApp("non apri whatsapp"));
         check(!VoiceAccessRules.openWhatsApp("apri whatsapp e invia ciao"));
+        check(VoiceAccessRules.stop("Fermati!"));
+        check(VoiceAccessRules.stop("Basta"));
+        check(!VoiceAccessRules.stop("Aspetta un momento"));
         check("Hola, Marco!".equals(VoiceAccessRules.greeting(" Marco ")));
         check("Ciao, Marco!".equals(ShareBridge.preview("Condividi Ciao, Marco! su WhatsApp")));
         check("Ciao".equals(ShareBridge.preview("condividi Ciao su whats app.")));
