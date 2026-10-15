@@ -10,16 +10,20 @@
 
 ## Implementato
 
-Dalla home aprire **Voice Access** oppure, con avatar flottante attivo, **☰ → Voice Access e ShareBridge**. L’overlay viene nascosto mentre la schermata è visibile. Inserire un nome e premere una volta **Avvia e attendi il saluto**. Dopo il consenso Android al microfono, Voice Access resta in attesa di **Hola, Solphivia!**. Silenzio e frasi diverse non interrompono l’attesa: il riconoscitore viene riaperto automaticamente entro la sessione in primo piano. Quando riconosce il saluto, Solphivia dice **Hola, Marco!** (o il nome scelto) e poi ascolta un comando.
+Dalla home aprire **Voice Access** oppure, con avatar flottante attivo, **☰ → Voice Access e ShareBridge**. L’avatar resta visibile nella schermata. Inserire un nome e premere **Avvia e attendi il saluto**: solo dopo il consenso Android al microfono e l’avvio volontario, Solphivia attende **Hola, Solphivia!**. Al saluto risponde con TTS **Hola, Marco!** (o il nome scelto), quindi ascolta il comando. Dopo una risposta di Solphivia, torna automaticamente in ascolto per un altro comando. La schermata deve rimanere in primo piano e il telefono sbloccato.
 
-- **Apri WhatsApp**: Intent di avvio del pacchetto `com.whatsapp`.
-- **Condividi Ciao Marco su WhatsApp**: ShareBridge estrae il testo e mostra un’anteprima modificabile. Solo **Apri condivisione WhatsApp** passa il testo a `ACTION_SEND`, `text/plain`, con pacchetto WhatsApp esplicito. Il destinatario e l’invio finale si scelgono in WhatsApp. Annullare non apre altre app. La conferma vocale e l’invio automatico non sono implementati.
+- **Apri WhatsApp**: apre l’app.
+- **Condividi Ciao Marco su WhatsApp**: ShareBridge mostra un’anteprima modificabile. Solo dopo **Apri condivisione WhatsApp** passa il testo a WhatsApp; destinatario e invio finale si scelgono lì.
+- **Cerca gatti sul web**: chiede conferma e poi apre la ricerca Android.
+- **Metti un timer di 5 minuti** e **sveglia alle 7:30**: dopo conferma apre l’app Orologio con i dati proposti, lasciando all’utente il controllo finale.
+- **Crea un appuntamento visita dentistica**: chiede conferma e apre il Calendario con una bozza da completare e salvare.
+- Una richiesta libera viene inviata alla chat ChatGPT già collegata; Solphivia legge la risposta e torna ad ascoltare. Se ChatGPT non è collegato, il modulo lo comunica a voce.
 
-Non sono interpretati comandi arbitrari o istruzioni di un modello. Il parser accetta soltanto queste forme, con variazioni di maiuscole, punteggiatura e “Whats App”. Il testo di condivisione è limitato a 2.000 caratteri; messaggi senza testo o comandi concatenati di apertura non vengono eseguiti. Non è supportato WhatsApp Business.
+Le azioni Android sopra sono un insieme limitato di comandi locali, con conferma prima di aprire app o inviare una ricerca. Il modello risponde alle richieste libere, ma in questa versione non può attivare funzioni o modificare il dispositivo tramite strumenti generali. Il parser tratta il testo di condivisione fino a 2.000 caratteri; WhatsApp Business non è supportato.
 
 ## Privacy, consumo e accessibilità
 
-- Nessun salvataggio di audio, trascrizioni o bozze da parte del modulo, nessun log del parlato, nessun accesso a ChatGPT, contatti o AI Memory Vault. Il nome viene salvato localmente dopo Avvia; può essere sostituito nel campo o eliminato cancellando i dati dell’app.
+- Audio e comandi locali non sono salvati dal modulo. Se chiedi una risposta libera, la trascrizione e la risposta vengono aggiunte alla cronologia chat già esistente e inviate tramite il collegamento ChatGPT dell’app; il testo resta nelle preferenze locali della chat. Il nome è salvato separatamente nelle preferenze `voice_access`. AI Memory Vault e contatti non vengono consultati.
 - Preferenza per `createOnDeviceSpeechRecognizer` da Android 12 quando disponibile. Se non disponibile, nessun fallback silenzioso: occorre selezionare il consenso al riconoscitore di sistema, che potrebbe inviare audio al proprio fornitore. Il consenso non viene conservato tra nuove aperture. La disponibilità del servizio locale non garantisce l’installazione del modello italiano: eventuali errori fermano la sessione.
 - TTS italiano con voce dichiarata offline; se assente, installarla nelle impostazioni Android e riaprire la schermata.
 - Massimo 15 secondi per ciascun ascolto e per il saluto, nessun ciclo di tentativi, wake lock, biometria o ascolto a schermo spento. Interrompi, uscita, sospensione e rotazione annullano la sessione; il ritorno non riattiva il microfono. Le callback obsolete vengono ignorate. Un’anteprima aperta viene scartata quando la schermata perde il primo piano.
@@ -36,11 +40,13 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 L’APK di verifica usa `it.solphivia.mobile.verification`, separato dall’installazione personale.
 
-1. Inserire “Marco”, consentire il microfono e avviare. Dire “Hola, Solphivia!”, attendere “Hola, Marco!”, poi “Apri WhatsApp”. Verificare che il microfono si spenga prima dell’apertura e non riparta tornando indietro.
-2. Ripetere con “Condividi Ci vediamo alle 18 su WhatsApp”. Modificare il testo, annullare: nessuna apertura. Ripetere, confermare: verificare testo e scelta destinatario in WhatsApp, senza inviare a persone reali.
+1. Inserire “Marco”, consentire il microfono e avviare. Dire “Hola, Solphivia!”, verificare risposta TTS e avatar, poi “Apri WhatsApp”. Verificare che il microfono si spenga prima dell’apertura.
+2. Ripetere e dire “Cerca gatti sul web”: annullare e ripetere confermando. Provare poi “Metti un timer di 5 minuti”, “Sveglia alle 7:30” e “Crea un appuntamento visita dentistica”; controllare che ciascuna azione chieda conferma e lasci l’ultima modifica all’app Android.
+3. Con ChatGPT collegato, dire una richiesta libera, verificare risposta TTS e che Solphivia torni ad ascoltare. Verificare la cronologia chat locale e il collegamento ChatGPT. Senza collegamento, il modulo deve spiegare il requisito a voce.
+4. Ripetere con “Condividi Ci vediamo alle 18 su WhatsApp”. Modificare il testo, annullare: nessuna apertura. Ripetere, confermare: verificare testo e scelta destinatario in WhatsApp, senza inviare a persone reali.
 3. Senza WhatsApp installato: errore leggibile, nessun crash o apertura del browser.
 4. Negare/revocare il permesso microfono, disattivare il microfono dalle impostazioni privacy, provare senza riconoscitore/TTS: messaggio di errore e nessun ascolto nascosto.
-5. Silenzio e frase errata: l’attesa del saluto continua, senza effetti. Comandi non supportati ritornano all’attesa. “Interrompi” arresta il microfono; dopo otto errori consecutivi il modulo si ferma e mostra lo stato.
+6. Silenzio e frase errata: l’attesa del saluto continua, senza effetti. “Interrompi” arresta il microfono; dopo otto errori consecutivi il modulo si ferma e mostra lo stato.
 6. Durante saluto e ascolto: Interrompi, Home, blocco schermo e rotazione. Verificare indicatore microfono spento, niente comando tardivo e riavvio solo manuale. Ripetere rapidamente Avvia/Interrompi per verificare callback obsolete.
 7. Android 8–11: consenso al servizio di sistema obbligatorio; Android 12+: testare sia locale disponibile sia assente. Provare in modalità aereo con modelli locali installati.
 8. TalkBack, caratteri grandi e orientamento orizzontale: verificare etichette, scorrimento, anteprima e conferma. Provare anche con overlay preesistente attivo: eventuale audio di altre funzioni non deve produrre un invio.
