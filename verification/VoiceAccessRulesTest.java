@@ -5,7 +5,12 @@ public final class VoiceAccessRulesTest {
     private static void check(boolean value) { if (!value) throw new AssertionError(); }
     public static void main(String[] args) {
         check(VoiceAccessRules.wake("  HOLA, Solphivia!  "));
+        check(VoiceAccessRules.wake("hola solfivia"));
+        check(VoiceAccessRules.wake("OLA, SOFIA!"));
+        check(VoiceAccessRules.wake("hola sophia"));
+        check(VoiceAccessRules.wakeCandidate("hola solfibia"));
         check(!VoiceAccessRules.wake("hola"));
+        check(!VoiceAccessRules.wake("ciao solphivia"));
         check(!VoiceAccessRules.wake("non dire hola solphivia"));
         check(!VoiceAccessRules.wake("hola solphivia apri whatsapp"));
         check(!VoiceAccessRules.wake(null));
@@ -24,6 +29,6 @@ public final class VoiceAccessRulesTest {
         check(ShareBridge.preview("condividi   su WhatsApp") == null);
         check(ShareBridge.preview("condividi " + "x".repeat(2001) + " su WhatsApp") == null);
         check(ShareBridge.preview(null) == null);
-        System.out.println("PASS: 17 Voice Access / ShareBridge checks");
+        System.out.println("PASS: 23 Voice Access / ShareBridge checks");
     }
 }

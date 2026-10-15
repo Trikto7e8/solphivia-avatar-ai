@@ -49,6 +49,7 @@ final class VoiceAccessController {
     private TextToSpeech tts;
     private TextView status;
     private boolean resumed, ttsReady;
+    private boolean englishAccentActive;
     private boolean requestingPermission;
     private boolean sessionSuppressed;
     private boolean userStopped;
@@ -72,19 +73,17 @@ final class VoiceAccessController {
         status = new TextView(host);
         sessionName = host.getSharedPreferences("voice_access", 0).getString("name", "").trim();
         if (sessionName.isEmpty()) sessionName = "Marco";
+        String engine = host.getSharedPreferences("pet", 0).getString("tts_engine", "");
         tts = new TextToSpeech(host, code -> main.post(() -> {
             if (destroyed || host.isDestroyed() || tts == null) return;
-            if (code == TextToSpeech.SUCCESS) {
-                android.speech.tts.Voice voice = SpeechVoiceSelection.select(tts, Locale.ITALIAN, true);
-                ttsReady = voice != null && tts.setVoice(voice) == TextToSpeech.SUCCESS;
-            }
+            if (code == TextToSpeech.SUCCESS) configureTtsVoice();
             if (ttsReady) {
                 if (resumed) begin();
             } else {
                 sessionSuppressed = true;
-                finishSession("Voce italiana offline non disponibile. Installala nelle impostazioni TTS e riapri Solphivia.");
+                finishSession("La voce scelta da Android non è disponibile. Controlla Sintesi vocale nelle impostazioni e riapri Solphivia.");
             }
-        }));
+        }), engine.isEmpty() ? null : engine);
         tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             public void onStart(String id) { }
             public void onDone(String id) { main.post(() -> {
@@ -93,12 +92,38 @@ final class VoiceAccessController {
                 }
             }); }
             public void onError(String id) { main.post(() -> {
-                if (id.equals(utterance)) {
+                if (id != null && id.equals(utterance)) {
                     sessionSuppressed = true;
-                    finishSession("Errore nella risposta vocale. Riprova.");
+                    finishSession("Android non è riuscito a pronunciare la risposta. Controlla la voce selezionata nelle impostazioni TTS.");
                 }
             }); }
         });
+    }
+
+    private void configureTtsVoice() {
+        boolean requestedEnglish = host.getSharedPreferences("pet", 0).getBoolean("english_accent", false);
+        Locale locale = requestedEnglish ? Locale.UK : Locale.ITALIAN;
+        int language = tts.setLanguage(locale);
+        ttsReady = language != TextToSpeech.LANG_MISSING_DATA && language != TextToSpeech.LANG_NOT_SUPPORTED;
+        englishAccentActive = requestedEnglish && ttsReady;
+        android.speech.tts.Voice best = ttsReady ? SpeechVoiceSelection.select(tts, locale, requestedEnglish) : null;
+        boolean selected = best != null && tts.setVoice(best) == TextToSpeech.SUCCESS;
+        if (requestedEnglish && !selected) {
+            int fallback = tts.setLanguage(Locale.ITALIAN);
+            ttsReady = fallback != TextToSpeech.LANG_MISSING_DATA && fallback != TextToSpeech.LANG_NOT_SUPPORTED;
+            englishAccentActive = false;
+        }
+        if (ttsReady) {
+            int rate = android.provider.Settings.Secure.getInt(host.getContentResolver(), android.provider.Settings.Secure.TTS_DEFAULT_RATE, 100);
+            int pitch = android.provider.Settings.Secure.getInt(host.getContentResolver(), android.provider.Settings.Secure.TTS_DEFAULT_PITCH, 100);
+            tts.setSpeechRate(Math.max(0.1f, rate / 100f));
+            tts.setPitch(Math.max(0.1f, pitch / 100f));
+        }
+    }
+
+    private int speak(String text, String id) {
+        String spoken = englishAccentActive ? ItalianEnglishAccent.respell(text) : text;
+        return tts.speak(spoken, TextToSpeech.QUEUE_FLUSH, null, id);
     }
 
     private void begin() {
@@ -222,6 +247,9 @@ final class VoiceAccessController {
         if (phase == Phase.WAKE && !VoiceAccessRules.stop(text) && !VoiceAccessRules.wake(text)) {
             if (speechService != null) speechService.reset();
             status.setText("In attesa di «Hola, Solphivia!»…");
+            if (VoiceAccessRules.wakeCandidate(text)) {
+                presentAvatar("Ho sentito «" + text + "». Prova «Hola, Solphivia!».", "listen");
+            }
             return;
         }
         pauseRecognition();
@@ -235,7 +263,7 @@ final class VoiceAccessController {
             phase = Phase.GREETING; utterance = "voice-access-" + generation;
             String greeting = VoiceAccessRules.greeting(sessionName); status.setText(greeting);
             presentAvatar(greeting, "wave");
-            if (tts.speak(greeting, TextToSpeech.QUEUE_FLUSH, null, utterance) == TextToSpeech.ERROR) {
+            if (speak(greeting, utterance) == TextToSpeech.ERROR) {
                 sessionSuppressed = true;
                 finishSession("Risposta vocale non disponibile.");
             }
@@ -389,7 +417,7 @@ final class VoiceAccessController {
         pauseRecognition();
         presentAvatar(message, "talk"); status.setText(message);
         main.removeCallbacks(timeout); main.postDelayed(timeout, 45000);
-        if (tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, utterance) == TextToSpeech.ERROR) {
+        if (speak(message, utterance) == TextToSpeech.ERROR) {
             sessionSuppressed = true;
             finishSession("Risposta vocale non disponibile. Riprova.");
         }
