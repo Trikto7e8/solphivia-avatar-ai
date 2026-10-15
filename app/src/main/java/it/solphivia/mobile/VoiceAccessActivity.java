@@ -227,8 +227,6 @@ public final class VoiceAccessActivity extends Activity {
     @Override protected void onResume() { super.onResume(); resumed = true; }
     @Override protected void onStart() { super.onStart(); PetService.setInternalChatVisible(true); }
     @Override protected void onStop() { PetService.setInternalChatVisible(false); super.onStop(); }
-    @Override protected void onStart() { super.onStart(); PetService.setInternalChatVisible(true); }
-    @Override protected void onStop() { PetService.setInternalChatVisible(false); super.onStop(); }
     @Override protected void onPause() {
         resumed = false; finishSession("Ascolto interrotto. Premi Avvia e attendi il saluto per ripartire.");
         if (previewDialog != null) previewDialog.dismiss();
