@@ -1,0 +1,102 @@
+[
+  {
+    "animation": "cyborg",
+    "frames": 8,
+    "unique": 8
+  },
+  {
+    "animation": "cyborg_run",
+    "frames": 8,
+    "unique": 8
+  },
+  {
+    "animation": "cyborg_sit",
+    "frames": 4,
+    "unique": 3
+  },
+  {
+    "animation": "cyborg_sleep",
+    "frames": 4,
+    "unique": 4
+  },
+  {
+    "animation": "emotion",
+    "frames": 8,
+    "unique": 8
+  },
+  {
+    "animation": "idle",
+    "frames": 4,
+    "unique": 4
+  },
+  {
+    "animation": "listen",
+    "frames": 8,
+    "unique": 8
+  },
+  {
+    "animation": "look",
+    "frames": 8,
+    "unique": 8
+  },
+  {
+    "animation": "mode_codex",
+    "frames": 4,
+    "unique": 4
+  },
+  {
+    "animation": "mode_prof",
+    "frames": 4,
+    "unique": 4
+  },
+  {
+    "animation": "mode_vj",
+    "frames": 4,
+    "unique": 4
+  },
+  {
+    "animation": "mode_vj_jacket",
+    "frames": 4,
+    "unique": 4
+  },
+  {
+    "animation": "run",
+    "frames": 8,
+    "unique": 8
+  },
+  {
+    "animation": "sit",
+    "frames": 4,
+    "unique": 4
+  },
+  {
+    "animation": "sleep",
+    "frames": 4,
+    "unique": 4
+  },
+  {
+    "animation": "talk",
+    "frames": 8,
+    "unique": 8
+  },
+  {
+    "animation": "vj_wave",
+    "frames": 4,
+    "unique": 4
+  },
+  {
+    "animation": "weather_cold",
+    "frames": 4,
+    "unique": 4
+  },
+  {
+    "animation": "weather_rain",
+    "frames": 4,
+    "unique": 4
+  },
+  {
+    "animation": "weather_sun",
+    "frames": 4,
+    "unique": 4
+  }
+]

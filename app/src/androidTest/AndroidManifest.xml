@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <instrumentation android:name="it.solphivia.mobile.VoiceInstrumentation" android:targetPackage="it.solphivia.mobile.verification" />
+    <instrumentation android:name="it.solphivia.mobile.UiInstrumentation" android:targetPackage="it.solphivia.mobile.verification" />
+</manifest>
