@@ -14,6 +14,9 @@ import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.widget.*;
+import android.provider.AlarmClock;
+import android.provider.CalendarContract;
+import android.app.SearchManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -23,6 +26,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Foreground, opt-in, bounded two-turn session. No vault, overlay or chat access. */
 public final class VoiceAccessActivity extends Activity {
@@ -178,7 +183,9 @@ public final class VoiceAccessActivity extends Activity {
                         if (tts.speak(greeting, TextToSpeech.QUEUE_FLUSH, null, utterance) == TextToSpeech.ERROR) finishSession("Risposta vocale non disponibile.");
                     } else {
                         avatarSpeech.setText("Hai detto: " + text);
-                        if (VoiceAccessRules.openWhatsApp(text)) {
+                        VoiceAction action = parseVoiceAction(text);
+                        if (action != null) { confirmVoiceAction(action); }
+                        else if (VoiceAccessRules.openWhatsApp(text)) {
                             finishSession("WhatsApp aperto. Ascolto terminato."); openWhatsApp();
                         } else {
                             String draft = ShareBridge.preview(text);
@@ -201,6 +208,68 @@ public final class VoiceAccessActivity extends Activity {
             if (next != Phase.WAKE) main.postDelayed(timeout, 15000);
             recognizer.startListening(intent);
         } catch (RuntimeException error) { finishSession("Riconoscimento non disponibile. Controlla permesso microfono e servizio vocale."); }
+    }
+
+    private static final class VoiceAction {
+        final String title, detail, kind, value;
+        final int first, second;
+        VoiceAction(String kind, String title, String detail, String value, int first, int second) {
+            this.kind=kind; this.title=title; this.detail=detail; this.value=value; this.first=first; this.second=second;
+        }
+    }
+    private VoiceAction parseVoiceAction(String text) {
+        if (text == null) return null;
+        Matcher search = Pattern.compile("^\\s*cerca\\s+(.+?)\\s+(?:sul web|su internet)[.!?]*\\s*$", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE).matcher(text);
+        if (search.matches()) return new VoiceAction("search", "Cerca sul web", "Aprire una ricerca per: " + search.group(1).trim() + "?", search.group(1).trim(), 0, 0);
+        Matcher timer = Pattern.compile("(?:metti|imposta|avvia)?\\s*(?:un\\s+)?timer(?:\\s+di)?\\s+(\\d+|un[oa]?|due|tre|quattro|cinque|dieci|quindici|venti|trenta|sessanta)\\s+(secondi|minuti|ore)", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE).matcher(text);
+        if (timer.find()) {
+            int amount = voiceNumber(timer.group(1));
+            int seconds = amount * ("ore".equalsIgnoreCase(timer.group(2)) ? 3600 : "minuti".equalsIgnoreCase(timer.group(2)) ? 60 : 1);
+            if (amount > 0 && seconds <= 86400) return new VoiceAction("timer", "Imposta un timer", "Impostare un timer di " + amount + " " + timer.group(2) + "?", "", seconds, 0);
+        }
+        Matcher alarm = Pattern.compile("(?:metti|imposta)?\\s*(?:una\\s+)?sveglia\\s+alle\\s+(\\d{1,2})(?:[:.](\\d{2}))?", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE).matcher(text);
+        if (alarm.find()) {
+            int hour = Integer.parseInt(alarm.group(1)), minute = alarm.group(2) == null ? 0 : Integer.parseInt(alarm.group(2));
+            if (hour <= 23 && minute <= 59) return new VoiceAction("alarm", "Imposta una sveglia", String.format(Locale.ITALIAN, "Impostare una sveglia alle %02d:%02d?", hour, minute), "", hour, minute);
+        }
+        Matcher event = Pattern.compile("(?:crea|aggiungi|metti|fissa)?\\s*(?:un\\s+)?appuntamento(?:\\s+(.+))?", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE).matcher(text.trim());
+        if (event.matches()) {
+            String title = event.group(1) == null ? "" : event.group(1).trim();
+            return new VoiceAction("calendar", "Crea un appuntamento", title.isEmpty() ? "Aprire il calendario per inserire un appuntamento?" : "Aprire il calendario con questa bozza: " + title + "?", title, 0, 0);
+        }
+        return null;
+    }
+    private int voiceNumber(String value) {
+        try { return Integer.parseInt(value); } catch (NumberFormatException ignored) { }
+        switch (value.toLowerCase(Locale.ROOT)) {
+            case "un": case "uno": case "una": return 1;
+            case "due": return 2; case "tre": return 3; case "quattro": return 4; case "cinque": return 5;
+            case "dieci": return 10; case "quindici": return 15; case "venti": return 20; case "trenta": return 30; case "sessanta": return 60;
+            default: return 0;
+        }
+    }
+    private void confirmVoiceAction(VoiceAction action) {
+        finishSession("In attesa della tua conferma.");
+        new android.app.AlertDialog.Builder(this).setTitle(action.title).setMessage(action.detail)
+                .setNegativeButton("Annulla", (dialog, which) -> status.setText("Azione annullata. Premi Avvia per riprendere."))
+                .setPositiveButton("Continua", (dialog, which) -> {
+                    Intent intent;
+                    if ("search".equals(action.kind)) {
+                        intent = new Intent(Intent.ACTION_WEB_SEARCH).putExtra(SearchManager.QUERY, action.value);
+                    } else if ("timer".equals(action.kind)) {
+                        intent = new Intent(AlarmClock.ACTION_SET_TIMER).putExtra(AlarmClock.EXTRA_LENGTH, action.first)
+                                .putExtra(AlarmClock.EXTRA_MESSAGE, "Timer Solphivia").putExtra(AlarmClock.EXTRA_SKIP_UI, false);
+                    } else if ("alarm".equals(action.kind)) {
+                        intent = new Intent(AlarmClock.ACTION_SET_ALARM).putExtra(AlarmClock.EXTRA_HOUR, action.first)
+                                .putExtra(AlarmClock.EXTRA_MINUTES, action.second).putExtra(AlarmClock.EXTRA_MESSAGE, "Sveglia Solphivia")
+                                .putExtra(AlarmClock.EXTRA_SKIP_UI, false);
+                    } else {
+                        intent = new Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI)
+                                .putExtra(CalendarContract.Events.TITLE, action.value.isEmpty() ? "Appuntamento" : action.value);
+                    }
+                    try { startActivity(intent); }
+                    catch (RuntimeException error) { status.setText("Azione non disponibile sul telefono. Nessuna modifica è stata applicata."); }
+                }).show();
     }
 
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
