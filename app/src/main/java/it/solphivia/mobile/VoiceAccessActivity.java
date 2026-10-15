@@ -58,7 +58,7 @@ public final class VoiceAccessActivity extends Activity {
         super.onCreate(state);
         setContentView(new android.view.View(this));
         getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
-                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+                android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
         status = new TextView(this);
         sessionName = getSharedPreferences("voice_access", 0).getString("name", "").trim();
         if (sessionName.isEmpty()) sessionName = "Marco";
@@ -349,7 +349,7 @@ public final class VoiceAccessActivity extends Activity {
     }
     private void setPassThrough(boolean enabled) {
         int flags = android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
-                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+                android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         if (enabled) getWindow().addFlags(flags); else getWindow().clearFlags(flags);
     }
     private boolean foregroundUnlocked() {
