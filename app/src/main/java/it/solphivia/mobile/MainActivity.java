@@ -72,7 +72,12 @@ public class MainActivity extends Activity {
     private DeviceSpeech inlineVoice;
 
     @Override public void onCreate(Bundle state) {
+        Intent launch = getIntent();
+        if (launch != null && Intent.ACTION_MAIN.equals(launch.getAction())
+                && launch.hasCategory(Intent.CATEGORY_LAUNCHER) && Settings.canDrawOverlays(this))
+            setTheme(R.style.CompanionRelayTheme);
         super.onCreate(state);
+        if (startFloatingVoiceIfLauncher()) return;
         VoicePreferences.initialize(this);
         inlineVoice=new DeviceSpeech(this);
         getWindow().setStatusBarColor(Color.rgb(250, 247, 252));
@@ -687,7 +692,24 @@ public class MainActivity extends Activity {
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if (startFloatingVoiceIfLauncher()) return;
         authBrowser = OpenAiChatClient.isAuthorizing();
+    }
+
+    private boolean startFloatingVoiceIfLauncher() {
+        Intent launch = getIntent();
+        if (launch == null || !Intent.ACTION_MAIN.equals(launch.getAction())
+                || !launch.hasCategory(Intent.CATEGORY_LAUNCHER)
+                || !Settings.canDrawOverlays(this) || OpenAiChatClient.isAuthorizing()) return false;
+        getSharedPreferences("pet", 0).edit().putBoolean("overlay_off", false).apply();
+        PetService.setInternalChatVisible(false);
+        Intent service = new Intent(this, PetService.class);
+        if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
+        startActivity(new Intent(this, VoiceAccessActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+        overridePendingTransition(0, 0);
+        finish();
+        return true;
     }
 
     @Override public void onWindowFocusChanged(boolean hasFocus) {
