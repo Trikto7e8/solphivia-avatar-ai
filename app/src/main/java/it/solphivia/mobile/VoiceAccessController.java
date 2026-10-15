@@ -1,6 +1,7 @@
 package it.solphivia.mobile;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -25,10 +26,10 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** App-foreground voice session hosted by the existing Solphivia screen. */
+/** Foreground voice session hosted by a transparent activity while the floating avatar stays visible. */
 final class VoiceAccessController {
     private enum Phase { IDLE, WAKE, GREETING, COMMAND, RESPONDING, SPEAKING }
-    private final MainActivity host;
+    private final Activity host;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ExecutorService voiceWorker = Executors.newSingleThreadExecutor();
     private Phase phase = Phase.IDLE;
@@ -55,9 +56,9 @@ final class VoiceAccessController {
                 (phase == Phase.WAKE || phase == Phase.COMMAND)) listen(phase);
     };
 
-    VoiceAccessController(MainActivity host) {
+    VoiceAccessController(Activity host) {
         this.host = host;
-        status = host.voiceStatusView();
+        status = new TextView(host);
         sessionName = host.getSharedPreferences("voice_access", 0).getString("name", "").trim();
         if (sessionName.isEmpty()) sessionName = "Marco";
         tts = new TextToSpeech(host, code -> main.post(() -> {
@@ -94,12 +95,12 @@ final class VoiceAccessController {
             host.requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 71); return;
         }
         PetService.setVoiceAccessVisible(true);
-        MainActivity.setVoiceAccessPresentation("Sono qui. Di' «Hola, Solphivia!» quando sei pronto.", "sit");
+        PetService.setVoiceAccessPresentation("Sono qui. Di' «Hola, Solphivia!» quando sei pronto.", "sit");
         listeningRequested = true; wakeFailures = 0; listen(Phase.WAKE);
     }
 
     private void presentAvatar(String text, String pose) {
-        MainActivity.setVoiceAccessPresentation(text, pose);
+        PetService.setVoiceAccessPresentation(text, pose);
     }
 
     private void listen(Phase next) {
@@ -395,7 +396,7 @@ final class VoiceAccessController {
         releaseRecognizer(); if (tts != null) tts.stop();
         PetService.setVoiceAccessVisible(false);
         if (status != null) status.setText(message);
-        MainActivity.setVoiceAccessPresentation(message, "sit");
+        PetService.setVoiceAccessPresentation(message, "sit");
     }
     void onPermissionResult(int request, int[] grants) {
         if (request == 71) {

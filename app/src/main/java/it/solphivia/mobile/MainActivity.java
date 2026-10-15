@@ -40,7 +40,6 @@ import java.util.concurrent.Executors;
 
 /** Avatar-first Solphivia chat: speech bubble, touch interaction, and one-line composer. */
 public class MainActivity extends Activity {
-    private static MainActivity voiceUiInstance;
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
     private FrameLayout stage;
@@ -57,7 +56,6 @@ public class MainActivity extends Activity {
     private boolean activityPaused;
     private boolean sendAfterConnect;
     private boolean connectionNoticePending;
-    private VoiceAccessController voiceAccess;
     private String queuedFirstMessage = "";
     private String currentAnimation = "idle";
     private float touchX, touchY, startTranslationX, startTranslationY;
@@ -89,7 +87,6 @@ public class MainActivity extends Activity {
         authBrowser = OpenAiChatClient.isAuthorizing();
         buildScreen();
         restoreLatestSpeech();
-        voiceAccess = new VoiceAccessController(this);
     }
 
     private void buildScreen() {
@@ -605,8 +602,6 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
-        if (voiceUiInstance == this) voiceUiInstance = null;
-        if (voiceAccess != null) voiceAccess.onDestroy();
         if(inlineVoice!=null)inlineVoice.stop();
         OpenAiChatClient.cancelAuthorization(this);
         main.removeCallbacksAndMessages(null);
@@ -657,7 +652,6 @@ public class MainActivity extends Activity {
                     p.edit().putBoolean("plan_welcome_seen",true).apply();
                     if (!isFinishing() && !isDestroyed()) {
                         submitQueuedFirstMessage();
-                        if (voiceAccess != null) voiceAccess.onResume();
                     }
                 }).show();
     }
@@ -686,24 +680,19 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume(); activityPaused = false;
-        voiceUiInstance = this;
         authBrowser = OpenAiChatClient.isAuthorizing();
-        if (!authBrowser && voiceAccess != null) voiceAccess.onResume();
         if (status != null) refreshConnectionState();
     }
 
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (intent != null && Intent.ACTION_MAIN.equals(intent.getAction()) && voiceAccess != null) voiceAccess.onNewLaunch();
         authBrowser = OpenAiChatClient.isAuthorizing();
-        if (!authBrowser && voiceAccess != null) voiceAccess.onResume();
     }
 
     @Override public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (!hasFocus || isFinishing() || OpenAiChatClient.isAuthorizing()) return;
-        if (voiceAccess != null) voiceAccess.onWindowFocusChanged(hasFocus);
     }
 
     private void submitQueuedFirstMessage() {
@@ -713,24 +702,8 @@ public class MainActivity extends Activity {
         sendMessage();
     }
 
-    static void setVoiceAccessPresentation(String text, String pose) {
-        MainActivity activity = voiceUiInstance;
-        if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-            activity.main.post(() -> {
-                if (activity.isFinishing() || activity.isDestroyed()) return;
-                if (text != null) {
-                    activity.speechTarget = text;
-                    activity.setSpeech(text, false);
-                }
-                if (pose != null) activity.setAnimation(pose);
-            });
-        }
-        PetService.setVoiceAccessPresentation(text, pose);
-    }
-
     @Override protected void onPause() {
         super.onPause(); activityPaused = true;
-        if (voiceAccess != null) voiceAccess.onPause();
         if(inlineVoice!=null)inlineVoice.stop();
         if (!isFinishing() && !authBrowser && Settings.canDrawOverlays(this) && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
             Intent service = new Intent(this, PetService.class).setAction(PetService.ACTION_ANIMATE).putExtra(PetService.EXTRA_ANIMATION, currentAnimation);
@@ -740,7 +713,6 @@ public class MainActivity extends Activity {
 
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (voiceAccess != null) voiceAccess.onPermissionResult(requestCode, grantResults);
     }
 
     TextView voiceStatusView() { return status; }

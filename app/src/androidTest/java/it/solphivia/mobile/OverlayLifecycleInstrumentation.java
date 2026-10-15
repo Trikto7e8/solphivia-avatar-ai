@@ -52,7 +52,7 @@ public final class OverlayLifecycleInstrumentation extends Instrumentation {
             progress("hidden window verified");
             runOnMainSync(()->{PetService.setInternalChatVisible(false);PetService.setVoiceAccessVisible(true);});
             android.os.SystemClock.sleep(300);
-            RevisionChecks.check(Boolean.FALSE.equals(field(service,"overlayAttached")),"voice listening hides floating avatar when internal chat is not visible");
+            RevisionChecks.check(Boolean.TRUE.equals(field(service,"overlayAttached")),"voice listening keeps the single floating avatar visible");
             runOnMainSync(()->{PetService.setVoiceAccessVisible(false);PetService.setInternalChatVisible(true);});
             android.os.SystemClock.sleep(300);
             RevisionChecks.check(Boolean.FALSE.equals(field(service,"overlayAttached")),"returning to chat keeps floating avatar hidden");
