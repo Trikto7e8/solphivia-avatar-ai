@@ -26,9 +26,6 @@ public final class OverlayLifecycleInstrumentation extends Instrumentation {
     @Override public void callActivityOnCreate(Activity activity, Bundle state) {
         super.callActivityOnCreate(activity, state);
         if (activity instanceof MainActivity) try {
-            Field f=MainActivity.class.getDeclaredField("homeShortcutAttempted");
-            f.setAccessible(true); f.setBoolean(activity,true);
-            // Keep the test chat open instead of taking the connected launcher's Home shortcut.
             Field busy=MainActivity.class.getDeclaredField("busy");
             busy.setAccessible(true);busy.setBoolean(activity,true);
         } catch (Exception e) { throw new AssertionError(e); }
@@ -53,6 +50,12 @@ public final class OverlayLifecycleInstrumentation extends Instrumentation {
             RevisionChecks.check(service!=null,"overlay service running");
             RevisionChecks.check(Boolean.FALSE.equals(field(service,"overlayAttached")),"no floating window over internal chat; visible="+field(null,"internalChatVisible")+", finishing="+chat.isFinishing()+", focus="+chat.hasWindowFocus());
             progress("hidden window verified");
+            runOnMainSync(()->{PetService.setInternalChatVisible(false);PetService.setVoiceAccessVisible(true);});
+            android.os.SystemClock.sleep(300);
+            RevisionChecks.check(Boolean.FALSE.equals(field(service,"overlayAttached")),"voice listening hides floating avatar when internal chat is not visible");
+            runOnMainSync(()->{PetService.setVoiceAccessVisible(false);PetService.setInternalChatVisible(true);});
+            android.os.SystemClock.sleep(300);
+            RevisionChecks.check(Boolean.FALSE.equals(field(service,"overlayAttached")),"returning to chat keeps floating avatar hidden");
             runOnMainSync(chat::finish);android.os.SystemClock.sleep(1000);
             RevisionChecks.check(Boolean.TRUE.equals(field(service,"overlayAttached")),"floating window returns after chat closes");
             Activity reopened=openChat(context);

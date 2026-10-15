@@ -17,7 +17,6 @@
   <activity android:name=".MemoryActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
   <activity android:name=".MemoryConsentActivity" android:exported="false" android:excludeFromRecents="true" android:windowSoftInputMode="adjustResize" />
   <activity android:name=".VoiceSettingsActivity" android:exported="false" />
-  <activity android:name=".VoiceAccessActivity" android:exported="false" android:theme="@style/CompanionRelayTheme" />
   <activity android:name=".AnimationPreviewActivity" android:exported="false" />
   <service android:name=".PetService" android:exported="false" android:foregroundServiceType="specialUse">
    <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-started draggable animated companion overlay; no screen reading or automation"/>

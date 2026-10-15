@@ -9,10 +9,7 @@ import java.io.*;
 
 /** Renders our synthetic test installation only, never the personal app's views. */
 public final class UiInstrumentation extends Instrumentation {
-    @Override public void callActivityOnCreate(Activity activity,Bundle state){
-        super.callActivityOnCreate(activity,state);
-        if(activity instanceof MainActivity)try{java.lang.reflect.Field f=MainActivity.class.getDeclaredField("homeShortcutAttempted");f.setAccessible(true);f.setBoolean(activity,true);}catch(Exception e){throw new AssertionError(e);}
-    }
+    @Override public void callActivityOnCreate(Activity activity,Bundle state){super.callActivityOnCreate(activity,state);}
     @Override public void onCreate(Bundle args){super.onCreate(args);start();}
     @Override public void onStart(){
         Bundle result=new Bundle();

@@ -1,7 +1,6 @@
 package it.solphivia.mobile;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -17,10 +16,6 @@ import android.widget.*;
 import android.provider.AlarmClock;
 import android.provider.CalendarContract;
 import android.app.SearchManager;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.GradientDrawable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.concurrent.ExecutorService;
@@ -30,9 +25,10 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** App-foreground wake phrase and bounded command session. No background or locked-screen listening. */
-public final class VoiceAccessActivity extends Activity {
+/** App-foreground voice session hosted by the existing Solphivia screen. */
+final class VoiceAccessController {
     private enum Phase { IDLE, WAKE, GREETING, COMMAND, RESPONDING, SPEAKING }
+    private final MainActivity host;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ExecutorService voiceWorker = Executors.newSingleThreadExecutor();
     private Phase phase = Phase.IDLE;
@@ -41,29 +37,31 @@ public final class VoiceAccessActivity extends Activity {
     private TextView status;
     private boolean resumed, ttsReady;
     private boolean requestingPermission;
-    private boolean closedInternally;
+    private boolean sessionSuppressed;
+    private boolean userStopped;
+    private boolean destroyed;
     private int generation;
     private int wakeFailures;
     private boolean listeningRequested;
     private String utterance;
     private String sessionName = "Marco";
     private android.app.AlertDialog previewDialog;
-    private final Runnable timeout = () -> finishSession("La richiesta ha impiegato troppo tempo. Riapri Solphivia per riprovare.");
+    private final Runnable timeout = () -> {
+        sessionSuppressed = true;
+        finishSession("La richiesta ha impiegato troppo tempo. Riapri Solphivia per riprovare.");
+    };
     private final Runnable retryListening = () -> {
         if (listeningRequested && foregroundUnlocked() &&
                 (phase == Phase.WAKE || phase == Phase.COMMAND)) listen(phase);
     };
 
-    @Override public void onCreate(Bundle state) {
-        super.onCreate(state);
-        setContentView(new android.view.View(this));
-        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
-                android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
-        status = new TextView(this);
-        sessionName = getSharedPreferences("voice_access", 0).getString("name", "").trim();
+    VoiceAccessController(MainActivity host) {
+        this.host = host;
+        status = host.voiceStatusView();
+        sessionName = host.getSharedPreferences("voice_access", 0).getString("name", "").trim();
         if (sessionName.isEmpty()) sessionName = "Marco";
-        tts = new TextToSpeech(this, code -> main.post(() -> {
-            if (isDestroyed() || tts == null) return;
+        tts = new TextToSpeech(host, code -> main.post(() -> {
+            if (destroyed || host.isDestroyed() || tts == null) return;
             if (code == TextToSpeech.SUCCESS) {
                 android.speech.tts.Voice voice = SpeechVoiceSelection.select(tts, Locale.ITALIAN, true);
                 ttsReady = voice != null && tts.setVoice(voice) == TextToSpeech.SUCCESS;
@@ -71,6 +69,7 @@ public final class VoiceAccessActivity extends Activity {
             if (ttsReady) {
                 if (resumed) begin();
             } else {
+                sessionSuppressed = true;
                 finishSession("Voce italiana offline non disponibile. Installala nelle impostazioni TTS e riapri Solphivia.");
             }
         }));
@@ -80,29 +79,23 @@ public final class VoiceAccessActivity extends Activity {
                 if (foregroundUnlocked() && (phase == Phase.GREETING || phase == Phase.SPEAKING) && id.equals(utterance)) listen(Phase.COMMAND);
             }); }
             public void onError(String id) { main.post(() -> {
-                if (id.equals(utterance)) finishSession("Errore nella risposta vocale. Riprova.");
+                if (id.equals(utterance)) {
+                    sessionSuppressed = true;
+                    finishSession("Errore nella risposta vocale. Riprova.");
+                }
             }); }
         });
     }
 
     private void begin() {
-        if (!foregroundUnlocked() || phase != Phase.IDLE || !ttsReady || requestingPermission) return;
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+        if (!foregroundUnlocked() || phase != Phase.IDLE || !ttsReady || requestingPermission || sessionSuppressed || userStopped || destroyed) return;
+        if (host.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             requestingPermission = true;
-            getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
-                    android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 71); return;
+            host.requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 71); return;
         }
-        enterOverlaySession();
-        listeningRequested = true; wakeFailures = 0; listen(Phase.WAKE);
-    }
-
-    /** Keep the activity alive for foreground microphone access while the existing home avatar remains visible. */
-    private void enterOverlaySession() {
-        setContentView(new android.view.View(this));
-        getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        getWindow().getDecorView().setBackgroundColor(Color.TRANSPARENT);
+        PetService.setVoiceAccessVisible(true);
         MainActivity.setVoiceAccessPresentation("Sono qui. Di' «Hola, Solphivia!» quando sei pronto.", "sit");
+        listeningRequested = true; wakeFailures = 0; listen(Phase.WAKE);
     }
 
     private void presentAvatar(String text, String pose) {
@@ -114,8 +107,12 @@ public final class VoiceAccessActivity extends Activity {
         releaseRecognizer(); main.removeCallbacks(timeout);
         phase = next; int token = ++generation;
         try {
-            boolean local = Build.VERSION.SDK_INT >= 31 && SpeechRecognizer.isOnDeviceRecognitionAvailable(this);
-            if (!local) { finishSession("Riconoscimento vocale offline non disponibile. Installa il modello italiano e riprova."); return; }
+            boolean local = Build.VERSION.SDK_INT >= 31 && SpeechRecognizer.isOnDeviceRecognitionAvailable(host);
+            if (!local) {
+                sessionSuppressed = true;
+                finishSession("Riconoscimento vocale offline non disponibile. Installa il modello italiano e riprova.");
+                return;
+            }
             recognizer = createOnDeviceRecognizer();
             recognizer.setRecognitionListener(new RecognitionListener() {
                 public void onReadyForSpeech(Bundle b) {
@@ -131,51 +128,34 @@ public final class VoiceAccessActivity extends Activity {
                 public void onEndOfSpeech() { }
                 public void onPartialResults(Bundle b) { }
                 public void onEvent(int type, Bundle b) { }
+                public void onSegmentResults(Bundle results) {
+                    if (token == generation) handleResults(next, token, results, false);
+                }
+                public void onEndOfSegmentedSession() {
+                    if (token != generation) return;
+                    releaseRecognizer();
+                    if (listeningRequested && foregroundUnlocked()) {
+                        main.postDelayed(retryListening, 1500);
+                    } else finishSession("Ascolto interrotto.");
+                }
                 public void onError(int error) {
                     if (token != generation) return;
                     if (listeningRequested && foregroundUnlocked() && error != SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
-                        wakeFailures++;
+                        if (++wakeFailures >= 5) {
+                            sessionSuppressed = true;
+                            finishSession("Il riconoscimento vocale si è interrotto. Riapri Solphivia per riprovare.");
+                            return;
+                        }
                         releaseRecognizer(); main.removeCallbacks(timeout);
                         status.setText(next == Phase.WAKE ? "Resto in attesa di «Hola, Solphivia!»…" : "Resto in ascolto dei tuoi comandi…");
                         main.postDelayed(retryListening, Math.min(5000, 750L * wakeFailures));
-                    } else finishSession("Ascolto terminato. Riapri Solphivia per riprovare.");
+                    } else {
+                        sessionSuppressed = true;
+                        finishSession("Ascolto terminato. Riapri Solphivia per riprovare.");
+                    }
                 }
                 public void onResults(Bundle results) {
-                    if (token != generation) return;
-                    if (!foregroundUnlocked()) { finishSession("Ascolto interrotto."); return; }
-                    ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                    String text = matches == null || matches.isEmpty() ? "" : matches.get(0);
-                    wakeFailures = 0;
-                    ++generation; releaseRecognizer(); main.removeCallbacks(timeout);
-                    if (VoiceAccessRules.stop(text)) {
-                        finishSession("Va bene, mi fermo.");
-                        return;
-                    }
-                    if (next == Phase.WAKE) {
-                        if (!VoiceAccessRules.wake(text)) {
-                            status.setText("Saluto non riconosciuto. Resto in attesa di «Hola, Solphivia!»…");
-                            listen(Phase.WAKE); return;
-                        }
-                        phase = Phase.GREETING; utterance = "voice-access-" + generation;
-                        String greeting = VoiceAccessRules.greeting(sessionName); status.setText(greeting);
-                        presentAvatar(greeting, "wave");
-                        if (tts.speak(greeting, TextToSpeech.QUEUE_FLUSH, null, utterance) == TextToSpeech.ERROR) finishSession("Risposta vocale non disponibile.");
-                    } else {
-                        presentAvatar("Hai detto: " + text, "listen");
-                        VoiceAction action = parseVoiceAction(text);
-                        if (action != null) { confirmVoiceAction(action); }
-                        else if (VoiceAccessRules.openWhatsApp(text)) {
-                            openWhatsApp();
-                        } else {
-                            String draft = ShareBridge.preview(text);
-                            if (draft != null) {
-                                pauseForConfirmation("Microfono spento. Controlla il testo prima di condividere.");
-                                showSharePreview(draft);
-                            } else {
-                                sendToSolphivia(text);
-                            }
-                        }
-                    }
+                    if (token == generation) handleResults(next, token, results, true);
                 }
             });
             Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
@@ -183,14 +163,72 @@ public final class VoiceAccessActivity extends Activity {
                     .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "it-IT")
                     .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
                     .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
+            if (next == Phase.WAKE && Build.VERSION.SDK_INT >= 33) {
+                intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1200)
+                        .putExtra(RecognizerIntent.EXTRA_SEGMENTED_SESSION,
+                                RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS);
+            }
             status.setText("Preparazione ascolto…");
             recognizer.startListening(intent);
-        } catch (RuntimeException error) { finishSession("Riconoscimento non disponibile. Controlla permesso microfono e servizio vocale."); }
+        } catch (RuntimeException error) {
+            sessionSuppressed = true;
+            finishSession("Riconoscimento non disponibile. Controlla permesso microfono e servizio vocale.");
+        }
     }
 
     @android.annotation.TargetApi(Build.VERSION_CODES.S)
     private SpeechRecognizer createOnDeviceRecognizer() {
-        return SpeechRecognizer.createOnDeviceSpeechRecognizer(this);
+        return SpeechRecognizer.createOnDeviceSpeechRecognizer(host);
+    }
+
+    private void handleResults(Phase next, int token, Bundle results, boolean sessionEnded) {
+        if (token != generation) return;
+        if (!foregroundUnlocked()) { finishSession("Ascolto interrotto."); return; }
+        ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+        String text = matches == null || matches.isEmpty() ? "" : matches.get(0);
+        if (text.trim().isEmpty()) {
+            if (sessionEnded && next == Phase.WAKE && listeningRequested) listen(Phase.WAKE);
+            return;
+        }
+        wakeFailures = 0;
+        if (next == Phase.WAKE && !VoiceAccessRules.stop(text) && !VoiceAccessRules.wake(text) && !sessionEnded) {
+            status.setText("In attesa di «Hola, Solphivia!»…");
+            return;
+        }
+        ++generation; releaseRecognizer(); main.removeCallbacks(timeout);
+        if (VoiceAccessRules.stop(text)) {
+            userStopped = true;
+            finishSession("Va bene, mi fermo.");
+            return;
+        }
+        if (next == Phase.WAKE) {
+            if (!VoiceAccessRules.wake(text)) {
+                status.setText("Saluto non riconosciuto. Resto in attesa di «Hola, Solphivia!»…");
+                listen(Phase.WAKE); return;
+            }
+            phase = Phase.GREETING; utterance = "voice-access-" + generation;
+            String greeting = VoiceAccessRules.greeting(sessionName); status.setText(greeting);
+            presentAvatar(greeting, "wave");
+            if (tts.speak(greeting, TextToSpeech.QUEUE_FLUSH, null, utterance) == TextToSpeech.ERROR) {
+                sessionSuppressed = true;
+                finishSession("Risposta vocale non disponibile.");
+            }
+        } else {
+            presentAvatar("Hai detto: " + text, "listen");
+            VoiceAction action = parseVoiceAction(text);
+            if (action != null) { confirmVoiceAction(action); }
+            else if (VoiceAccessRules.openWhatsApp(text)) {
+                openWhatsApp();
+            } else {
+                String draft = ShareBridge.preview(text);
+                if (draft != null) {
+                    pauseForConfirmation("Microfono spento. Controlla il testo prima di condividere.");
+                    showSharePreview(draft);
+                } else {
+                    sendToSolphivia(text);
+                }
+            }
+        }
     }
 
     private static final class VoiceAction {
@@ -233,8 +271,7 @@ public final class VoiceAccessActivity extends Activity {
     }
     private void confirmVoiceAction(VoiceAction action) {
         pauseForConfirmation("In attesa della tua conferma.");
-        setPassThrough(false);
-        android.app.AlertDialog actionDialog = new android.app.AlertDialog.Builder(this).setTitle(action.title).setMessage(action.detail)
+        android.app.AlertDialog actionDialog = new android.app.AlertDialog.Builder(host).setTitle(action.title).setMessage(action.detail)
                 .setNegativeButton("Annulla", (dialog, which) -> speakAndResume("Azione annullata."))
                 .setPositiveButton("Continua", (dialog, which) -> {
                     Intent intent;
@@ -251,20 +288,15 @@ public final class VoiceAccessActivity extends Activity {
                         intent = new Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI)
                                 .putExtra(CalendarContract.Events.TITLE, action.value.isEmpty() ? "Appuntamento" : action.value);
                     }
-                    try { startActivity(intent); }
+                    try { host.startActivity(intent); }
                     catch (RuntimeException error) { status.setText("Azione non disponibile sul telefono. Nessuna modifica è stata applicata."); }
                 }).create();
-        actionDialog.setOnDismissListener(ignored -> setPassThrough(true));
+        actionDialog.setCancelable(false);
         actionDialog.show();
     }
 
-    private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
-    private GradientDrawable roundRect(int color, int radius, int stroke) {
-        GradientDrawable shape = new GradientDrawable(); shape.setColor(color); shape.setCornerRadius(radius);
-        shape.setStroke(dp(1), stroke); return shape;
-    }
     private JSONArray loadHistory() {
-        try { return new JSONArray(getSharedPreferences("chat", 0).getString("history", "[]")); }
+        try { return new JSONArray(host.getSharedPreferences("chat", 0).getString("history", "[]")); }
         catch (Exception ignored) { return new JSONArray(); }
     }
     private void speakAndResume(String message) {
@@ -272,18 +304,21 @@ public final class VoiceAccessActivity extends Activity {
         phase = Phase.SPEAKING; utterance = "voice-access-" + (++generation);
         presentAvatar(message, "talk"); status.setText(message);
         main.removeCallbacks(timeout); main.postDelayed(timeout, 45000);
-        if (tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, utterance) == TextToSpeech.ERROR)
+        if (tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, utterance) == TextToSpeech.ERROR) {
+            sessionSuppressed = true;
             finishSession("Risposta vocale non disponibile. Riprova.");
+        }
     }
     private void pauseForConfirmation(String message) {
         ++generation; phase = Phase.IDLE; utterance = null;
         main.removeCallbacks(timeout); main.removeCallbacks(retryListening);
         releaseRecognizer(); if (tts != null) tts.stop();
+        PetService.setVoiceAccessVisible(false);
         status.setText(message); presentAvatar(message, "listen");
     }
     private void sendToSolphivia(String request) {
         main.removeCallbacks(timeout);
-        if (!OpenAiChatClient.isConnected(this)) {
+        if (!OpenAiChatClient.isConnected(host)) {
             speakAndResume("Per rispondere alle richieste vocali, collega prima ChatGPT dalla schermata principale.");
             return;
         }
@@ -294,17 +329,17 @@ public final class VoiceAccessActivity extends Activity {
         catch (Exception error) { speakAndResume("Non sono riuscita a preparare la richiesta. Riprova."); return; }
         while (history.length() > 16) history.remove(0);
         main.postDelayed(timeout, 45000);
-        OpenAiChatClient.respond(this, voiceWorker, history, new OpenAiChatClient.ChatCallback() {
+        OpenAiChatClient.respond(host, voiceWorker, history, new OpenAiChatClient.ChatCallback() {
             @Override public void onSuccess(String reply, String animationName, String motion, String mode) {
                 main.post(() -> {
-                    if (!listeningRequested || isFinishing() || isDestroyed()) return;
-                    getSharedPreferences("chat", 0).edit().putString("history", history.toString()).apply();
+                    if (!listeningRequested || host.isFinishing() || host.isDestroyed()) return;
+                    host.getSharedPreferences("chat", 0).edit().putString("history", history.toString()).apply();
                     speakAndResume(reply);
                 });
             }
             @Override public void onError(String message) {
                 main.post(() -> {
-                    if (!listeningRequested || isFinishing() || isDestroyed()) return;
+                    if (!listeningRequested || host.isFinishing() || host.isDestroyed()) return;
                     speakAndResume("Non riesco a completare la richiesta: " + message);
                 });
             }
@@ -312,26 +347,26 @@ public final class VoiceAccessActivity extends Activity {
     }
 
     private void openWhatsApp() {
-        Intent launch = getPackageManager().getLaunchIntentForPackage("com.whatsapp");
+        Intent launch = host.getPackageManager().getLaunchIntentForPackage("com.whatsapp");
         if (launch == null) { speakAndResume("WhatsApp non è installato o non è disponibile."); return; }
-        try { MainActivity.setVoiceAccessPresentation("WhatsApp aperto. Ascolto terminato.", "sit"); startActivity(launch); }
+        try { finishSession("WhatsApp aperto. Ascolto terminato."); host.startActivity(launch); }
         catch (RuntimeException error) { speakAndResume("Impossibile aprire WhatsApp."); }
     }
 
     private void showSharePreview(String draft) {
         pauseForConfirmation("Microfono spento. Controlla il testo prima di condividere.");
-        setPassThrough(false);
-        EditText editor = new EditText(this);
+        EditText editor = new EditText(host);
         editor.setContentDescription("Testo da condividere su WhatsApp");
         editor.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         editor.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(2000)});
         editor.setText(draft);
-        previewDialog = new android.app.AlertDialog.Builder(this)
+        previewDialog = new android.app.AlertDialog.Builder(host)
                 .setTitle("ShareBridge · Anteprima")
                 .setMessage("Aprire la condivisione WhatsApp? Sceglierai il destinatario e confermerai l’invio dentro WhatsApp.")
                 .setView(editor).setNegativeButton("Annulla", (dialog, which) -> speakAndResume("Condivisione annullata."))
                 .setPositiveButton("Apri condivisione WhatsApp", null).create();
-        previewDialog.setOnDismissListener(dialog -> { editor.setText(""); previewDialog = null; setPassThrough(true); });
+        previewDialog.setCancelable(false);
+        previewDialog.setOnDismissListener(dialog -> { editor.setText(""); previewDialog = null; });
         previewDialog.show();
         previewDialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             String text = editor.getText().toString().trim();
@@ -339,7 +374,7 @@ public final class VoiceAccessActivity extends Activity {
             Intent share = new Intent(Intent.ACTION_SEND).setType("text/plain")
                     .setPackage("com.whatsapp").putExtra(Intent.EXTRA_TEXT, text);
             previewDialog.dismiss();
-            try { startActivity(share); status.setText("Condivisione aperta. Nessun invio automatico."); }
+            try { finishSession("Condivisione aperta. Nessun invio automatico."); host.startActivity(share); status.setText("Condivisione aperta. Nessun invio automatico."); }
             catch (RuntimeException error) { status.setText("Condivisione WhatsApp non disponibile. Nessun messaggio inviato."); }
         });
     }
@@ -347,47 +382,52 @@ public final class VoiceAccessActivity extends Activity {
     private void releaseRecognizer() {
         if (recognizer != null) { recognizer.cancel(); recognizer.destroy(); recognizer = null; }
     }
-    private void setPassThrough(boolean enabled) {
-        int flags = android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
-                android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
-        if (enabled) getWindow().addFlags(flags); else getWindow().clearFlags(flags);
-    }
     private boolean foregroundUnlocked() {
-        return resumed && getSystemService(android.os.PowerManager.class).isInteractive()
-                && !getSystemService(android.app.KeyguardManager.class).isKeyguardLocked();
+        android.os.PowerManager power = host.getSystemService(android.os.PowerManager.class);
+        android.app.KeyguardManager keyguard = host.getSystemService(android.app.KeyguardManager.class);
+        return resumed && power != null && power.isInteractive()
+                && keyguard != null && !keyguard.isKeyguardLocked() && !host.isFinishing() && !host.isDestroyed();
     }
     private void finishSession(String message) {
-        if (isFinishing() || isDestroyed()) return;
-        closedInternally = true;
+        if (destroyed || host.isFinishing() || host.isDestroyed()) return;
         listeningRequested = false; ++generation; phase = Phase.IDLE; utterance = null;
         main.removeCallbacks(timeout); main.removeCallbacks(retryListening);
         releaseRecognizer(); if (tts != null) tts.stop();
+        PetService.setVoiceAccessVisible(false);
         if (status != null) status.setText(message);
         MainActivity.setVoiceAccessPresentation(message, "sit");
-        finish();
     }
-    @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
-        super.onRequestPermissionsResult(request, permissions, grants);
+    void onPermissionResult(int request, int[] grants) {
         if (request == 71) {
             requestingPermission = false;
-            setPassThrough(true);
             if (grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED) begin();
             else {
+                sessionSuppressed = true;
                 finishSession("Microfono negato. Puoi consentirlo nelle impostazioni di Solphivia.");
             }
         }
     }
-    @Override protected void onResume() { super.onResume(); resumed = true; if (ttsReady && !listeningRequested && phase == Phase.IDLE && !requestingPermission) begin(); }
-    @Override protected void onStart() { super.onStart(); PetService.setVoiceAccessVisible(true); }
-    @Override protected void onStop() { PetService.setVoiceAccessVisible(false); super.onStop(); }
-    @Override protected void onPause() {
+    void onNewLaunch() { sessionSuppressed = false; userStopped = false; }
+    void onResume() {
+        resumed = true;
+        if (ttsReady && !listeningRequested && phase == Phase.IDLE && !requestingPermission) begin();
+    }
+    void onWindowFocusChanged(boolean hasFocus) { if (hasFocus) onResume(); }
+    void onPause() {
         resumed = false;
         if (!requestingPermission) {
-            if (!closedInternally) MainActivity.restartVoiceAccessWhenResumed();
-            finishSession("Ascolto interrotto.");
+            listeningRequested = false; ++generation; phase = Phase.IDLE; utterance = null;
+            main.removeCallbacks(timeout); main.removeCallbacks(retryListening);
+            releaseRecognizer(); if (tts != null) tts.stop();
+            PetService.setVoiceAccessVisible(false);
         }
         if (previewDialog != null) previewDialog.dismiss();
-        super.onPause();
     }
-    @Override protected void onDestroy() { finishSession("Ascolto terminato."); voiceWorker.shutdownNow(); if (tts != null) { tts.shutdown(); tts = null; } super.onDestroy(); }
+    void onDestroy() {
+        destroyed = true; listeningRequested = false; ++generation;
+        main.removeCallbacks(timeout); main.removeCallbacks(retryListening); releaseRecognizer();
+        voiceWorker.shutdownNow(); if (tts != null) { tts.shutdown(); tts = null; }
+        PetService.setVoiceAccessVisible(false);
+    }
+    boolean isActive() { return listeningRequested && resumed && !sessionSuppressed && !userStopped; }
 }

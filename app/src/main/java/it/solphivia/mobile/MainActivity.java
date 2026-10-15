@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
     private boolean activityPaused;
     private boolean sendAfterConnect;
     private boolean connectionNoticePending;
-    private boolean voiceAccessStarted;
+    private VoiceAccessController voiceAccess;
     private String queuedFirstMessage = "";
     private String currentAnimation = "idle";
     private float touchX, touchY, startTranslationX, startTranslationY;
@@ -89,6 +89,7 @@ public class MainActivity extends Activity {
         authBrowser = OpenAiChatClient.isAuthorizing();
         buildScreen();
         restoreLatestSpeech();
+        voiceAccess = new VoiceAccessController(this);
     }
 
     private void buildScreen() {
@@ -371,7 +372,6 @@ public class MainActivity extends Activity {
                     showFirstUseNotice();
                     if (!connectionNoticePending) {
                         submitQueuedFirstMessage();
-                        startVoiceAccessOnLaunch();
                     }
                 });
             }
@@ -606,6 +606,7 @@ public class MainActivity extends Activity {
 
     @Override protected void onDestroy() {
         if (voiceUiInstance == this) voiceUiInstance = null;
+        if (voiceAccess != null) voiceAccess.onDestroy();
         if(inlineVoice!=null)inlineVoice.stop();
         OpenAiChatClient.cancelAuthorization(this);
         main.removeCallbacksAndMessages(null);
@@ -656,7 +657,7 @@ public class MainActivity extends Activity {
                     p.edit().putBoolean("plan_welcome_seen",true).apply();
                     if (!isFinishing() && !isDestroyed()) {
                         submitQueuedFirstMessage();
-                        startVoiceAccessOnLaunch();
+                        if (voiceAccess != null) voiceAccess.onResume();
                     }
                 }).show();
     }
@@ -674,8 +675,8 @@ public class MainActivity extends Activity {
     @Override protected void onStop() {
         super.onStop();
         if (!isChangingConfigurations()) {
-            if (!voiceAccessStarted) PetService.setInternalChatVisible(false);
-            if (!voiceAccessStarted && !authBrowser && Settings.canDrawOverlays(this)
+            PetService.setInternalChatVisible(false);
+            if (!authBrowser && Settings.canDrawOverlays(this)
                     && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
                 Intent service = new Intent(this, PetService.class);
                 if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
@@ -687,37 +688,22 @@ public class MainActivity extends Activity {
         super.onResume(); activityPaused = false;
         voiceUiInstance = this;
         authBrowser = OpenAiChatClient.isAuthorizing();
-        if (!authBrowser && startVoiceAccessOnLaunch()) return;
+        if (!authBrowser && voiceAccess != null) voiceAccess.onResume();
         if (status != null) refreshConnectionState();
     }
 
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (intent != null && Intent.ACTION_MAIN.equals(intent.getAction())) voiceAccessStarted = false;
+        if (intent != null && Intent.ACTION_MAIN.equals(intent.getAction()) && voiceAccess != null) voiceAccess.onNewLaunch();
         authBrowser = OpenAiChatClient.isAuthorizing();
-        if (!authBrowser && startVoiceAccessOnLaunch()) return;
+        if (!authBrowser && voiceAccess != null) voiceAccess.onResume();
     }
 
     @Override public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (!hasFocus || isFinishing() || OpenAiChatClient.isAuthorizing()) return;
-        if (startVoiceAccessOnLaunch()) return;
-    }
-
-    private boolean startVoiceAccessOnLaunch() {
-        if (voiceAccessStarted || !hasWindowFocus() || authBrowser || connectionNoticePending ||
-                isFinishing() || isDestroyed()) return false;
-        voiceAccessStarted = true;
-        try {
-            startActivity(new Intent(this, VoiceAccessActivity.class).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION));
-            overridePendingTransition(0, 0);
-            return true;
-        } catch (RuntimeException error) {
-            voiceAccessStarted = false;
-            android.util.Log.w("Solphivia", "Voice Access non disponibile all’avvio", error);
-            return false;
-        }
+        if (voiceAccess != null) voiceAccess.onWindowFocusChanged(hasFocus);
     }
 
     private void submitQueuedFirstMessage() {
@@ -742,20 +728,22 @@ public class MainActivity extends Activity {
         PetService.setVoiceAccessPresentation(text, pose);
     }
 
-    static void restartVoiceAccessWhenResumed() {
-        MainActivity activity = voiceUiInstance;
-        if (activity != null && !activity.isFinishing() && !activity.isDestroyed())
-            activity.voiceAccessStarted = false;
-    }
-
     @Override protected void onPause() {
         super.onPause(); activityPaused = true;
+        if (voiceAccess != null) voiceAccess.onPause();
         if(inlineVoice!=null)inlineVoice.stop();
-        if (!voiceAccessStarted && !isFinishing() && !authBrowser && Settings.canDrawOverlays(this) && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
+        if (!isFinishing() && !authBrowser && Settings.canDrawOverlays(this) && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
             Intent service = new Intent(this, PetService.class).setAction(PetService.ACTION_ANIMATE).putExtra(PetService.EXTRA_ANIMATION, currentAnimation);
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
         }
     }
+
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (voiceAccess != null) voiceAccess.onPermissionResult(requestCode, grantResults);
+    }
+
+    TextView voiceStatusView() { return status; }
 
     private GradientDrawable roundRect(int color, int radius, int stroke) {
         GradientDrawable d = new GradientDrawable(); d.setColor(color); d.setCornerRadius(radius);

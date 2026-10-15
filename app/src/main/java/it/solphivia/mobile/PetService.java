@@ -90,7 +90,7 @@ public class PetService extends Service {
 
     private void updateOverlayVisibility() {
         if (panel == null || destroyed) return;
-        boolean hideOverlay = internalChatVisible;
+        boolean hideOverlay = internalChatVisible || voiceAccessVisible;
         if (hideOverlay && overlayAttached) {
             wm.removeViewImmediate(panel);
             overlayAttached = false;
@@ -441,7 +441,7 @@ public class PetService extends Service {
             });
         }
         try {
-            if (!internalChatVisible) { wm.addView(panel, lp); overlayAttached = true; }
+            if (!internalChatVisible && !voiceAccessVisible) { wm.addView(panel, lp); overlayAttached = true; }
             getSharedPreferences("pet", 0).edit().putBoolean("overlay_active", true).apply();
         }
         catch (RuntimeException error) { panel = null; pet = null; stopSelf(); return; }
