@@ -33,3 +33,9 @@ jobs:
           path: |
             app/build/outputs/apk/debug/*.apk
             app/build/reports/lint-results-debug.*
+      - name: Build APK with existing application ID for local update signing
+        run: bash gradlew --no-daemon assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: voice-access-update
+          path: app/build/outputs/apk/debug/*.apk
