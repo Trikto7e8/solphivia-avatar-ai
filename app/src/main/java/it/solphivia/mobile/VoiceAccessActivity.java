@@ -191,6 +191,8 @@ public final class VoiceAccessActivity extends Activity {
                 ? "Microfono consentito. Premi Avvia." : "Microfono negato. Puoi consentirlo nelle impostazioni dell’app.");
     }
     @Override protected void onResume() { super.onResume(); resumed = true; }
+    @Override protected void onStart() { super.onStart(); PetService.setInternalChatVisible(true); }
+    @Override protected void onStop() { PetService.setInternalChatVisible(false); super.onStop(); }
     @Override protected void onPause() {
         resumed = false; finishSession("Ascolto interrotto. Premi Avvia per ripartire.");
         if (previewDialog != null) previewDialog.dismiss();

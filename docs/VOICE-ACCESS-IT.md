@@ -10,7 +10,7 @@
 
 ## Implementato
 
-Dalla home aprire **Voice Access**, inserire un nome e premere **Avvia ascolto**. Dopo il consenso Android al microfono, premere nuovamente Avvia. Dire **Hola, Solphivia!**: il riconoscimento del saluto intero produce **Hola, Marco!** (o il nome scelto). Il microfono viene riaperto per un solo comando dopo la fine effettiva del TTS:
+Dalla home aprire **Voice Access** oppure, con avatar flottante attivo, **☰ → Voice Access e ShareBridge**. L’overlay viene nascosto mentre la schermata è visibile. Inserire un nome e premere **Avvia ascolto**. Dopo il consenso Android al microfono, premere nuovamente Avvia. Dire **Hola, Solphivia!**: il riconoscimento del saluto intero produce **Hola, Marco!** (o il nome scelto). Il microfono viene riaperto per un solo comando dopo la fine effettiva del TTS:
 
 - **Apri WhatsApp**: Intent di avvio del pacchetto `com.whatsapp`.
 - **Condividi Ciao Marco su WhatsApp**: ShareBridge estrae il testo e mostra un’anteprima modificabile. Solo **Apri condivisione WhatsApp** passa il testo a `ACTION_SEND`, `text/plain`, con pacchetto WhatsApp esplicito. Il destinatario e l’invio finale si scelgono in WhatsApp. Annullare non apre altre app. La conferma vocale e l’invio automatico non sono implementati.
