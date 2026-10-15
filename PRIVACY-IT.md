@@ -18,6 +18,14 @@
 
 ## Controlli dell'utente
 
+### Voice Access e ShareBridge (modulo v0.1)
+
+La schermata Voice Access richiede il microfono solo dopo Avvia. Due ascolti limitati a 15 secondi riconoscono il saluto e un comando; uscita o sospensione interrompono la sessione. Nessun ascolto continuo, identificazione biometrica o accesso ad AI Memory Vault. Il nome scelto viene conservato in preferenze private separate; audio, trascrizioni e anteprime non vengono salvati dal modulo.
+
+Il riconoscimento locale è preferito sui dispositivi compatibili. L’uso del riconoscitore di sistema richiede una scelta esplicita e può comportare elaborazione online da parte del suo fornitore. Il saluto usa una voce italiana dichiarata offline. ShareBridge mostra il testo modificabile e passa quel testo a WhatsApp soltanto dopo la conferma “Apri condivisione WhatsApp”; destinatario e invio finale vengono scelti dentro WhatsApp, secondo la sua informativa. Nessun invio automatico. [Dettagli e prove](docs/VOICE-ACCESS-IT.md).
+
+### Controlli generali
+
 - Non collegare l'account se non vuoi concedere i permessi mostrati dal browser.
 - Puoi fermare l'avatar dalla notifica persistente o revocare il permesso overlay nelle impostazioni Android.
 - La cronologia e i dati locali dell'app si possono eliminare cancellando i dati dell'app o disinstallandola; questo disconnette anche il token locale. Per revocare l'autorizzazione lato account, controlla le impostazioni di account ChatGPT/OpenAI.

@@ -138,6 +138,9 @@ public class MainActivity extends Activity {
         voiceButton.setOnClickListener(v -> startActivity(new Intent(this, VoiceSettingsActivity.class)));
         settingsRow.addView(voiceButton, new LinearLayout.LayoutParams(0, -2, 1));
         page.addView(settingsRow);
+        Button accessButton = new Button(this); accessButton.setText("Voice Access");
+        accessButton.setOnClickListener(v -> startActivity(new Intent(this, VoiceAccessActivity.class)));
+        page.addView(accessButton);
 
         stage = new FrameLayout(this);
         stage.setBackground(roundRect(Color.WHITE, dp(24), 0xFFE9DDEC));

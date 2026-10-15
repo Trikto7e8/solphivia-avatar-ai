@@ -111,3 +111,7 @@ Scrivi `scegli tu` o `modalità auto` per la scelta contestuale. I comandi espli
 - Sonno animato, proporzioni corrette e schermata `☰ → Prova animazioni`; 108 sprite e 1248 combinazioni verificate.
 
 Scarica l’APK dalla [pre-release v0.9.2-alpha2](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha4). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.
+
+## Voice Access e ShareBridge (MVP del modulo v0.1)
+
+Saluto “Hola, Solphivia!”, risposta personalizzata, apertura di WhatsApp e condivisione con anteprima e conferma. Vedi [funzioni, privacy, limiti e test Android](docs/VOICE-ACCESS-IT.md). La numerazione 0.1 riguarda il modulo, non sostituisce la versione dell’app.
