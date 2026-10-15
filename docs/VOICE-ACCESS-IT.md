@@ -6,11 +6,11 @@
 - `DeviceSpeech`, `PetService`, `SpeechVoiceSelection`, `VoicePreferences`: TTS e selezione delle voci già presenti. Voice Access riusa il selettore offline, con ciclo di vita TTS proprio e callback di fine saluto.
 - `PetService`: avatar in overlay e servizio foreground special-use; Voice Access non aggiunge ascolto all’overlay né un nuovo servizio.
 - Profilo OAuth e dati personali del vault non sono usati. Il nome scelto per Voice Access vive solo nelle preferenze locali `voice_access`.
-- Il manifest aveva permessi overlay, rete, posizione e notifiche. Questa funzione aggiunge solo `RECORD_AUDIO`, richiesto all’avvio volontario, e visibilità mirata del riconoscitore e di WhatsApp.
+- Il manifest aveva permessi overlay, rete, posizione e notifiche. Questa funzione usa il permesso `RECORD_AUDIO` richiesto da Android e visibilità mirata del riconoscitore e di WhatsApp.
 
 ## Implementato
 
-Dalla home, con avatar flottante attivo, toccare **☰ → Voice Access e ShareBridge**: questa azione attiva volontariamente la sessione e apre subito il microfono Android, senza una schermata intermedia. Al primo uso Android chiede il permesso microfono. Solphivia resta seduta nella bolla flottante, in attesa di **Hola, Solphivia!**; al saluto risponde con TTS **Hola, Marco!** usando il nome locale già salvato (se assente, usa “amico”), si anima e ascolta il comando. Dopo una risposta di Solphivia torna in ascolto per il comando successivo. Dire **Fermati** (anche **Basta**, **Stop** o **Smetti**) arresta il microfono e chiude la sessione; per riattivarla si tocca di nuovo **Voice Access** dal menu dell’avatar. L’app deve restare in primo piano e il telefono sbloccato.
+Dall’avvio di Solphivia, l’avatar resta visibile nella schermata principale e il riconoscitore locale attende **Hola, Solphivia!** senza una pagina o un pulsante Voice Access. Al primo uso Android chiede il normale permesso microfono. Al saluto Solphivia si anima e risponde con TTS **Hola, Marco!** usando il nome locale già salvato (ripiego: “Marco”), poi ascolta i comandi. Dopo una risposta torna ad ascoltare il comando successivo. Dire **Fermati** (anche **Basta**, **Stop** o **Smetti**) interrompe la sessione fino al prossimo avvio di Solphivia. Uscendo dall’app o bloccando il telefono il microfono si spegne; quando Solphivia torna in primo piano, l’attesa riparte.
 
 - **Apri WhatsApp**: apre l’app.
 - **Condividi Ciao Marco su WhatsApp**: ShareBridge mostra un’anteprima modificabile. Solo dopo **Apri condivisione WhatsApp** passa il testo a WhatsApp; destinatario e invio finale si scelgono lì.
@@ -25,8 +25,8 @@ Le azioni Android sopra sono un insieme limitato di comandi locali, con conferma
 
 - Audio e comandi locali non sono salvati dal modulo. Se chiedi una risposta libera, la trascrizione e la risposta vengono aggiunte alla cronologia chat già esistente e inviate tramite il collegamento ChatGPT dell’app; il testo resta nelle preferenze locali della chat. Il nome è salvato separatamente nelle preferenze `voice_access`. AI Memory Vault e contatti non vengono consultati.
 - Usa solo `createOnDeviceSpeechRecognizer` quando Android lo supporta; non c’è fallback online nella v0.1. Se il riconoscitore locale o il modello italiano non è disponibile, Solphivia mostra l’errore nella bolla e chiude la sessione. Android 8–11 non è supportato per il percorso vocale locale.
-- TTS italiano con voce dichiarata offline; se assente, installarla nelle impostazioni Android e riaprire Voice Access dal menu.
-- Massimo 15 secondi per ciascun ascolto e per il saluto, niente wake lock, biometria o ascolto a schermo spento. La frase di attivazione resta in attesa mentre l’app è aperta; errori ripetuti interrompono la sessione. **Fermati**, uscita, sospensione e rotazione annullano la sessione; il ritorno non riattiva il microfono. Le callback obsolete vengono ignorate. Un’anteprima aperta viene scartata quando la schermata perde il primo piano.
+- TTS italiano con voce dichiarata offline; se assente, installarla nelle impostazioni Android e riaprire Solphivia.
+- L’attesa della frase di attivazione e dei comandi resta attiva finché Solphivia è in primo piano; i tentativi del riconoscitore ripartono con attesa crescente in caso di errore. Nessun wake lock, biometria o ascolto a schermo spento. **Fermati** sospende l’ascolto fino al successivo avvio dell’app. Uscita, blocco e rotazione fermano il microfono; al ritorno in primo piano l’attesa riparte. Le callback obsolete vengono ignorate. Un’anteprima aperta viene scartata quando l’app perde il primo piano.
 - La sessione usa l’avatar e la bolla già presenti; le conferme per effetti sul dispositivo restano dialoghi Android nativi. La verifica manuale con TalkBack e font grandi resta necessaria.
 
 ## Prova su Android
@@ -40,24 +40,24 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 L’APK di verifica usa `it.solphivia.mobile.verification`, separato dall’installazione personale.
 
-1. Dal menu flottante toccare **Voice Access e ShareBridge** e, al primo uso, consentire il microfono ad Android. Verificare che non compaia una schermata di configurazione e resti l’avatar flottante seduto. Dire “Hola, Solphivia!”, verificare risposta TTS e animazione, poi “Apri WhatsApp”. Verificare che il microfono si spenga prima dell’apertura.
+1. Aprire Solphivia e, al primo uso, consentire il microfono ad Android. Verificare che non compaia una pagina di configurazione, che l’indicatore microfono Android sia attivo e che l’avatar aspetti seduto. Dire “Hola, Solphivia!”, verificare risposta TTS e animazione, poi “Apri WhatsApp”. Verificare che il microfono si spenga prima dell’apertura e riparta tornando a Solphivia.
 2. Ripetere e dire “Cerca gatti sul web”: annullare e ripetere confermando. Provare poi “Metti un timer di 5 minuti”, “Sveglia alle 7:30” e “Crea un appuntamento visita dentistica”; controllare che ciascuna azione chieda conferma e lasci l’ultima modifica all’app Android.
 3. Con ChatGPT collegato, dire una richiesta libera, verificare risposta TTS e che Solphivia torni ad ascoltare. Verificare la cronologia chat locale e il collegamento ChatGPT. Senza collegamento, il modulo deve spiegare il requisito a voce.
 4. Ripetere con “Condividi Ci vediamo alle 18 su WhatsApp”. Modificare il testo, annullare: nessuna apertura. Ripetere, confermare: verificare testo e scelta destinatario in WhatsApp, senza inviare a persone reali.
 5. Senza WhatsApp installato: errore leggibile, nessun crash o apertura del browser.
 6. Negare/revocare il permesso microfono, disattivare il microfono dalle impostazioni privacy, provare senza riconoscitore/TTS: messaggio di errore e nessun ascolto nascosto.
-6. Silenzio e frase errata: l’attesa del saluto continua, senza effetti. “Interrompi” arresta il microfono; dopo otto errori consecutivi il modulo si ferma e mostra lo stato.
-7. Durante attesa e ascolto: dire “Fermati”, poi provare Home, blocco schermo e rotazione. Verificare indicatore microfono spento, niente comando tardivo e riavvio solo dal menu Voice Access.
-8. Android 12+: provare con il riconoscitore on-device e modello italiano disponibili e poi assenti. Provare in modalità aereo con i modelli locali installati.
-9. TalkBack, caratteri grandi e orientamento orizzontale: verificare etichette, scorrimento, anteprima e conferma. Provare anche con overlay preesistente attivo: eventuale audio di altre funzioni non deve produrre un invio.
+7. Silenzio e frase errata: l’attesa del saluto continua, senza effetti. “Fermati” arresta il microfono.
+8. Durante attesa e ascolto, provare Home, blocco schermo e rotazione. Verificare indicatore microfono spento, niente comando tardivo e ripartenza solo tornando in Solphivia.
+9. Android 12+: provare con il riconoscitore on-device e modello italiano disponibili e poi assenti. Provare in modalità aereo con i modelli locali installati.
+10. TalkBack, caratteri grandi e orientamento orizzontale: verificare etichette, anteprima e conferma. Provare anche con overlay preesistente attivo: eventuale audio di altre funzioni non deve produrre un invio.
 
 La CI verifica parser, compilazione degli APK e lint. Non simula un motore vocale reale né certifica il comportamento di WhatsApp: i passaggi sopra sono collaudo manuale richiesto prima del rilascio.
 
-### Verifiche locali del 15 ottobre 2026
+### Verifiche locali
 
-- PASS: 17 controlli del parser eseguiti con JDK 17; `git diff --check` pulito.
-- Build APK e test strumentali tentata con Gradle 8.11.1 e SDK 35. Il Java 25 installato è incompatibile; con JDK 17 locale la compilazione incontra `AccessDeniedException` alla chiusura dei JAR SDK nell’ambiente Windows limitato, anche usando una copia dell’SDK nella cartella di lavoro. Nessun APK validato localmente; lint non completato in questo tentativo.
-- ADB non inizializza la propria cartella utente nell’ambiente: prove su dispositivo e test strumentali non eseguiti. Il workflow della PR offre una verifica separata su Linux/JDK 17; consultarne l’esito effettivo, senza dedurlo da questi test del parser.
+- PASS: build APK debug, APK strumentale debug e `lintDebug` con JDK 17 e SDK 35.
+- PASS: 17 controlli puri del parser di wake phrase, allowlist WhatsApp e ShareBridge.
+- PASS: APK installato sul Moto g35 5G (Android 16). La prova parlata completa sul dispositivo resta da fare con lo schermo sbloccato; l’ultimo tentativo ADB ha trovato il telefono alla schermata di blocco.
 
 ## Roadmap separata
 

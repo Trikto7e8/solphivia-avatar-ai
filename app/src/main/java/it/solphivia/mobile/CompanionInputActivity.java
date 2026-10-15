@@ -54,8 +54,8 @@ public class CompanionInputActivity extends Activity {
         String action = getIntent() == null ? null : getIntent().getAction();
         if (ACTION_SETTINGS.equals(action)) {
             new AlertDialog.Builder(this).setTitle("Solphivia")
-                    .setItems(new String[]{"Memoria e Memory Vault", "Voce e accento", "Prova animazioni", "Voice Access e ShareBridge"}, (d,w) -> {
-                        startActivity(new Intent(this,w==0?MemoryActivity.class:w==1?VoiceSettingsActivity.class:w==2?AnimationPreviewActivity.class:VoiceAccessActivity.class)); finish();
+                    .setItems(new String[]{"Memoria e Memory Vault", "Voce e accento", "Prova animazioni"}, (d,w) -> {
+                        startActivity(new Intent(this,w==0?MemoryActivity.class:w==1?VoiceSettingsActivity.class:AnimationPreviewActivity.class)); finish();
                     }).setOnCancelListener(d -> finish()).show();
         }
         else if (ACTION_WEATHER_SETUP.equals(action)) chooseWeatherLocation();
