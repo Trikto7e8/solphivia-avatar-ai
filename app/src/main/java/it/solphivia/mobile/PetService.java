@@ -64,6 +64,7 @@ import java.nio.charset.StandardCharsets;
 /** Home-screen overlay containing Solphivia, her speech bubble, and the chat composer. */
 public class PetService extends Service {
     private static boolean internalChatVisible;
+    private static boolean voiceAccessVisible;
     private static PetService activeInstance;
     private boolean overlayAttached;
 
@@ -72,12 +73,18 @@ public class PetService extends Service {
         if (activeInstance != null) activeInstance.updateOverlayVisibility();
     }
 
+    static void setVoiceAccessVisible(boolean visible) {
+        voiceAccessVisible = visible;
+        if (activeInstance != null) activeInstance.updateOverlayVisibility();
+    }
+
     private void updateOverlayVisibility() {
         if (panel == null || destroyed) return;
-        if (internalChatVisible && overlayAttached) {
+        boolean hideOverlay = internalChatVisible || voiceAccessVisible;
+        if (hideOverlay && overlayAttached) {
             wm.removeViewImmediate(panel);
             overlayAttached = false;
-        } else if (!internalChatVisible && !overlayAttached && Settings.canDrawOverlays(this)) {
+        } else if (!hideOverlay && !overlayAttached && Settings.canDrawOverlays(this)) {
             try { wm.addView(panel, lp); overlayAttached = true; }
             catch (RuntimeException error) { stopSelf(); }
         }
