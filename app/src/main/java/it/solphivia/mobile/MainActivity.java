@@ -52,6 +52,7 @@ public class MainActivity extends Activity {
     private PetView inlinePet;
     private BubbleTail speechTail;
     private boolean authBrowser;
+    private boolean launchingVoice;
     private boolean busy;
     private boolean activityPaused;
     private boolean sendAfterConnect;
@@ -668,14 +669,14 @@ public class MainActivity extends Activity {
 
     @Override protected void onStart() {
         super.onStart();
-        PetService.setInternalChatVisible(true);
+        if (!launchingVoice) PetService.setInternalChatVisible(true);
     }
 
     @Override protected void onStop() {
         super.onStop();
         if (!isChangingConfigurations()) {
             PetService.setInternalChatVisible(false);
-            if (!authBrowser && Settings.canDrawOverlays(this)
+            if (!launchingVoice && !authBrowser && Settings.canDrawOverlays(this)
                     && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
                 Intent service = new Intent(this, PetService.class);
                 if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
@@ -702,9 +703,8 @@ public class MainActivity extends Activity {
                 || !launch.hasCategory(Intent.CATEGORY_LAUNCHER)
                 || !Settings.canDrawOverlays(this) || OpenAiChatClient.isAuthorizing()) return false;
         getSharedPreferences("pet", 0).edit().putBoolean("overlay_off", false).apply();
+        launchingVoice = true;
         PetService.setInternalChatVisible(false);
-        Intent service = new Intent(this, PetService.class);
-        if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
         startActivity(new Intent(this, VoiceAccessActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_SINGLE_TOP));
         overridePendingTransition(0, 0);

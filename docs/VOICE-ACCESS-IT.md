@@ -4,15 +4,15 @@
 
 - `CompanionInputActivity`: dettatura esistente tramite `ACTION_RECOGNIZE_SPEECH`, con ritorno alla chat o all’overlay. Non è una parola di attivazione.
 - `DeviceSpeech`, `PetService`, `SpeechVoiceSelection`, `VoicePreferences`: TTS e selezione delle voci già presenti. Voice Access riusa il selettore offline, con ciclo di vita TTS proprio e callback di fine saluto.
-- `PetService`: avatar in overlay e servizio foreground special-use; Voice Access non aggiunge una seconda finestra dell’avatar.
+- `PetService`: avatar flottante e servizio foreground; usa il tipo Android `microphone` durante Voice Access e `specialUse` per il solo overlay. `VoiceAccessActivity` gestisce soltanto permessi e avvio, poi si chiude: nessuna attività trasparente resta davanti alle altre app.
 - Profilo OAuth e dati personali del vault non sono usati. Il nome scelto per Voice Access vive solo nelle preferenze locali `voice_access`.
 - Il manifest aveva permessi overlay, rete, posizione e notifiche. Questa funzione usa il permesso `RECORD_AUDIO` richiesto da Android e visibilità mirata del riconoscitore e di WhatsApp.
 
 ## Implementato
 
-Dall’icona di avvio si apre solo Solphivia flottante: la schermata chat non resta dietro e il riconoscitore offline resta in attesa di **Hola, Solphivia!** tramite un unico flusso audio locale. Il parser accetta anche le trascrizioni fonetiche più probabili del nome, come “Hola, Solfivia” e “Hola, Sofia”; se il riconoscitore sente una frase simile ma non la attiva, la vignetta mostra cosa ha sentito. Al primo uso Android chiede il permesso microfono; il modello italiano Vosk (48 MB) viene scaricato una volta solo con Wi-Fi e conservato nei dati privati dell’app. Al saluto Solphivia si anima e risponde con TTS **Hola, Marco!** usando il nome locale già salvato (ripiego: “Marco”) e il motore/accento selezionati per l’avatar, poi ascolta i comandi. Dopo una risposta torna ad ascoltare il comando successivo. Dire **Fermati** (anche **Basta**, **Stop** o **Smetti**) interrompe la sessione fino al prossimo avvio di Solphivia. Uscendo dall’app o bloccando il telefono il microfono si spegne; quando Solphivia torna in primo piano, l’attesa riparte. Se il permesso overlay manca, si apre la schermata principale per consentirne l’attivazione.
+Dall’icona si avvia il servizio vocale e appare una sola Solphivia flottante con bolla e controlli. Il riconoscitore offline attende **Hola, Solphivia!**, risponde con TTS **Hola, Marco!** usando il nome locale e il motore/accento scelti per l’avatar, poi ascolta i comandi. La vignetta mostra le trascrizioni parziali; sono accettate alcune varianti fonetiche del nome. Dopo una risposta o l’apertura di WhatsApp l’ascolto dei comandi continua anche sopra un’altra app, finché lo schermo resta acceso e sbloccato. **Fermati**, **Basta**, **Stop** o **Smetti** spengono il microfono fino al prossimo avvio. Il pulsante **Ferma** nella notifica chiude avatar e voce. A schermo spento o bloccato il microfono si spegne; allo sblocco torna in attesa del saluto. Il modello italiano Vosk (48 MB) si scarica una volta via Wi-Fi e resta nei dati privati dell’app. AI Memory Vault resta separato.
 
-- **Apri WhatsApp**: apre l’app.
+- **Apri WhatsApp**: apre l’app nel proprio task e continua ad ascoltare il comando successivo.
 - **Condividi Ciao Marco su WhatsApp**: ShareBridge mostra un’anteprima modificabile. Solo dopo **Apri condivisione WhatsApp** passa il testo a WhatsApp; destinatario e invio finale si scelgono lì.
 - **Cerca gatti sul web**: chiede conferma e poi apre la ricerca Android.
 - **Metti un timer di 5 minuti** e **sveglia alle 7:30**: dopo conferma apre l’app Orologio con i dati proposti, lasciando all’utente il controllo finale.
@@ -24,11 +24,12 @@ Le azioni Android sopra sono un insieme limitato di comandi locali, con conferma
 ## Privacy, consumo e accessibilità
 
 - Il riconoscimento del saluto e dei comandi è elaborato sul telefono da Vosk; i campioni audio non vengono inviati né salvati. Il modello si scarica una volta via Wi-Fi e rimane nei dati privati dell’app. Se chiedi una risposta libera, la trascrizione e la risposta vengono aggiunte alla cronologia chat già esistente e inviate tramite il collegamento ChatGPT dell’app; il testo resta nelle preferenze locali della chat. Il nome è salvato separatamente nelle preferenze `voice_access`. AI Memory Vault e contatti non vengono consultati.
-- Il microfono usa un’unica registrazione `AudioRecord` per tutta la sessione in primo piano, invece di riavviare `SpeechRecognizer` alle pause. Il modello italiano piccolo è Apache-2.0; il download è consentito solo su Wi-Fi. Senza Wi-Fi al primo avvio, l’avatar resta visibile e attende la connessione. Se download, spazio o microfono falliscono, mostra un messaggio e non avvia il loop.
+- Il microfono usa un’unica registrazione `AudioRecord` nel servizio Android foreground di tipo `microphone`, avviato volontariamente dall’icona dopo il permesso `RECORD_AUDIO`. La notifica persistente offre **Ferma**. Il modello italiano piccolo è Apache-2.0; il download è consentito solo su Wi-Fi. Senza Wi-Fi al primo avvio l’avatar attende la connessione; un errore non provoca riavvii in loop.
 - Il TTS usa lo stesso motore e l’accento selezionato nelle impostazioni dell’avatar; se la voce scelta non è disponibile, Android deve offrire una voce italiana compatibile.
 - Sul Moto g35 è stata osservata la trascrizione “o la sua figlia” per il saluto. Questa variante esatta è accettata soltanto a frase conclusa, evitando di attivare una frase più lunga dalla sola trascrizione parziale.
 - Durante il TTS di Voice Access o dell’avatar flottante, il riconoscitore non elabora l’audio. Dopo la fine della voce attende 500 ms e azzera il riconoscitore prima di riprendere, per scartare la coda acustica. La registrazione rimane aperta senza riavvii. La sintesi segue il comportamento di rete del motore e della voce Android selezionati; il riconoscimento del microfono resta locale.
-- L’attesa del saluto e dei comandi resta attiva finché Solphivia è in primo piano. Nessun wake lock, biometria o ascolto a schermo spento. **Fermati** sospende l’ascolto fino al successivo avvio dell’app. Uscita e blocco fermano il microfono; al ritorno in primo piano l’attesa riparte. Durante la voce TTS e l’attesa di una risposta ChatGPT il flusso audio resta locale ma non viene passato al riconoscitore; anteprima e azioni con conferma chiudono il microfono. Un’anteprima aperta viene scartata quando l’app perde il primo piano.
+- L’ascolto continua durante l’uso di altre app a schermo acceso e sbloccato. Nessun wake lock o biometria. I broadcast di spegnimento e sblocco sospendono/riprendono la sessione; le risposte IA divenute obsolete vengono ignorate. Durante TTS e attesa ChatGPT il flusso non viene passato al riconoscitore. Anteprime e conferme chiudono temporaneamente il microfono; il blocco schermo le scarta. Le conferme sono dialoghi Android di tipo overlay, senza un’attività trasparente permanente.
+- Android deve consentire l’attività in background: nelle impostazioni Batteria dell’app attivare **Consenti l’utilizzo in background**. Se l’app è limitata, l’avvio vocale mostra un avviso. Sul Moto g35 l’impostazione va ricontrollata dopo gli aggiornamenti APK di debug.
 - La sessione aggiorna l’unico avatar flottante, la sua bolla e i suoi controlli già presenti; le conferme per effetti sul dispositivo restano dialoghi Android nativi. La verifica manuale con TalkBack e font grandi resta necessaria.
 
 ## Prova su Android
@@ -49,7 +50,7 @@ L’APK di verifica usa `it.solphivia.mobile.verification`, separato dall’inst
 5. Senza WhatsApp installato: errore leggibile, nessun crash o apertura del browser.
 6. Negare/revocare il permesso microfono, disattivare il microfono dalle impostazioni privacy, provare senza riconoscitore/TTS: messaggio di errore e nessun ascolto nascosto.
 7. Silenzio e frase errata: l’attesa del saluto continua, senza effetti. “Fermati” arresta il microfono.
-8. Durante attesa e ascolto, provare Home e blocco schermo. Verificare che il microfono si spenga, che non arrivi un comando tardivo e che l’attesa riparta tornando in Solphivia.
+8. Provare Home e WhatsApp: il microfono deve restare attivo e non silenziato, e un secondo comando deve funzionare. Spegnere/bloccare lo schermo: il microfono deve spegnersi e nessun comando tardivo deve essere eseguito. Allo sblocco deve tornare l’attesa del saluto. Provare **Fermati** e **Ferma** nella notifica: l’ascolto deve terminare.
 9. Dopo il download, disattivare Wi-Fi e ripetere il saluto: il riconoscimento deve funzionare offline. Al primo avvio senza Wi-Fi, verificare che non parta alcun download su rete mobile e che l’avatar spieghi cosa manca.
 10. TalkBack, caratteri grandi e orientamento orizzontale: verificare etichette, anteprima e conferma. Provare anche con overlay preesistente attivo: eventuale audio di altre funzioni non deve produrre un invio.
 
@@ -58,9 +59,9 @@ La CI verifica parser, compilazione degli APK e lint. Non simula un motore vocal
 ### Verifiche locali
 
 - PASS: build APK debug, APK strumentale debug e `lintDebug` con JDK 17 e SDK 35.
-- PASS: 17 controlli puri del parser di wake phrase, allowlist WhatsApp e ShareBridge.
+- PASS: 27 controlli puri del parser di wake phrase, allowlist WhatsApp e ShareBridge.
 - PASS: build APK debug, APK strumentale debug e `lintDebug` dopo l’integrazione dell’ascolto nella `MainActivity`.
-- PASS: APK debug installato sul Moto g35 5G (Android 16); la schermata chat è stata rimossa dal percorso di avvio vocale e l’attività trasparente mantiene l’ascolto mentre l’overlay mostra l’avatar. La prova parlata della frase di attivazione e dei comandi resta da confermare sulla nuova build.
+- PASS utente sulla revisione precedente: saluto TTS e apertura vocale di WhatsApp. La revisione del servizio persistente richiede la nuova prova di apertura, secondo comando, stop e blocco schermo.
 - NOT RUN: il test strumentale overlay non ha completato l’esecuzione nel runner Android personalizzato; la prima esecuzione rilevava un riferimento di test obsoleto (`homeShortcutAttempted`), che è stato rimosso. La seconda esecuzione ha restituito un bundle vuoto prima di qualsiasi risultato.
 
 ## Roadmap separata

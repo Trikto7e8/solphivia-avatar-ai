@@ -1,7 +1,6 @@
 package it.solphivia.mobile;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Handler;
@@ -32,7 +31,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Foreground voice session hosted by a transparent activity while the floating avatar stays visible. */
+/** Voice session owned by the user-started microphone foreground service. */
 final class VoiceAccessController {
     private static VoiceAccessController activeController;
     private long ignoreAudioUntil;
@@ -49,7 +48,7 @@ final class VoiceAccessController {
         }
     }
     private enum Phase { IDLE, WAKE, GREETING, COMMAND, RESPONDING, SPEAKING }
-    private final Activity host;
+    private final PetService host;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ExecutorService voiceWorker = Executors.newSingleThreadExecutor();
     private final ExecutorService modelWorker = Executors.newSingleThreadExecutor();
@@ -64,7 +63,6 @@ final class VoiceAccessController {
     private TextView status;
     private boolean resumed, ttsReady;
     private boolean englishAccentActive;
-    private boolean requestingPermission;
     private boolean sessionSuppressed;
     private boolean userStopped;
     private boolean destroyed;
@@ -74,15 +72,16 @@ final class VoiceAccessController {
     private String utterance;
     private String sessionName = "Marco";
     private android.app.AlertDialog previewDialog;
+    private android.app.AlertDialog actionDialog;
     private final Runnable timeout = () -> {
         sessionSuppressed = true;
         finishSession("La richiesta ha impiegato troppo tempo. Riapri Solphivia per riprovare.");
     };
     private final Runnable retryListening = () -> {
-        if (listeningRequested && foregroundUnlocked() && speechService != null) resumeRecognition();
+        if (listeningRequested && screenUnlocked() && speechService != null) resumeRecognition();
     };
 
-    VoiceAccessController(Activity host) {
+    VoiceAccessController(PetService host) {
         this.host = host;
         activeController = this;
         status = new TextView(host);
@@ -90,7 +89,7 @@ final class VoiceAccessController {
         if (sessionName.isEmpty()) sessionName = "Marco";
         String engine = host.getSharedPreferences("pet", 0).getString("tts_engine", "");
         tts = new TextToSpeech(host, code -> main.post(() -> {
-            if (destroyed || host.isDestroyed() || tts == null) return;
+            if (destroyed || tts == null) return;
             if (code == TextToSpeech.SUCCESS) configureTtsVoice();
             if (ttsReady) {
                 if (resumed) begin();
@@ -103,7 +102,8 @@ final class VoiceAccessController {
             public void onStart(String id) { android.util.Log.d("SolphiviaVoice", "Voice Access TTS started"); }
             public void onDone(String id) { main.post(() -> {
                 android.util.Log.d("SolphiviaVoice", "Voice Access TTS completed");
-                if (foregroundUnlocked() && (phase == Phase.GREETING || phase == Phase.SPEAKING) && id.equals(utterance)) {
+                if (screenUnlocked() && (phase == Phase.GREETING || phase == Phase.SPEAKING) && id.equals(utterance)) {
+                    main.removeCallbacks(timeout);
                     ignoreAudioUntil = android.os.SystemClock.elapsedRealtime() + 500;
                     resumeListening(Phase.COMMAND);
                 }
@@ -145,14 +145,13 @@ final class VoiceAccessController {
     }
 
     private void begin() {
-        if (!foregroundUnlocked() || !ttsReady || requestingPermission || sessionSuppressed || userStopped || destroyed) return;
+        if (!screenUnlocked() || !ttsReady || sessionSuppressed || userStopped || destroyed) return;
         if (listeningRequested) {
             if (model != null && speechService == null && !modelLoading) prepareStreaming();
             return;
         }
         if (host.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            requestingPermission = true;
-            host.requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 71); return;
+            finishSession("Consenti il microfono riaprendo Solphivia."); return;
         }
         PetService.prepareForVoiceAccess();
         PetService.setVoiceAccessVisible(true);
@@ -165,7 +164,7 @@ final class VoiceAccessController {
     }
 
     private void ensureModelAndStart() {
-        if (!listeningRequested || !foregroundUnlocked() || modelLoading) return;
+        if (!listeningRequested || !screenUnlocked() || modelLoading) return;
         if (model != null) { prepareStreaming(); return; }
         File installed = OfflineVoiceModelInstaller.modelDirectory(host);
         if (OfflineVoiceModelInstaller.isInstalled(installed)) {
@@ -210,7 +209,7 @@ final class VoiceAccessController {
             Model loaded = new Model(dir.getAbsolutePath());
             main.post(() -> {
                 modelLoading = false;
-                if (destroyed || !listeningRequested || !foregroundUnlocked()) { loaded.close(); return; }
+                if (destroyed || !listeningRequested || !screenUnlocked()) { loaded.close(); return; }
                 model = loaded;
                 unregisterWifiCallback();
                 prepareStreaming();
@@ -227,7 +226,7 @@ final class VoiceAccessController {
     }
 
     private void prepareStreaming() {
-        if (!listeningRequested || !foregroundUnlocked() || model == null) return;
+        if (!listeningRequested || !screenUnlocked() || model == null) return;
         try {
             if (recognizer == null) recognizer = new Recognizer(model, 16000.0f);
             if (speechService == null) speechService = new SpeechService(recognizer, 16000.0f);
@@ -236,7 +235,7 @@ final class VoiceAccessController {
                 @Override public void onResult(String hypothesis) { main.post(() -> handleVoskResult(hypothesis, true)); }
                 @Override public void onPartialResult(String hypothesis) {
                     main.post(() -> {
-                        if (destroyed || !listeningRequested || !foregroundUnlocked() || phase != Phase.WAKE
+                        if (destroyed || !listeningRequested || !screenUnlocked() || phase != Phase.WAKE
                                 || PetService.isAvatarSpeaking() || android.os.SystemClock.elapsedRealtime() < ignoreAudioUntil) return;
                         try {
                             String partial = new JSONObject(hypothesis).optString("partial", "").trim();
@@ -275,7 +274,7 @@ final class VoiceAccessController {
     }
 
     private void handleVoskResult(String result, boolean finalResult) {
-        if (!finalResult || destroyed || !listeningRequested || !foregroundUnlocked()
+        if (!finalResult || destroyed || !listeningRequested || !screenUnlocked()
                 || PetService.isAvatarSpeaking() || android.os.SystemClock.elapsedRealtime() < ignoreAudioUntil
                 || (phase != Phase.WAKE && phase != Phase.COMMAND)) return;
         String text;
@@ -323,7 +322,7 @@ final class VoiceAccessController {
     }
 
     private void resumeListening(Phase next) {
-        if (!listeningRequested || !foregroundUnlocked()) return;
+        if (!listeningRequested || !screenUnlocked()) return;
         phase = next;
         if (recognizer == null || speechService == null) prepareStreaming();
         else resumeRecognition();
@@ -429,7 +428,8 @@ final class VoiceAccessController {
     }
     private void confirmVoiceAction(VoiceAction action) {
         pauseForConfirmation("In attesa della tua conferma.");
-        android.app.AlertDialog actionDialog = new android.app.AlertDialog.Builder(host).setTitle(action.title).setMessage(action.detail)
+        android.view.ContextThemeWrapper theme = new android.view.ContextThemeWrapper(host, android.R.style.Theme_Material_Light_Dialog_Alert);
+        actionDialog = new android.app.AlertDialog.Builder(theme).setTitle(action.title).setMessage(action.detail)
                 .setNegativeButton("Annulla", (dialog, which) -> speakAndResume("Azione annullata."))
                 .setPositiveButton("Continua", (dialog, which) -> {
                     Intent intent;
@@ -446,10 +446,12 @@ final class VoiceAccessController {
                         intent = new Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI)
                                 .putExtra(CalendarContract.Events.TITLE, action.value.isEmpty() ? "Appuntamento" : action.value);
                     }
-                    try { host.startActivity(intent); }
-                    catch (RuntimeException error) { status.setText("Azione non disponibile sul telefono. Nessuna modifica è stata applicata."); }
+                    try { host.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); resumeListening(Phase.COMMAND); }
+                    catch (RuntimeException error) { speakAndResume("Azione non disponibile sul telefono. Nessuna modifica applicata."); }
                 }).create();
         actionDialog.setCancelable(false);
+        actionDialog.getWindow().setType(android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+        actionDialog.setOnDismissListener(dialog -> actionDialog = null);
         actionDialog.show();
     }
 
@@ -458,7 +460,7 @@ final class VoiceAccessController {
         catch (Exception ignored) { return new JSONArray(); }
     }
     private void speakAndResume(String message) {
-        if (!listeningRequested || !foregroundUnlocked()) return;
+        if (!listeningRequested || !screenUnlocked()) return;
         phase = Phase.SPEAKING; utterance = "voice-access-" + (++generation);
         pauseRecognition();
         presentAvatar(message, "talk"); status.setText(message);
@@ -483,6 +485,7 @@ final class VoiceAccessController {
             return;
         }
         phase = Phase.RESPONDING; presentAvatar("Ci penso…", "thinking");
+        final int requestGeneration = generation;
         status.setText("Solphivia sta pensando…");
         JSONArray history = loadHistory();
         try { history.put(new JSONObject().put("role", "user").put("content", request)); }
@@ -492,14 +495,14 @@ final class VoiceAccessController {
         OpenAiChatClient.respond(host, voiceWorker, history, new OpenAiChatClient.ChatCallback() {
             @Override public void onSuccess(String reply, String animationName, String motion, String mode) {
                 main.post(() -> {
-                    if (!listeningRequested || host.isFinishing() || host.isDestroyed()) return;
+                    if (!listeningRequested || destroyed || generation != requestGeneration) return;
                     host.getSharedPreferences("chat", 0).edit().putString("history", history.toString()).apply();
                     speakAndResume(reply);
                 });
             }
             @Override public void onError(String message) {
                 main.post(() -> {
-                    if (!listeningRequested || host.isFinishing() || host.isDestroyed()) return;
+                    if (!listeningRequested || destroyed || generation != requestGeneration) return;
                     speakAndResume("Non riesco a completare la richiesta: " + message);
                 });
             }
@@ -509,23 +512,25 @@ final class VoiceAccessController {
     private void openWhatsApp() {
         Intent launch = host.getPackageManager().getLaunchIntentForPackage("com.whatsapp");
         if (launch == null) { speakAndResume("WhatsApp non è installato o non è disponibile."); return; }
-        try { finishSession("WhatsApp aperto. Ascolto terminato."); host.startActivity(launch); }
+        try { host.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); resumeListening(Phase.COMMAND); }
         catch (RuntimeException error) { speakAndResume("Impossibile aprire WhatsApp."); }
     }
 
     private void showSharePreview(String draft) {
         pauseForConfirmation("Microfono spento. Controlla il testo prima di condividere.");
-        EditText editor = new EditText(host);
+        android.view.ContextThemeWrapper theme = new android.view.ContextThemeWrapper(host, android.R.style.Theme_Material_Light_Dialog_Alert);
+        EditText editor = new EditText(theme);
         editor.setContentDescription("Testo da condividere su WhatsApp");
         editor.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         editor.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(2000)});
         editor.setText(draft);
-        previewDialog = new android.app.AlertDialog.Builder(host)
+        previewDialog = new android.app.AlertDialog.Builder(theme)
                 .setTitle("ShareBridge · Anteprima")
                 .setMessage("Aprire la condivisione WhatsApp? Sceglierai il destinatario e confermerai l’invio dentro WhatsApp.")
                 .setView(editor).setNegativeButton("Annulla", (dialog, which) -> speakAndResume("Condivisione annullata."))
                 .setPositiveButton("Apri condivisione WhatsApp", null).create();
         previewDialog.setCancelable(false);
+        previewDialog.getWindow().setType(android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
         previewDialog.setOnDismissListener(dialog -> { editor.setText(""); previewDialog = null; });
         previewDialog.show();
         previewDialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
@@ -534,8 +539,8 @@ final class VoiceAccessController {
             Intent share = new Intent(Intent.ACTION_SEND).setType("text/plain")
                     .setPackage("com.whatsapp").putExtra(Intent.EXTRA_TEXT, text);
             previewDialog.dismiss();
-            try { finishSession("Condivisione aperta. Nessun invio automatico."); host.startActivity(share); status.setText("Condivisione aperta. Nessun invio automatico."); }
-            catch (RuntimeException error) { status.setText("Condivisione WhatsApp non disponibile. Nessun messaggio inviato."); }
+            try { host.startActivity(share.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); resumeListening(Phase.COMMAND); }
+            catch (RuntimeException error) { speakAndResume("Condivisione WhatsApp non disponibile. Nessun messaggio inviato."); }
         });
     }
 
@@ -550,14 +555,15 @@ final class VoiceAccessController {
             recognizer = null;
         }
     }
-    private boolean foregroundUnlocked() {
+    private boolean screenUnlocked() {
         android.os.PowerManager power = host.getSystemService(android.os.PowerManager.class);
         android.app.KeyguardManager keyguard = host.getSystemService(android.app.KeyguardManager.class);
         return resumed && power != null && power.isInteractive()
-                && keyguard != null && !keyguard.isKeyguardLocked() && !host.isFinishing() && !host.isDestroyed();
+                && keyguard != null && !keyguard.isKeyguardLocked() && !destroyed;
     }
     private void finishSession(String message) {
-        if (destroyed || host.isFinishing() || host.isDestroyed()) return;
+        if (destroyed) return;
+        android.util.Log.i("SolphiviaVoice", "Voice session finished, phase=" + phase);
         listeningRequested = false; ++generation; phase = Phase.IDLE; utterance = null;
         main.removeCallbacks(timeout); main.removeCallbacks(retryListening);
         releaseRecognizer(); unregisterWifiCallback();
@@ -567,39 +573,30 @@ final class VoiceAccessController {
         PetService.setVoiceAccessVisible(false);
         if (status != null) status.setText(message);
         PetService.setVoiceAccessPresentation(message, "sit");
-    }
-    void onPermissionResult(int request, int[] grants) {
-        if (request == 71) {
-            requestingPermission = false;
-            if (grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED) begin();
-            else {
-                sessionSuppressed = true;
-                finishSession("Microfono negato. Puoi consentirlo nelle impostazioni di Solphivia.");
-            }
-        }
+        host.onVoiceSessionFinished(this);
     }
     void onNewLaunch() { sessionSuppressed = false; userStopped = false; }
     void onResume() {
         resumed = true;
-        if (ttsReady && !listeningRequested && phase == Phase.IDLE && !requestingPermission) begin();
+        if (ttsReady && !listeningRequested && phase == Phase.IDLE) begin();
     }
-    void onWindowFocusChanged(boolean hasFocus) { if (hasFocus) onResume(); }
     void onPause() {
         resumed = false;
-        if (!requestingPermission) {
-            listeningRequested = false; ++generation; phase = Phase.IDLE; utterance = null;
-            main.removeCallbacks(timeout); main.removeCallbacks(retryListening);
-            releaseRecognizer(); unregisterWifiCallback();
-            if (modelTask != null && !modelTask.isDone()) modelTask.cancel(true);
-            modelLoading = false;
-            if (tts != null) tts.stop();
-            PetService.setVoiceAccessVisible(false);
-        }
+        listeningRequested = false; ++generation; phase = Phase.IDLE; utterance = null;
+        main.removeCallbacks(timeout); main.removeCallbacks(retryListening);
+        releaseRecognizer(); unregisterWifiCallback();
+        if (modelTask != null && !modelTask.isDone()) modelTask.cancel(true);
+        modelLoading = false;
+        if (tts != null) tts.stop();
+        PetService.setVoiceAccessVisible(false);
         if (previewDialog != null) previewDialog.dismiss();
+        if (actionDialog != null) actionDialog.dismiss();
     }
     void onDestroy() {
         destroyed = true; listeningRequested = false; ++generation;
         if (activeController == this) activeController = null;
+        if (previewDialog != null) previewDialog.dismiss();
+        if (actionDialog != null) actionDialog.dismiss();
         main.removeCallbacks(timeout); main.removeCallbacks(retryListening); releaseRecognizer(); unregisterWifiCallback();
         if (model != null) { model.close(); model = null; }
         voiceWorker.shutdownNow(); modelWorker.shutdownNow(); if (tts != null) { tts.shutdown(); tts = null; }

@@ -3,42 +3,85 @@ package it.solphivia.mobile;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.WindowManager;
+import android.Manifest;
+import android.content.pm.PackageManager;
 
-/** Invisible, touch-through foreground host; the user only sees and touches the existing floating avatar. */
+/** Permission/start relay only: no activity remains behind another app. */
 public final class VoiceAccessActivity extends Activity {
-    private VoiceAccessController controller;
+    private static VoiceAccessActivity startingActivity;
+    private boolean permissionRequested;
+    private boolean starting;
+    private final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
+
+    static void serviceStarted() {
+        VoiceAccessActivity activity = startingActivity;
+        if (activity != null) activity.main.post(() -> {
+            if (!activity.isDestroyed()) {
+                activity.finish();
+                activity.overridePendingTransition(0, 0);
+            }
+        });
+    }
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+        startingActivity = this;
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         setContentView(new android.view.View(this));
-        controller = new VoiceAccessController(this);
     }
 
     @Override protected void onResume() {
         super.onResume();
-        if (controller != null) controller.onResume();
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            if (!permissionRequested) {
+                permissionRequested = true;
+                requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 71);
+            }
+            return;
+        }
+        if (getWindow().getDecorView().hasWindowFocus()) startVoice();
     }
 
-    @Override protected void onPause() {
-        if (controller != null) controller.onPause();
-        super.onPause();
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+            startVoice();
     }
 
-    @Override protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-        if (controller != null) {
-            controller.onNewLaunch();
-            controller.onResume();
+    private void startVoice() {
+        if (starting) return;
+        if (!android.provider.Settings.canDrawOverlays(this)) { finish(); return; }
+        android.app.ActivityManager manager = getSystemService(android.app.ActivityManager.class);
+        if (android.os.Build.VERSION.SDK_INT >= 28 && manager != null && manager.isBackgroundRestricted()) {
+            android.widget.Toast.makeText(this, "Consenti l’utilizzo in background per Solphivia nelle impostazioni Batteria dell’app.", android.widget.Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+        starting = true;
+        try {
+            startForegroundService(new Intent(this, PetService.class).setAction(PetService.ACTION_VOICE_START));
+            main.postDelayed(() -> { if (!isFinishing()) finish(); }, 10000);
+        } catch (RuntimeException error) {
+            android.widget.Toast.makeText(this, "Non riesco ad avviare il microfono. Riapri Solphivia.", android.widget.Toast.LENGTH_LONG).show();
+            finish();
         }
     }
 
     @Override protected void onDestroy() {
-        if (controller != null) controller.onDestroy();
+        if (startingActivity == this) startingActivity = null;
+        main.removeCallbacksAndMessages(null);
         super.onDestroy();
+    }
+
+    @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
+        super.onRequestPermissionsResult(request, permissions, grants);
+        if (request != 71) return;
+        if (grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED) {
+            if (getWindow().getDecorView().hasWindowFocus()) startVoice();
+        }
+        else {
+            PetService.setVoiceAccessPresentation("Microfono negato. Puoi consentirlo nelle impostazioni di Solphivia.", "sit");
+            finish();
+        }
     }
 }
