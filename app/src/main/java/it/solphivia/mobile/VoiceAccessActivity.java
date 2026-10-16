@@ -51,16 +51,17 @@ public final class VoiceAccessActivity extends Activity {
     private void startVoice() {
         if (starting) return;
         if (!android.provider.Settings.canDrawOverlays(this)) { finish(); return; }
-        android.app.ActivityManager manager = getSystemService(android.app.ActivityManager.class);
-        if (android.os.Build.VERSION.SDK_INT >= 28 && manager != null && manager.isBackgroundRestricted()) {
-            android.widget.Toast.makeText(this, "Consenti l’utilizzo in background per Solphivia nelle impostazioni Batteria dell’app.", android.widget.Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
+        // Battery restriction state can remain cached after the user allows background use.
+        // Start from this focused activity and let Android enforce actual FGS permissions.
         starting = true;
         try {
             startForegroundService(new Intent(this, PetService.class).setAction(PetService.ACTION_VOICE_START));
-            main.postDelayed(() -> { if (!isFinishing()) finish(); }, 10000);
+            main.postDelayed(() -> {
+                if (!isFinishing()) {
+                    android.widget.Toast.makeText(this, "Android non ha avviato l’ascolto. Riapri Solphivia per riprovare.", android.widget.Toast.LENGTH_LONG).show();
+                    finish();
+                }
+            }, 10000);
         } catch (RuntimeException error) {
             android.widget.Toast.makeText(this, "Non riesco ad avviare il microfono. Riapri Solphivia.", android.widget.Toast.LENGTH_LONG).show();
             finish();
