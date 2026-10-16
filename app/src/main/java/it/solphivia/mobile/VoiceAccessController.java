@@ -36,6 +36,12 @@ final class VoiceAccessController {
     private static VoiceAccessController activeController;
     private long ignoreAudioUntil;
     private String lastWakePartial = "";
+    private final Runnable stableWake = () -> {
+        if (this.phase != Phase.WAKE || !VoiceAccessRules.wake(lastWakePartial)) return;
+        try {
+            handleVoskResult(new JSONObject().put("text", lastWakePartial).toString(), true);
+        } catch (JSONException ignored) { }
+    };
 
     static void onAvatarSpeechChanged(boolean speaking) {
         VoiceAccessController controller = activeController;
@@ -239,12 +245,15 @@ final class VoiceAccessController {
                                 || PetService.isAvatarSpeaking() || android.os.SystemClock.elapsedRealtime() < ignoreAudioUntil) return;
                         try {
                             String partial = new JSONObject(hypothesis).optString("partial", "").trim();
-                            if (partial.isEmpty() || partial.equals(lastWakePartial)) return;
+                            if (partial.equals(lastWakePartial)) return;
+                            main.removeCallbacks(stableWake);
                             lastWakePartial = partial;
-                            // Common-word aliases must wait for the complete utterance.
+                            if (partial.isEmpty()) return;
+                            // Common-word aliases require a stable full phrase, never a prefix.
                             if (VoiceAccessRules.wake(partial) && VoiceAccessRules.wakeCandidate(partial)) {
                                 handleVoskResult(new JSONObject().put("text", partial).toString(), true);
                             } else {
+                                if (VoiceAccessRules.wake(partial)) main.postDelayed(stableWake, 900);
                                 presentAvatar("Sto sentendo: «" + partial.substring(0, Math.min(100, partial.length())) + "»", "sit");
                             }
                         } catch (JSONException ignored) { }
@@ -280,6 +289,8 @@ final class VoiceAccessController {
         String text;
         try { text = new JSONObject(result).optString("text", "").trim(); }
         catch (JSONException ignored) { text = ""; }
+        main.removeCallbacks(stableWake);
+        lastWakePartial = "";
         if (text.isEmpty()) { if (speechService != null) speechService.reset(); return; }
         if (phase == Phase.WAKE && !VoiceAccessRules.stop(text) && !VoiceAccessRules.wake(text)) {
             if (speechService != null) speechService.reset();
@@ -294,7 +305,7 @@ final class VoiceAccessController {
             finishSession("Va bene, mi fermo.");
             return;
         }
-        if (phase == Phase.WAKE) {
+        if (VoiceAccessRules.wake(text)) {
             phase = Phase.GREETING; utterance = "voice-access-" + generation;
             String greeting = VoiceAccessRules.greeting(sessionName); status.setText(greeting);
             presentAvatar(greeting, "wave");
@@ -340,6 +351,8 @@ final class VoiceAccessController {
     }
 
     private void pauseRecognition() {
+        main.removeCallbacks(stableWake);
+        lastWakePartial = "";
         if (speechService != null) speechService.setPause(true);
     }
 
