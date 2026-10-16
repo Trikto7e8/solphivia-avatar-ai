@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.Manifest;
 import android.content.pm.PackageManager;
 
-/** Permission/start relay only: no activity remains behind another app. */
+/** Permission/start relay; its transparent task stays behind other apps. */
 public final class VoiceAccessActivity extends Activity {
     private static VoiceAccessActivity startingActivity;
     private boolean permissionRequested;
@@ -17,7 +17,8 @@ public final class VoiceAccessActivity extends Activity {
         VoiceAccessActivity activity = startingActivity;
         if (activity != null) activity.main.post(() -> {
             if (!activity.isDestroyed()) {
-                activity.finish();
+                activity.main.removeCallbacksAndMessages(null);
+                activity.moveTaskToBack(true);
                 activity.overridePendingTransition(0, 0);
             }
         });
@@ -28,6 +29,11 @@ public final class VoiceAccessActivity extends Activity {
         startingActivity = this;
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         setContentView(new android.view.View(this));
+    }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        starting = false;
     }
 
     @Override protected void onResume() {

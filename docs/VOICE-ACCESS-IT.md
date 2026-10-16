@@ -4,7 +4,7 @@
 
 - `CompanionInputActivity`: dettatura esistente tramite `ACTION_RECOGNIZE_SPEECH`, con ritorno alla chat o all’overlay. Non è una parola di attivazione.
 - `DeviceSpeech`, `PetService`, `SpeechVoiceSelection`, `VoicePreferences`: TTS e selezione delle voci già presenti. Voice Access riusa il selettore offline, con ciclo di vita TTS proprio e callback di fine saluto.
-- `PetService`: avatar flottante e servizio foreground; usa il tipo Android `microphone` durante Voice Access e `specialUse` per il solo overlay. `VoiceAccessActivity` gestisce soltanto permessi e avvio, poi si chiude: nessuna attività trasparente resta davanti alle altre app.
+- `PetService`: avatar flottante e servizio foreground; usa il tipo Android `microphone` durante Voice Access e `specialUse` per il solo overlay. `VoiceAccessActivity` gestisce permessi e avvio, poi sposta il proprio task in secondo piano, escluso dai recenti. Sul Moto g35 chiuderlo immediatamente causava il declassamento del servizio e il silenziamento del microfono. Nessuna attività trasparente resta davanti alle altre app.
 - Profilo OAuth e dati personali del vault non sono usati. Il nome scelto per Voice Access vive solo nelle preferenze locali `voice_access`.
 - Il manifest aveva permessi overlay, rete, posizione e notifiche. Questa funzione usa il permesso `RECORD_AUDIO` richiesto da Android e visibilità mirata del riconoscitore e di WhatsApp.
 
@@ -29,7 +29,7 @@ Le azioni Android sopra sono un insieme limitato di comandi locali, con conferma
 - Sul Moto g35 è stata osservata la trascrizione “o la sua figlia” per il saluto. Questa variante esatta è accettata soltanto a frase conclusa, evitando di attivare una frase più lunga dalla sola trascrizione parziale.
 - Durante il TTS di Voice Access o dell’avatar flottante, il riconoscitore non elabora l’audio. Dopo la fine della voce attende 500 ms e azzera il riconoscitore prima di riprendere, per scartare la coda acustica. La registrazione rimane aperta senza riavvii. La sintesi segue il comportamento di rete del motore e della voce Android selezionati; il riconoscimento del microfono resta locale.
 - L’ascolto continua durante l’uso di altre app a schermo acceso e sbloccato. Nessun wake lock o biometria. I broadcast di spegnimento e sblocco sospendono/riprendono la sessione; le risposte IA divenute obsolete vengono ignorate. Durante TTS e attesa ChatGPT il flusso non viene passato al riconoscitore. Anteprime e conferme chiudono temporaneamente il microfono; il blocco schermo le scarta. Le conferme sono dialoghi Android di tipo overlay, senza un’attività trasparente permanente.
-- Android deve consentire l’attività in background: nelle impostazioni Batteria dell’app attivare **Consenti l’utilizzo in background**. Se l’app è limitata, l’avvio vocale mostra un avviso. Sul Moto g35 l’impostazione va ricontrollata dopo gli aggiornamenti APK di debug.
+- Android deve consentire l’attività in background: nelle impostazioni Batteria dell’app attivare **Consenti l’utilizzo in background**. L’app tenta l’avvio dall’attività visibile e lascia ad Android la verifica dei permessi effettivi, senza bloccare preventivamente su uno stato batteria memorizzato. Sul Moto g35 l’impostazione va ricontrollata dopo gli aggiornamenti APK di debug.
 - La sessione aggiorna l’unico avatar flottante, la sua bolla e i suoi controlli già presenti; le conferme per effetti sul dispositivo restano dialoghi Android nativi. La verifica manuale con TalkBack e font grandi resta necessaria.
 
 ## Prova su Android
