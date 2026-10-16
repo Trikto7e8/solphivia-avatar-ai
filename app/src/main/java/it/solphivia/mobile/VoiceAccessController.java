@@ -242,7 +242,8 @@ final class VoiceAccessController {
                             String partial = new JSONObject(hypothesis).optString("partial", "").trim();
                             if (partial.isEmpty() || partial.equals(lastWakePartial)) return;
                             lastWakePartial = partial;
-                            if (VoiceAccessRules.wake(partial)) {
+                            // Common-word aliases must wait for the complete utterance.
+                            if (VoiceAccessRules.wake(partial) && VoiceAccessRules.wakeCandidate(partial)) {
                                 handleVoskResult(new JSONObject().put("text", partial).toString(), true);
                             } else {
                                 presentAvatar("Sto sentendo: «" + partial.substring(0, Math.min(100, partial.length())) + "»", "sit");

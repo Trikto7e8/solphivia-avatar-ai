@@ -2,7 +2,7 @@ package it.solphivia.mobile;
 
 import java.util.Locale;
 
-/** Exact allowlist: dictated text is never passed to a chat or arbitrary Intent. */
+/** Exact allowlist for activation and local app-opening commands. */
 final class VoiceAccessRules {
     static String normalize(String text) {
         return text == null ? "" : text.toLowerCase(Locale.ROOT)
@@ -11,13 +11,14 @@ final class VoiceAccessRules {
     static boolean wake(String text) {
         String value = normalize(text);
         // Vosk's Italian model can transcribe the invented name phonetically.
-        // Keep the activation constrained to the two-word greeting.
+        // Accept complete phrases only, including the transcription observed on Moto g35.
         switch (value) {
             case "hola solphivia": case "hola solfivia": case "hola solphibia":
             case "hola solvia": case "hola solivia": case "hola solphia":
             case "hola sofia": case "hola sophia":
             case "ola solphivia": case "ola solfivia": case "ola solphibia":
             case "ola solvia": case "ola sofia": case "ola sophia":
+            case "o la sua figlia":
                 return true;
             default: return false;
         }

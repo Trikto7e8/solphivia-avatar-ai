@@ -8,6 +8,10 @@ public final class VoiceAccessRulesTest {
         check(VoiceAccessRules.wake("hola solfivia"));
         check(VoiceAccessRules.wake("OLA, SOFIA!"));
         check(VoiceAccessRules.wake("hola sophia"));
+        check(VoiceAccessRules.wake("o la sua figlia"));
+        check(!VoiceAccessRules.wakeCandidate("o la sua figlia"));
+        check(!VoiceAccessRules.wake("non ho la sua figlia"));
+        check(!VoiceAccessRules.wake("o la sua figlia viene qui"));
         check(VoiceAccessRules.wakeCandidate("hola solfibia"));
         check(!VoiceAccessRules.wake("hola"));
         check(!VoiceAccessRules.wake("ciao solphivia"));
@@ -29,6 +33,6 @@ public final class VoiceAccessRulesTest {
         check(ShareBridge.preview("condividi   su WhatsApp") == null);
         check(ShareBridge.preview("condividi " + "x".repeat(2001) + " su WhatsApp") == null);
         check(ShareBridge.preview(null) == null);
-        System.out.println("PASS: 23 Voice Access / ShareBridge checks");
+        System.out.println("PASS: 27 Voice Access / ShareBridge checks");
     }
 }
