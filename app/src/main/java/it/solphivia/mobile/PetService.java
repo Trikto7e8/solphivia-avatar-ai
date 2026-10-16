@@ -66,6 +66,31 @@ public class PetService extends Service {
     private static boolean internalChatVisible;
     private static boolean voiceAccessVisible;
     private static PetService activeInstance;
+    private boolean avatarSpeaking;
+
+    static boolean isAvatarSpeaking() {
+        return activeInstance != null && activeInstance.avatarSpeaking;
+    }
+
+    static void prepareForVoiceAccess() {
+        PetService service = activeInstance;
+        if (service == null) return;
+        if (service.typingTask != null) service.main.removeCallbacks(service.typingTask);
+        service.typingTask = null;
+        service.pendingUtterance = null;
+        service.ttsPending = false;
+        service.speechTypingDone = true;
+        service.speechFinalized = true;
+        if (service.tts != null) service.tts.stop();
+        service.setAvatarSpeaking(false);
+    }
+
+    private void setAvatarSpeaking(boolean speaking) {
+        if (avatarSpeaking == speaking) return;
+        avatarSpeaking = speaking;
+        android.util.Log.d("SolphiviaVoice", "Overlay speaking=" + speaking);
+        VoiceAccessController.onAvatarSpeechChanged(speaking);
+    }
     private boolean overlayAttached;
 
     static void setInternalChatVisible(boolean visible) {
@@ -204,6 +229,7 @@ public class PetService extends Service {
 
     private void initializeTts() {
         if (tts != null) { tts.stop(); tts.shutdown(); }
+        setAvatarSpeaking(false);
         ttsReady = false; ttsInitializationComplete = false;
         int generation=++ttsGeneration;
         tts = new TextToSpeech(this, status -> main.post(() -> {
@@ -959,6 +985,7 @@ public class PetService extends Service {
         if (destroyed) return;
         if (typingTask != null) { main.removeCallbacks(typingTask); typingTask = null; }
         if (tts != null) tts.stop();
+        setAvatarSpeaking(false);
         pendingUtterance = null; ttsPending = false; speechTypingDone = true; speechFinalized = true;
         speechTarget = text; speech.setText(text); setAnimation("idle"); resetIdleTimers();
     }
@@ -982,11 +1009,12 @@ public class PetService extends Service {
         String id = "solphivia-" + serial;
         String spokenText = englishAccentActive ? ItalianEnglishAccent.respell(text) : text;
         int limit=Math.max(100,TextToSpeech.getMaxSpeechInputLength()-1);
+        setAvatarSpeaking(!spokenText.isEmpty());
         for(int start=0;start<spokenText.length();) {
             int end=Math.min(start+limit,spokenText.length());
             if(end<spokenText.length() && Character.isLowSurrogate(spokenText.charAt(end)))end--;
             int result=tts.speak(spokenText.substring(start,end),start==0?TextToSpeech.QUEUE_FLUSH:TextToSpeech.QUEUE_ADD,null,end==spokenText.length()?id:id+"-part-"+start);
-            if(result==TextToSpeech.ERROR) {tts.stop();ttsPending=false;finishSpokenLine();break;}
+            if(result==TextToSpeech.ERROR) {tts.stop();setAvatarSpeaking(false);ttsPending=false;finishSpokenLine();break;}
             start=end;
         }
         if(spokenText.isEmpty()){ttsPending=false;finishSpokenLine();}
@@ -1049,6 +1077,7 @@ public class PetService extends Service {
         main.post(() -> {
             if (destroyed) return;
             if (id == null || !id.equals("solphivia-" + currentUtteranceSerial)) return;
+            setAvatarSpeaking(false);
             ttsPending = false;
             finishSpokenLine();
         });
@@ -1308,6 +1337,7 @@ public class PetService extends Service {
 
     @Override public void onDestroy() {
         destroyed = true;
+        setAvatarSpeaking(false);
         if (activeInstance == this) activeInstance = null;
         weatherRevision++;
         getSharedPreferences("pet", 0).edit().putBoolean("overlay_active", false).apply();

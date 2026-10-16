@@ -34,6 +34,20 @@ import java.util.regex.Pattern;
 
 /** Foreground voice session hosted by a transparent activity while the floating avatar stays visible. */
 final class VoiceAccessController {
+    private static VoiceAccessController activeController;
+    private long ignoreAudioUntil;
+    private String lastWakePartial = "";
+
+    static void onAvatarSpeechChanged(boolean speaking) {
+        VoiceAccessController controller = activeController;
+        if (controller == null || controller.destroyed) return;
+        controller.pauseRecognition();
+        controller.main.removeCallbacks(controller.retryListening);
+        if (!speaking) {
+            controller.ignoreAudioUntil = android.os.SystemClock.elapsedRealtime() + 500;
+            controller.main.postDelayed(controller.retryListening, 500);
+        }
+    }
     private enum Phase { IDLE, WAKE, GREETING, COMMAND, RESPONDING, SPEAKING }
     private final Activity host;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -70,6 +84,7 @@ final class VoiceAccessController {
 
     VoiceAccessController(Activity host) {
         this.host = host;
+        activeController = this;
         status = new TextView(host);
         sessionName = host.getSharedPreferences("voice_access", 0).getString("name", "").trim();
         if (sessionName.isEmpty()) sessionName = "Marco";
@@ -85,13 +100,16 @@ final class VoiceAccessController {
             }
         }), engine.isEmpty() ? null : engine);
         tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-            public void onStart(String id) { }
+            public void onStart(String id) { android.util.Log.d("SolphiviaVoice", "Voice Access TTS started"); }
             public void onDone(String id) { main.post(() -> {
+                android.util.Log.d("SolphiviaVoice", "Voice Access TTS completed");
                 if (foregroundUnlocked() && (phase == Phase.GREETING || phase == Phase.SPEAKING) && id.equals(utterance)) {
+                    ignoreAudioUntil = android.os.SystemClock.elapsedRealtime() + 500;
                     resumeListening(Phase.COMMAND);
                 }
             }); }
             public void onError(String id) { main.post(() -> {
+                android.util.Log.w("SolphiviaVoice", "Voice Access TTS failed");
                 if (id != null && id.equals(utterance)) {
                     sessionSuppressed = true;
                     finishSession("Android non è riuscito a pronunciare la risposta. Controlla la voce selezionata nelle impostazioni TTS.");
@@ -136,6 +154,7 @@ final class VoiceAccessController {
             requestingPermission = true;
             host.requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 71); return;
         }
+        PetService.prepareForVoiceAccess();
         PetService.setVoiceAccessVisible(true);
         listeningRequested = true; phase = Phase.WAKE;
         ensureModelAndStart();
@@ -215,7 +234,22 @@ final class VoiceAccessController {
             phase = phase == Phase.IDLE ? Phase.WAKE : phase;
             if (!speechService.startListening(new RecognitionListener() {
                 @Override public void onResult(String hypothesis) { main.post(() -> handleVoskResult(hypothesis, true)); }
-                @Override public void onPartialResult(String hypothesis) { }
+                @Override public void onPartialResult(String hypothesis) {
+                    main.post(() -> {
+                        if (destroyed || !listeningRequested || !foregroundUnlocked() || phase != Phase.WAKE
+                                || PetService.isAvatarSpeaking() || android.os.SystemClock.elapsedRealtime() < ignoreAudioUntil) return;
+                        try {
+                            String partial = new JSONObject(hypothesis).optString("partial", "").trim();
+                            if (partial.isEmpty() || partial.equals(lastWakePartial)) return;
+                            lastWakePartial = partial;
+                            if (VoiceAccessRules.wake(partial)) {
+                                handleVoskResult(new JSONObject().put("text", partial).toString(), true);
+                            } else {
+                                presentAvatar("Sto sentendo: «" + partial.substring(0, Math.min(100, partial.length())) + "»", "sit");
+                            }
+                        } catch (JSONException ignored) { }
+                    });
+                }
                 @Override public void onFinalResult(String hypothesis) { main.post(() -> handleVoskResult(hypothesis, true)); }
                 @Override public void onError(Exception error) {
                     main.post(() -> {
@@ -229,6 +263,8 @@ final class VoiceAccessController {
             })) {
                 resumeRecognition();
             } else {
+                if (PetService.isAvatarSpeaking()) pauseRecognition();
+                android.util.Log.d("SolphiviaVoice", "Streaming started, overlaySpeaking=" + PetService.isAvatarSpeaking());
                 showPhaseStatus();
             }
         } catch (IOException | RuntimeException error) {
@@ -239,6 +275,7 @@ final class VoiceAccessController {
 
     private void handleVoskResult(String result, boolean finalResult) {
         if (!finalResult || destroyed || !listeningRequested || !foregroundUnlocked()
+                || PetService.isAvatarSpeaking() || android.os.SystemClock.elapsedRealtime() < ignoreAudioUntil
                 || (phase != Phase.WAKE && phase != Phase.COMMAND)) return;
         String text;
         try { text = new JSONObject(result).optString("text", "").trim(); }
@@ -247,9 +284,7 @@ final class VoiceAccessController {
         if (phase == Phase.WAKE && !VoiceAccessRules.stop(text) && !VoiceAccessRules.wake(text)) {
             if (speechService != null) speechService.reset();
             status.setText("In attesa di «Hola, Solphivia!»…");
-            if (VoiceAccessRules.wakeCandidate(text)) {
-                presentAvatar("Ho sentito «" + text + "». Prova «Hola, Solphivia!».", "listen");
-            }
+            presentAvatar("Ho sentito «" + text.substring(0, Math.min(100, text.length())) + "». Prova «Hola, Solphivia!».", "sit");
             return;
         }
         pauseRecognition();
@@ -309,9 +344,19 @@ final class VoiceAccessController {
     }
 
     private void resumeRecognition() {
+        if (phase != Phase.WAKE && phase != Phase.COMMAND) return;
+        if (PetService.isAvatarSpeaking()) { pauseRecognition(); return; }
+        long remaining = ignoreAudioUntil - android.os.SystemClock.elapsedRealtime();
+        if (remaining > 0) {
+            pauseRecognition();
+            main.removeCallbacks(retryListening);
+            main.postDelayed(retryListening, remaining);
+            return;
+        }
         if (speechService != null) {
             speechService.reset();
             speechService.setPause(false);
+            android.util.Log.d("SolphiviaVoice", "Recognition resumed in " + phase);
         }
     }
 
@@ -553,6 +598,7 @@ final class VoiceAccessController {
     }
     void onDestroy() {
         destroyed = true; listeningRequested = false; ++generation;
+        if (activeController == this) activeController = null;
         main.removeCallbacks(timeout); main.removeCallbacks(retryListening); releaseRecognizer(); unregisterWifiCallback();
         if (model != null) { model.close(); model = null; }
         voiceWorker.shutdownNow(); modelWorker.shutdownNow(); if (tts != null) { tts.shutdown(); tts = null; }
