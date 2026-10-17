@@ -18,6 +18,14 @@
 
 ## Controlli dell'utente
 
+### Voice Access e ShareBridge (modulo v0.1)
+
+Aprire volontariamente Solphivia dall’icona avvia Voice Access, se il permesso microfono e il permesso overlay sono concessi. Una notifica persistente segnala la sessione. L’ascolto rimane attivo anche sopra altre app, solo a schermo acceso e sbloccato. Il blocco schermo interrompe la registrazione; allo sblocco la sessione può riprendere. «Fermati» spegne il microfono; **Ferma** nella notifica chiude avatar e microfono. Nessuna identificazione biometrica o accesso ad AI Memory Vault. Il nome del saluto è conservato in preferenze private separate, con Marco come valore predefinito; non deriva da identificazione vocale.
+
+Voice Access trascrive localmente con Vosk; il modello italiano viene scaricato una tantum via Wi-Fi (circa 48 MB). Non salva o trasmette l’audio grezzo. Le richieste vocali libere, dopo il saluto, vengono inviate automaticamente alla connessione ChatGPT già autorizzata, con la cronologia recente descritta sopra; i comandi locali vengono gestiti sul dispositivo. Non c’è una bozza da confermare per ogni richiesta libera. Il riconoscimento viene sospeso mentre parla l’avatar per evitare che risponda alla propria voce. Il TTS usa il motore Android scelto e può usare la rete secondo quel motore e la voce selezionata. La dettatura dal pulsante microfono resta un percorso distinto e usa il riconoscitore Android. ShareBridge mostra il testo modificabile e passa quel testo a WhatsApp soltanto dopo la conferma “Apri condivisione WhatsApp”; destinatario e invio finale vengono scelti dentro WhatsApp, secondo la sua informativa. Nessun invio automatico di messaggi. [Dettagli e prove](docs/VOICE-ACCESS-IT.md).
+
+### Controlli generali
+
 - Non collegare l'account se non vuoi concedere i permessi mostrati dal browser.
 - Puoi fermare l'avatar dalla notifica persistente o revocare il permesso overlay nelle impostazioni Android.
 - La cronologia e i dati locali dell'app si possono eliminare cancellando i dati dell'app o disinstallandola; questo disconnette anche il token locale. Per revocare l'autorizzazione lato account, controlla le impostazioni di account ChatGPT/OpenAI.

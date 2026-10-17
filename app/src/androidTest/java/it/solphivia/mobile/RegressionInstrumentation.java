@@ -23,13 +23,7 @@ public final class RegressionInstrumentation extends Instrumentation {
         super.callActivityOnResume(activity);
         if(activity instanceof MainActivity){resumedMain=activity;mainResumed.countDown();}
     }
-    @Override public void callActivityOnCreate(Activity activity, Bundle state) {
-        super.callActivityOnCreate(activity, state);
-        if (activity instanceof MainActivity) try {
-            java.lang.reflect.Field field = MainActivity.class.getDeclaredField("homeShortcutAttempted");
-            field.setAccessible(true); field.setBoolean(activity, true);
-        } catch (Exception error) { throw new AssertionError(error); }
-    }
+    @Override public void callActivityOnCreate(Activity activity, Bundle state) { super.callActivityOnCreate(activity, state); }
     @Override public void onCreate(Bundle args) { super.onCreate(args); start(); }
     @Override public void onStart() {
         Bundle result = new Bundle();

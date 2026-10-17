@@ -21,6 +21,14 @@ Questa guida descrive la versione di prova attuale. Le schermate e i nomi delle 
 
 ## Usare l'avatar
 
+### Voice Access nell’alpha5
+
+Aprire l’app dall’icona avvia volontariamente l’ascolto se overlay e microfono sono autorizzati. Al primo avvio serve il Wi-Fi per scaricare il modello italiano offline (circa 48 MB). A schermo acceso e sbloccato, di’ **«Hola, Solphivia!»**, attendi il saluto e poi **«Apri WhatsApp»**. L’ascolto continua sopra le altre app. **«Fermati»** spegne il microfono; **Ferma** nella notifica chiude anche l’avatar. Il blocco schermo sospende la registrazione.
+
+Le richieste libere dopo il saluto vengono inoltrate alla connessione ChatGPT già autorizzata. Gli invii WhatsApp richiedono anteprima e conferma. Sul Moto g35, se la vignetta non cambia mentre parli, disattiva e riattiva **Consenti utilizzo in background** nelle impostazioni batteria della sola app e riaprila: Android può ripristinare la restrizione dopo aggiornamenti debug. [Dettagli e limiti della release](docs/releases/v0.9.2-alpha5.md).
+
+### Testo e dettatura dal pulsante
+
 - Tocca la riga di testo sotto l'avatar, scrivi e premi la freccia di invio.
 - Tocca il microfono per dettare in italiano. Il riconoscimento usa il servizio vocale configurato su Android; il trattamento audio dipende da quel servizio e dalle impostazioni del telefono.
 - Usa **+** per selezionare fino a 5 file PDF, DOC/DOCX o immagini. Limite: 8 MB per file e 15 MB complessivi per invio. Il contenuto selezionato viene inviato al servizio AI per rispondere.

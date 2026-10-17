@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ShortcutInfo;
-import android.content.pm.ShortcutManager;
 import android.graphics.Insets;
 import android.graphics.Color;
 import android.graphics.Canvas;
@@ -13,7 +11,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -55,12 +52,10 @@ public class MainActivity extends Activity {
     private PetView inlinePet;
     private BubbleTail speechTail;
     private boolean authBrowser;
+    private boolean launchingVoice;
     private boolean busy;
     private boolean activityPaused;
     private boolean sendAfterConnect;
-    private boolean homeShortcutPromptPending;
-    private boolean homeShortcutAttempted;
-    private boolean notificationRequestPending;
     private boolean connectionNoticePending;
     private String queuedFirstMessage = "";
     private String currentAnimation = "idle";
@@ -78,7 +73,12 @@ public class MainActivity extends Activity {
     private DeviceSpeech inlineVoice;
 
     @Override public void onCreate(Bundle state) {
+        Intent launch = getIntent();
+        if (launch != null && Intent.ACTION_MAIN.equals(launch.getAction())
+                && launch.hasCategory(Intent.CATEGORY_LAUNCHER) && Settings.canDrawOverlays(this))
+            setTheme(R.style.CompanionRelayTheme);
         super.onCreate(state);
+        if (startFloatingVoiceIfLauncher()) return;
         VoicePreferences.initialize(this);
         inlineVoice=new DeviceSpeech(this);
         getWindow().setStatusBarColor(Color.rgb(250, 247, 252));
@@ -373,7 +373,9 @@ public class MainActivity extends Activity {
                         Toast.makeText(MainActivity.this, "Chat pronta. Puoi attivare l’avatar flottante dal messaggio di stato.", Toast.LENGTH_LONG).show();
                     }
                     showFirstUseNotice();
-                    if (!connectionNoticePending) startHomeOverlayIfReady();
+                    if (!connectionNoticePending) {
+                        submitQueuedFirstMessage();
+                    }
                 });
             }
             @Override public void onError(String message) {
@@ -654,7 +656,9 @@ public class MainActivity extends Activity {
                 .setOnDismissListener(dialog -> {
                     connectionNoticePending = false;
                     p.edit().putBoolean("plan_welcome_seen",true).apply();
-                    if (!isFinishing() && !isDestroyed()) startHomeOverlayIfReady();
+                    if (!isFinishing() && !isDestroyed()) {
+                        submitQueuedFirstMessage();
+                    }
                 }).show();
     }
 
@@ -665,14 +669,14 @@ public class MainActivity extends Activity {
 
     @Override protected void onStart() {
         super.onStart();
-        PetService.setInternalChatVisible(true);
+        if (!launchingVoice) PetService.setInternalChatVisible(true);
     }
 
     @Override protected void onStop() {
         super.onStop();
         if (!isChangingConfigurations()) {
             PetService.setInternalChatVisible(false);
-            if (!authBrowser && !homeShortcutPromptPending && Settings.canDrawOverlays(this)
+            if (!launchingVoice && !authBrowser && Settings.canDrawOverlays(this)
                     && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
                 Intent service = new Intent(this, PetService.class);
                 if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
@@ -683,118 +687,57 @@ public class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume(); activityPaused = false;
         authBrowser = OpenAiChatClient.isAuthorizing();
-        if (!authBrowser && homeShortcutAttempted && !homeShortcutPromptPending && startHomeOverlayIfReady()) return;
         if (status != null) refreshConnectionState();
     }
 
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if (startFloatingVoiceIfLauncher()) return;
         authBrowser = OpenAiChatClient.isAuthorizing();
-        if (!authBrowser && homeShortcutAttempted && !homeShortcutPromptPending) startHomeOverlayIfReady();
+    }
+
+    private boolean startFloatingVoiceIfLauncher() {
+        Intent launch = getIntent();
+        if (launch == null || !Intent.ACTION_MAIN.equals(launch.getAction())
+                || !launch.hasCategory(Intent.CATEGORY_LAUNCHER)
+                || !Settings.canDrawOverlays(this) || OpenAiChatClient.isAuthorizing()) return false;
+        getSharedPreferences("pet", 0).edit().putBoolean("overlay_off", false).apply();
+        launchingVoice = true;
+        PetService.setInternalChatVisible(false);
+        startActivity(new Intent(this, VoiceAccessActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+        overridePendingTransition(0, 0);
+        finish();
+        return true;
     }
 
     @Override public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (!hasFocus || isFinishing() || OpenAiChatClient.isAuthorizing()) return;
-        if (!homeShortcutAttempted) {
-            homeShortcutAttempted = true;
-            homeShortcutPromptPending = requestHomeScreenShortcut();
-            if (homeShortcutPromptPending) return;
-        } else {
-            homeShortcutPromptPending = false;
-        }
-        startHomeOverlayIfReady();
     }
 
-    /** Ask the Motorola launcher to place Solphivia's face icon on the Home screen. */
-    private boolean requestHomeScreenShortcut() {
-        if (Build.VERSION.SDK_INT < 26) return false;
-        try {
-        ShortcutManager manager = getSystemService(ShortcutManager.class);
-        if (manager == null || !manager.isRequestPinShortcutSupported()) return false;
-        for (ShortcutInfo pinned : manager.getPinnedShortcuts()) {
-            if ("solphivia-home".equals(pinned.getId())) {
-                Intent launch = new Intent(this, MainActivity.class)
-                        .setAction(Intent.ACTION_MAIN)
-                        .addCategory(Intent.CATEGORY_LAUNCHER)
-                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                ShortcutInfo refreshedShortcut = new ShortcutInfo.Builder(this, "solphivia-home")
-                        .setShortLabel("Solphivia")
-                        .setLongLabel("Solphivia Avatar AI")
-                        .setIcon(Icon.createWithResource(this, R.mipmap.ic_launcher))
-                        .setIntent(launch)
-                        .build();
-                Thread iconUpdater = new Thread(() -> {
-                    try {
-                        boolean updated = manager.updateShortcuts(
-                                java.util.Collections.singletonList(refreshedShortcut));
-                        android.util.Log.i("Solphivia", "Aggiornamento icona Home: " + updated);
-                    } catch (IllegalArgumentException | IllegalStateException | SecurityException error) {
-                        android.util.Log.w("Solphivia", "Impossibile aggiornare l'icona Home fissata", error);
-                    }
-                }, "solphivia-shortcut-refresh");
-                iconUpdater.start();
-                return false;
-            }
-        }
-        Intent launch = new Intent(this, MainActivity.class)
-                .setAction(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_LAUNCHER)
-                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        ShortcutInfo shortcut = new ShortcutInfo.Builder(this, "solphivia-home")
-                .setShortLabel("Solphivia")
-                .setLongLabel("Solphivia Avatar AI")
-                .setIcon(Icon.createWithResource(this, R.mipmap.ic_launcher))
-                .setIntent(launch)
-                .build();
-        return manager.requestPinShortcut(shortcut, null);
-        } catch (IllegalStateException | IllegalArgumentException | SecurityException error) {
-            android.util.Log.w("Solphivia", "Richiesta icona Home non disponibile", error);
-            return false;
-        }
-    }
-
-    /** Once setup is complete, the launcher returns directly to Home with the floating chat. */
-    private boolean startHomeOverlayIfReady() {
-        if (isFinishing() || isDestroyed() || busy || inputPending || !pendingFiles.isEmpty() || connectionNoticePending || notificationRequestPending) return false;
-        if (!Settings.canDrawOverlays(this) || !OpenAiChatClient.isConnected(this)) return false;
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED &&
-                !getSharedPreferences("pet", 0).getBoolean("notification_prompted", false)) {
-            notificationRequestPending = true;
-            getSharedPreferences("pet", 0).edit().putBoolean("notification_prompted", true).apply();
-            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 33);
-            return true;
-        }
-        getSharedPreferences("pet",0).edit().putBoolean("overlay_off",false).apply();
-        Intent service = new Intent(this, PetService.class);
-        String draft = composer == null ? "" : composer.getText().toString().trim();
-        if (!queuedFirstMessage.isEmpty()) {
-            service.putExtra(PetService.EXTRA_SEND_MESSAGE, queuedFirstMessage);
-            queuedFirstMessage = "";
-        } else if (!draft.isEmpty()) service.putExtra(PetService.EXTRA_DRAFT_MESSAGE, draft);
-        if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
-        moveTaskToBack(true);
-        finish();
-        return true;
-    }
-
-    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grants) {
-        super.onRequestPermissionsResult(requestCode, permissions, grants);
-        if (requestCode == 33) {
-            notificationRequestPending = false;
-            startHomeOverlayIfReady();
-        }
+    private void submitQueuedFirstMessage() {
+        if (queuedFirstMessage.isEmpty() || composer == null || busy) return;
+        composer.setText(queuedFirstMessage);
+        queuedFirstMessage = "";
+        sendMessage();
     }
 
     @Override protected void onPause() {
         super.onPause(); activityPaused = true;
         if(inlineVoice!=null)inlineVoice.stop();
-        if (!isFinishing() && !homeShortcutPromptPending && !authBrowser && Settings.canDrawOverlays(this) && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
+        if (!isFinishing() && !authBrowser && Settings.canDrawOverlays(this) && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
             Intent service = new Intent(this, PetService.class).setAction(PetService.ACTION_ANIMATE).putExtra(PetService.EXTRA_ANIMATION, currentAnimation);
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
         }
     }
+
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    TextView voiceStatusView() { return status; }
 
     private GradientDrawable roundRect(int color, int radius, int stroke) {
         GradientDrawable d = new GradientDrawable(); d.setColor(color); d.setCornerRadius(radius);
