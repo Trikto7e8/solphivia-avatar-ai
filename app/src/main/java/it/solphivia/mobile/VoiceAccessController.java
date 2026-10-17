@@ -80,8 +80,7 @@ final class VoiceAccessController {
     private android.app.AlertDialog previewDialog;
     private android.app.AlertDialog actionDialog;
     private final Runnable timeout = () -> {
-        sessionSuppressed = true;
-        finishSession("La richiesta ha impiegato troppo tempo. Riapri Solphivia per riprovare.");
+        recoverResponse("La risposta ha impiegato troppo tempo.");
     };
     private final Runnable retryListening = () -> {
         if (listeningRequested && screenUnlocked() && speechService != null) resumeRecognition();
@@ -117,8 +116,7 @@ final class VoiceAccessController {
             public void onError(String id) { main.post(() -> {
                 android.util.Log.w("SolphiviaVoice", "Voice Access TTS failed");
                 if (id != null && id.equals(utterance)) {
-                    sessionSuppressed = true;
-                    finishSession("Android non è riuscito a pronunciare la risposta. Controlla la voce selezionata nelle impostazioni TTS.");
+                    recoverResponse("Android non è riuscito a pronunciare la risposta.");
                 }
             }); }
         });
@@ -309,9 +307,9 @@ final class VoiceAccessController {
             phase = Phase.GREETING; utterance = "voice-access-" + generation;
             String greeting = VoiceAccessRules.greeting(sessionName); status.setText(greeting);
             presentAvatar(greeting, "wave");
+            main.postDelayed(timeout, 12000);
             if (speak(greeting, utterance) == TextToSpeech.ERROR) {
-                sessionSuppressed = true;
-                finishSession("Risposta vocale non disponibile.");
+                recoverResponse("Risposta vocale non disponibile.");
             }
         } else {
             phase = Phase.RESPONDING;
@@ -479,9 +477,18 @@ final class VoiceAccessController {
         presentAvatar(message, "talk"); status.setText(message);
         main.removeCallbacks(timeout); main.postDelayed(timeout, 45000);
         if (speak(message, utterance) == TextToSpeech.ERROR) {
-            sessionSuppressed = true;
-            finishSession("Risposta vocale non disponibile. Riprova.");
+            recoverResponse("Risposta vocale non disponibile.");
         }
+    }
+    private void recoverResponse(String message) {
+        if (destroyed || !listeningRequested || !screenUnlocked()) return;
+        ++generation;
+        utterance = null;
+        main.removeCallbacks(timeout);
+        if (tts != null) tts.stop();
+        ignoreAudioUntil = android.os.SystemClock.elapsedRealtime() + 500;
+        resumeListening(Phase.COMMAND);
+        presentAvatar(message + " Ti ascolto: puoi riprovare.", "listen");
     }
     private void pauseForConfirmation(String message) {
         ++generation; phase = Phase.IDLE; utterance = null;

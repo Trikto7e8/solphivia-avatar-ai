@@ -15,9 +15,10 @@ final class VoiceAccessRules {
         switch (value) {
             case "hola solphivia": case "hola solfivia": case "hola solphibia":
             case "hola solvia": case "hola solivia": case "hola solphia":
-            case "hola sofia": case "hola sophia":
+            case "hola sofia": case "hola sophia": case "hola solfibia":
             case "ola solphivia": case "ola solfivia": case "ola solphibia":
-            case "ola solvia": case "ola sofia": case "ola sophia":
+            case "ola solvia": case "ola sofia": case "ola sophia": case "ola solfibia":
+            case "o la solfivia": case "o la solfibia": case "oh la solfivia":
             case "o la sua figlia":
                 return true;
             default: return false;
