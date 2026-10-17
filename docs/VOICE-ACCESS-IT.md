@@ -59,11 +59,11 @@ La CI verifica parser, compilazione degli APK e lint. Non simula un motore vocal
 ### Verifiche locali
 
 - PASS: build APK debug, APK strumentale debug e `lintDebug` con JDK 17 e SDK 35.
-- PASS: 27 controlli puri del parser di wake phrase, allowlist WhatsApp e ShareBridge.
+- PASS: 33 controlli puri del parser di wake phrase, allowlist WhatsApp e ShareBridge.
 - PASS: build APK debug, APK strumentale debug e `lintDebug` dopo l’integrazione dell’ascolto nella `MainActivity`.
 - PASS sul Moto g35 (Android 16): servizio foreground di tipo microfono attivo, cattura non silenziata con WhatsApp davanti, registrazione interrotta a schermo spento/bloccato.
 - PASS utente sulla revisione del servizio: dopo lo sblocco, saluto TTS, WhatsApp visibile senza schermata nera e comando successivo **Fermati** riconosciuto. Verificato anche lo spegnimento effettivo del microfono.
-- Da ricollaudare prima della pubblicazione: affidabilità del saluto al primo tentativo. La correzione successiva accetta la trascrizione esatta «o la sua figlia» anche quando stabile per 900 ms, annulla l'attivazione se il testo cambia e riconosce nuovamente il saluto durante la sessione comandi. Non usa corrispondenze generiche con frasi comuni.
+- PASS utente del 17 ottobre 2026: saluto «Hola, Marco!», apertura WhatsApp e nuovo richiamo durante la sessione. La correzione accetta la trascrizione esatta «o la sua figlia» anche quando stabile per 900 ms, annulla l'attivazione se il testo cambia e riconosce nuovamente il saluto durante la sessione comandi. Non usa corrispondenze generiche con frasi comuni. Stabilità dopo riavvio e su altri dispositivi ancora da verificare.
 - NOT RUN: il test strumentale overlay non ha completato l’esecuzione nel runner Android personalizzato; la prima esecuzione rilevava un riferimento di test obsoleto (`homeShortcutAttempted`), che è stato rimosso. La seconda esecuzione ha restituito un bundle vuoto prima di qualsiasi risultato.
 
 ## Roadmap separata

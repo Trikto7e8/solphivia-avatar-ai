@@ -2,9 +2,11 @@
 
 # Meet Solphivia
 
+**New in alpha5 — say “Hola, Solphivia!”** Get a spoken greeting, open WhatsApp by voice, and keep talking with the floating avatar. Offline recognition; screen must remain on and unlocked. [Release notes and limits](docs/releases/v0.9.2-alpha5.md). Android testers welcome!
+
 An animated companion on your Android screen. Talk, type, attach a file, and keep your assistant's personal memory under your control.
 
-**[Try the Android alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha4)** · **[Help build Solphivia](COLLABORATE.md)** · [Leggi in italiano](README-IT.md)
+**[Try the Android alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha5)** · **[Help build Solphivia](COLLABORATE.md)** · [Leggi in italiano](README-IT.md)
 
 > Community alpha · Android available for testing · Google Play and iOS are work ahead.
 
@@ -24,7 +26,7 @@ Actual character frames from the Android app. Artwork is reserved under [ASSETS-
 
 ## Start in a few minutes
 
-1. Get the APK from the [alpha release](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha4). This is a debug test build, not a store release.
+1. Get the APK from the [alpha release](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha5). This is a debug test build, not a store release.
 2. Follow the [Italian setup guide](AVVIO-RAPIDO-IT.md), enable the overlay and choose an installed Android speech engine.
 3. Try the avatar and share a [reproducible test report](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6) using synthetic examples.
 
