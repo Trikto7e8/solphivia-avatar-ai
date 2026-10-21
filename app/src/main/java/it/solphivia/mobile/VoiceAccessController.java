@@ -75,6 +75,8 @@ final class VoiceAccessController {
     private int generation;
     private boolean listeningRequested;
     private boolean modelLoading;
+    private int streamGeneration;
+    private int streamFailures;
     private String utterance;
     private String sessionName = "Marco";
     private android.app.AlertDialog previewDialog;
@@ -83,7 +85,10 @@ final class VoiceAccessController {
         recoverResponse("La risposta ha impiegato troppo tempo.");
     };
     private final Runnable retryListening = () -> {
-        if (listeningRequested && screenUnlocked() && speechService != null) resumeRecognition();
+        if (!listeningRequested || !screenUnlocked() || destroyed
+                || (phase != Phase.WAKE && phase != Phase.COMMAND)) return;
+        if (speechService == null) prepareStreaming();
+        else resumeRecognition();
     };
 
     VoiceAccessController(PetService host) {
@@ -230,16 +235,22 @@ final class VoiceAccessController {
     }
 
     private void prepareStreaming() {
-        if (!listeningRequested || !screenUnlocked() || model == null) return;
+        if (!listeningRequested || !screenUnlocked() || model == null
+                || (phase != Phase.WAKE && phase != Phase.COMMAND)) return;
+        if (speechService != null) { resumeRecognition(); return; }
         try {
             if (recognizer == null) recognizer = new Recognizer(model, 16000.0f);
             if (speechService == null) speechService = new SpeechService(recognizer, 16000.0f);
-            phase = phase == Phase.IDLE ? Phase.WAKE : phase;
+            final int stream = ++streamGeneration;
             if (!speechService.startListening(new RecognitionListener() {
-                @Override public void onResult(String hypothesis) { main.post(() -> handleVoskResult(hypothesis, true)); }
+                @Override public void onResult(String hypothesis) { main.post(() -> {
+                    if (stream != streamGeneration) return;
+                    streamFailures = 0;
+                    handleVoskResult(hypothesis, true);
+                }); }
                 @Override public void onPartialResult(String hypothesis) {
                     main.post(() -> {
-                        if (destroyed || !listeningRequested || !screenUnlocked() || phase != Phase.WAKE
+                        if (stream != streamGeneration || destroyed || !listeningRequested || !screenUnlocked() || phase != Phase.WAKE
                                 || PetService.isAvatarSpeaking() || android.os.SystemClock.elapsedRealtime() < ignoreAudioUntil) return;
                         try {
                             String partial = new JSONObject(hypothesis).optString("partial", "").trim();
@@ -257,27 +268,45 @@ final class VoiceAccessController {
                         } catch (JSONException ignored) { }
                     });
                 }
-                @Override public void onFinalResult(String hypothesis) { main.post(() -> handleVoskResult(hypothesis, true)); }
+                @Override public void onFinalResult(String hypothesis) { main.post(() -> {
+                    if (stream != streamGeneration) return;
+                    handleVoskResult(hypothesis, true);
+                    recoverStream(stream);
+                }); }
                 @Override public void onError(Exception error) {
-                    main.post(() -> {
-                        if (!destroyed && listeningRequested) {
-                            sessionSuppressed = true;
-                            finishSession("Il microfono si è interrotto. Riapri Solphivia per riprovare.");
-                        }
-                    });
+                    main.post(() -> recoverStream(stream));
                 }
-                @Override public void onTimeout() { }
+                @Override public void onTimeout() {
+                    main.post(() -> recoverStream(stream));
+                }
             })) {
-                resumeRecognition();
+                recoverStream(stream);
             } else {
-                if (PetService.isAvatarSpeaking()) pauseRecognition();
+                resumeRecognition();
                 android.util.Log.d("SolphiviaVoice", "Streaming started, overlaySpeaking=" + PetService.isAvatarSpeaking());
                 showPhaseStatus();
             }
         } catch (IOException | RuntimeException error) {
-            sessionSuppressed = true;
-            finishSession("Riconoscimento offline non disponibile. Controlla il microfono e riapri Solphivia.");
+            recoverStream(streamGeneration);
         }
+    }
+
+    /** Recreate a terminated audio stream; unpausing a dead thread cannot restart it. */
+    private void recoverStream(int stream) {
+        if (stream != streamGeneration || destroyed || !listeningRequested || !screenUnlocked()) return;
+        releaseRecognizer();
+        main.removeCallbacks(retryListening);
+        if (host.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            finishSession("Microfono non consentito. Abilitalo nelle impostazioni e riapri Solphivia.");
+            return;
+        }
+        // Speech/confirmation completion owns the next restart in those phases.
+        if (phase != Phase.WAKE && phase != Phase.COMMAND) return;
+        long delay = Math.min(10000L, 500L << streamFailures);
+        streamFailures = Math.min(streamFailures + 1, 5);
+        status.setText("Ripristino del microfono…");
+        presentAvatar("Il microfono si è interrotto. Provo a riprendere l’ascolto…", "sit");
+        main.postDelayed(retryListening, delay);
     }
 
     private void handleVoskResult(String result, boolean finalResult) {
@@ -291,9 +320,9 @@ final class VoiceAccessController {
         lastWakePartial = "";
         if (text.isEmpty()) { if (speechService != null) speechService.reset(); return; }
         if (phase == Phase.WAKE && !VoiceAccessRules.stop(text) && !VoiceAccessRules.wake(text)) {
-            if (speechService != null) speechService.reset();
-            status.setText("In attesa di «Hola, Solphivia!»…");
-            presentAvatar("Ho sentito «" + text.substring(0, Math.min(100, text.length())) + "». Prova «Hola, Solphivia!».", "sit");
+            resumeRecognition();
+            status.setText("In ascolto, in attesa di «Hola, Solphivia!»…");
+            presentAvatar("Ho sentito «" + text.substring(0, Math.min(100, text.length())) + "». Sono ancora in ascolto: riprova «Hola, Solphivia!».", "sit");
             return;
         }
         pauseRecognition();
@@ -565,6 +594,9 @@ final class VoiceAccessController {
     }
 
     private void releaseRecognizer() {
+        ++streamGeneration; // Ignore queued callbacks from a released service.
+        main.removeCallbacks(stableWake);
+        lastWakePartial = "";
         if (speechService != null) {
             try { speechService.cancel(); } catch (RuntimeException ignored) { }
             try { speechService.shutdown(); } catch (RuntimeException ignored) { }
