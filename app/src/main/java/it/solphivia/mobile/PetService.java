@@ -1331,6 +1331,7 @@ public class PetService extends Service {
             movementAnimator.removeAllUpdateListeners(); movementAnimator.removeAllListeners();
             movementAnimator.cancel(); movementAnimator = null;
         }
+        OpenAiChatClient.cancelRequests(worker);
         worker.shutdownNow();
         weatherWorker.shutdownNow();
         if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }

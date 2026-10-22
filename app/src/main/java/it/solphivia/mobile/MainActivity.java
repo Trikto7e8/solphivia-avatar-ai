@@ -663,6 +663,7 @@ public class MainActivity extends Activity {
         main.removeCallbacksAndMessages(null);
         cancelIdleTimers();
         if (typingTask != null) main.removeCallbacks(typingTask);
+        OpenAiChatClient.cancelRequests(worker);
         worker.shutdownNow();
         super.onDestroy();
     }
