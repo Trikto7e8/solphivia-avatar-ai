@@ -63,53 +63,8 @@ import java.nio.charset.StandardCharsets;
 
 /** Home-screen overlay containing Solphivia, her speech bubble, and the chat composer. */
 public class PetService extends Service {
-    public static final String ACTION_VOICE_START = "it.solphivia.mobile.action.START_VOICE";
-    private VoiceAccessController voiceController;
-    private final android.content.BroadcastReceiver screenReceiver = new android.content.BroadcastReceiver() {
-        @Override public void onReceive(Context context, Intent intent) {
-            if (voiceController == null) return;
-            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) voiceController.onPause();
-            else voiceController.onResume();
-            startForegroundNotification();
-        }
-    };
-
-    void onVoiceSessionFinished(VoiceAccessController ended) {
-        main.post(() -> {
-            if (voiceController != ended || destroyed) return;
-            voiceController = null;
-            ended.onDestroy();
-            startForegroundNotification();
-        });
-    }
     private static boolean internalChatVisible;
-    private static boolean voiceAccessVisible;
     private static PetService activeInstance;
-    private boolean avatarSpeaking;
-
-    static boolean isAvatarSpeaking() {
-        return activeInstance != null && activeInstance.avatarSpeaking;
-    }
-
-    static void prepareForVoiceAccess() {
-        PetService service = activeInstance;
-        if (service == null) return;
-        if (service.typingTask != null) service.main.removeCallbacks(service.typingTask);
-        service.typingTask = null;
-        service.pendingUtterance = null;
-        service.ttsPending = false;
-        service.speechTypingDone = true;
-        service.speechFinalized = true;
-        if (service.tts != null) service.tts.stop();
-        service.setAvatarSpeaking(false);
-    }
-
-    private void setAvatarSpeaking(boolean speaking) {
-        if (avatarSpeaking == speaking) return;
-        avatarSpeaking = speaking;
-        android.util.Log.d("SolphiviaVoice", "Overlay speaking=" + speaking);
-        VoiceAccessController.onAvatarSpeechChanged(speaking);
-    }
     private boolean overlayAttached;
 
     static void setInternalChatVisible(boolean visible) {
@@ -117,31 +72,16 @@ public class PetService extends Service {
         if (activeInstance != null) activeInstance.updateOverlayVisibility();
     }
 
-    static void setVoiceAccessVisible(boolean visible) {
-        voiceAccessVisible = visible;
-        if (activeInstance != null) activeInstance.updateOverlayVisibility();
-    }
-
-    static void setVoiceAccessPresentation(String text, String pose) {
-        PetService service = activeInstance;
-        if (service == null || service.destroyed || service.pet == null || service.speech == null) return;
-        if (text != null) {
-            service.speechTarget = text;
-            service.speech.setText(text);
-        }
-        if (pose != null) service.setAnimation(pose);
-    }
-
     private void updateOverlayVisibility() {
         if (panel == null || destroyed) return;
-        boolean hideOverlay = internalChatVisible;
-        if (hideOverlay && overlayAttached) {
+        if (internalChatVisible && overlayAttached) {
             wm.removeViewImmediate(panel);
             overlayAttached = false;
-        } else if (!hideOverlay && !overlayAttached && Settings.canDrawOverlays(this)) {
+        } else if (!internalChatVisible && !overlayAttached && Settings.canDrawOverlays(this)) {
             try { wm.addView(panel, lp); overlayAttached = true; }
             catch (RuntimeException error) { stopSelf(); }
         }
+        if (!internalChatVisible && overlayAttached && greetWhenVisible) greetOnOpen();
     }
 
     private void updateOverlayLayout() {
@@ -150,6 +90,21 @@ public class PetService extends Service {
     public static final String ACTION_ANIMATE = "it.solphivia.mobile.action.ANIMATE";
     public static final String ACTION_MODE = "it.solphivia.mobile.action.MODE";
     public static final String ACTION_VOICE_SETTINGS = "it.solphivia.mobile.action.VOICE_SETTINGS";
+    public static final String ACTION_GREET = "it.solphivia.mobile.action.GREET";
+    private boolean greetWhenVisible;
+    static boolean voiceOutputBusy() {
+        return MainActivity.voiceBusy() || (activeInstance!=null && (activeInstance.busy || activeInstance.typingTask!=null || activeInstance.ttsPending));
+    }
+    static void voiceListening(boolean listening) {
+        if(activeInstance==null || voiceOutputBusy())return;
+        if(listening){activeInstance.cancelIdleTimers();activeInstance.setAnimation("listen");}
+        else {activeInstance.setAnimation("idle");activeInstance.resetIdleTimers();}
+    }
+    private void greetOnOpen() {
+        if (internalChatVisible) { greetWhenVisible=true;return; }
+        greetWhenVisible=false;
+        if (!busy && GreetingPolicy.claim()) { speechEndMood="wave";typeSpeech("Hola! Sono Solphivia, sono qui con te."); }
+    }
     public static final String ACTION_INPUT_DONE = "it.solphivia.mobile.action.INPUT_DONE";
     public static final String ACTION_WEATHER_LOCATION = "it.solphivia.mobile.action.WEATHER_LOCATION";
     public static final String EXTRA_ANIMATION = "animation";
@@ -244,16 +199,10 @@ public class PetService extends Service {
         VoicePreferences.initialize(this);
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         initializeTts();
-        android.content.IntentFilter filter = new android.content.IntentFilter(Intent.ACTION_SCREEN_OFF);
-        filter.addAction(Intent.ACTION_SCREEN_ON);
-        filter.addAction(Intent.ACTION_USER_PRESENT);
-        if (Build.VERSION.SDK_INT >= 33) registerReceiver(screenReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        else registerReceiver(screenReceiver, filter);
     }
 
     private void initializeTts() {
         if (tts != null) { tts.stop(); tts.shutdown(); }
-        setAvatarSpeaking(false);
         ttsReady = false; ttsInitializationComplete = false;
         int generation=++ttsGeneration;
         tts = new TextToSpeech(this, status -> main.post(() -> {
@@ -278,36 +227,17 @@ public class PetService extends Service {
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int id) {
-        android.util.Log.i("SolphiviaVoice", "Service start action=" + (intent == null ? "null" : intent.getAction()));
         if (intent != null && ACTION_STOP.equals(intent.getAction())) {
+            stopService(new Intent(this,VoiceSessionService.class));
             getSharedPreferences("pet", 0).edit().putBoolean("overlay_off", true).apply();
             stopSelf();
             return START_NOT_STICKY;
         }
         if (!Settings.canDrawOverlays(this)) { stopSelf(); return START_NOT_STICKY; }
-        boolean voiceStart = intent != null && ACTION_VOICE_START.equals(intent.getAction());
-        if (voiceStart && checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                && voiceController == null) voiceController = new VoiceAccessController(this);
         startForegroundNotification();
         if (panel == null) createOverlay();
         if (panel == null) return START_NOT_STICKY;
-        if (intent != null && ACTION_VOICE_START.equals(intent.getAction())) {
-            if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED)
-                return START_NOT_STICKY;
-            if (voiceController == null) voiceController = new VoiceAccessController(this);
-            try {
-                startForegroundNotification();
-                voiceController.onNewLaunch();
-                voiceController.onResume();
-                VoiceAccessActivity.serviceStarted();
-            } catch (SecurityException error) {
-                voiceController.onDestroy();
-                voiceController = null;
-                setVoiceAccessPresentation("Android non ha consentito il microfono. Riapri Solphivia dalla sua icona.", "sit");
-                startForegroundNotification();
-                VoiceAccessActivity.serviceStarted();
-            }
-        }
+        if (intent!=null && ACTION_GREET.equals(intent.getAction()))greetOnOpen();
         if(intent!=null && ACTION_INPUT_DONE.equals(intent.getAction())){setAnimation("idle");resetIdleTimers();}
         if (intent != null && ACTION_VOICE_SETTINGS.equals(intent.getAction())) {
             initializeTts();
@@ -337,7 +267,7 @@ public class PetService extends Service {
         if (intent != null && intent.hasExtra(EXTRA_SEND_MESSAGE) && composer != null) {
             String message = intent.getStringExtra(EXTRA_SEND_MESSAGE);
             if (message != null && !message.trim().isEmpty()) main.post(() -> {
-                if (composer != null) { composer.setText(message); sendMessage(); }
+                if (composer != null && !busy) { submitMessage(message, new ArrayList<>(), intent.getBooleanExtra("voice_message",false)); }
             });
         }
         return START_NOT_STICKY;
@@ -347,25 +277,20 @@ public class PetService extends Service {
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel("pet", "Avatar Solphivia", NotificationManager.IMPORTANCE_LOW));
         PendingIntent open = PendingIntent.getActivity(this, 0,
-                new Intent(this, MainActivity.class).setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP),
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         PendingIntent stop = PendingIntent.getService(this, 1,
                 new Intent(this, PetService.class).setAction(ACTION_STOP),
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         Notification note = new Notification.Builder(this, "pet")
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle(voiceController == null ? "Solphivia è sullo schermo" : "Solphivia · ascolto vocale")
-                .setContentText(voiceController == null ? "Tocca per riaprire Solphivia" : "Ascolto a schermo acceso · Ferma chiude avatar e microfono")
+                .setContentTitle("Solphivia è sullo schermo")
+                .setContentText("Tocca per aprire le impostazioni")
                 .setContentIntent(open).setOngoing(true)
                 .addAction(new Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, "Ferma", stop).build())
                 .build();
-        if (Build.VERSION.SDK_INT >= 29) {
-            int types = Build.VERSION.SDK_INT >= 34 ? android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE : 0;
-            if (voiceController != null && Build.VERSION.SDK_INT >= 30) types = android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
-            startForeground(1, note, types);
-            android.util.Log.i("SolphiviaVoice", "Foreground types=" + types);
-        } else startForeground(1, note);
+        if (Build.VERSION.SDK_INT >= 34) startForeground(1, note, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+        else startForeground(1, note);
     }
 
     private void createOverlay() {
@@ -525,9 +450,8 @@ public class PetService extends Service {
         composer.setOnClickListener(v -> composer.requestFocus());
         panel.setFocusableInTouchMode(true);
         panel.requestFocus();
-        if (voiceController == null) typeSpeech("Ciao, io sono Solphivia. Come posso aiutarti?");
-        else setSpeech("Preparo l’ascolto vocale…");
-        refreshWeather(true);
+        greetOnOpen();
+        refreshWeather(false);
         main.removeCallbacks(weatherRefreshTask);
         if (getSharedPreferences("weather", 0).getBoolean("enabled", false)) main.postDelayed(weatherRefreshTask, METEORINA_REFRESH_MS);
     }
@@ -593,6 +517,11 @@ public class PetService extends Service {
     }
 
     private void openInputActivity(String action) {
+        if(ACTION_PICK_VOICE.equals(action)) {
+            try {startActivity(new Intent(this,VoiceSessionActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));}
+            catch(RuntimeException error){setSpeech("Non riesco ad aprire la sessione vocale.");}
+            return;
+        }
         if (destroyed || busy) return;
         if (ACTION_PICK_VOICE.equals(action)) { setSpeech("Ti ascolto…"); cancelIdleTimers(); setAnimation("listen"); }
         try { startActivity(new Intent(this, CompanionInputActivity.class).setAction(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
@@ -618,9 +547,13 @@ public class PetService extends Service {
         if(filesButton!=null) { filesButton.setText(pendingFiles.isEmpty()?"＋":"+"+pendingFiles.size()); filesButton.setContentDescription(pendingFiles.size()+" allegati selezionati. Tieni premuto per rimuoverli."); }
     }
 
-    private void submitMessage(String text, ArrayList<String> attachmentUris) {
+    private void submitMessage(String text, ArrayList<String> attachmentUris) { submitMessage(text, attachmentUris, false); }
+
+    private void submitMessage(String text, ArrayList<String> attachmentUris, boolean voice) {
         if (destroyed) return;
         if(attachmentUris.isEmpty()) {
+            String appReply=LocalAppCommands.handle(this,text);
+            if(appReply!=null){composer.setText("");typeSpeech(appReply);return;}
             String memoryReply=MemoryCommands.handle(this,text);
             if(memoryReply!=null){composer.setText("");typeSpeech(memoryReply);return;}
         }
@@ -662,6 +595,7 @@ public class PetService extends Service {
         if (attachmentUris.isEmpty() && handleGreetingCommand(text)) return;
         if (attachmentUris.isEmpty() && handleVoiceModeCommand(text)) return;
         if (attachmentUris.isEmpty() && isShutdownCommand(text)) {
+            stopService(new Intent(this,VoiceSessionService.class));
             composer.setText("");
             ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
             getSharedPreferences("pet", 0).edit().putBoolean("overlay_off", true).apply();
@@ -680,7 +614,7 @@ public class PetService extends Service {
         busy = true; composer.setEnabled(false); sendButton.setEnabled(false);
         setAnimation("thinking"); setSpeech(attachmentUris.isEmpty() ? "Ti ascolto…" : "Sto preparando gli allegati…");
         if (attachmentUris.isEmpty()) {
-            dispatchMessage(text, new JSONArray());
+            dispatchMessage(text, new JSONArray(), voice);
             return;
         }
         try {
@@ -919,7 +853,9 @@ public class PetService extends Service {
         return AttachmentReader.read(this, uris, new long[]{0});
     }
 
-    private void dispatchMessage(String text, JSONArray attachments) {
+    private void dispatchMessage(String text, JSONArray attachments) { dispatchMessage(text, attachments, false); }
+
+    private void dispatchMessage(String text, JSONArray attachments, boolean voice) {
         if (destroyed) return;
         String storedText = text;
         if (attachments.length() > 0) {
@@ -939,12 +875,12 @@ public class PetService extends Service {
             busy = false; composer.setEnabled(true); sendButton.setEnabled(true);
             setSpeech("Non riesco a conservare gli allegati. Riprova."); return;
         }
-        OpenAiChatClient.respond(this, worker, history, attachments, new OpenAiChatClient.ChatCallback() {
+        OpenAiChatClient.respond(this, worker, history, attachments, voice, new OpenAiChatClient.ChatCallback() {
             @Override public void onSuccess(String reply, String mood, String motion, String mode) {
                 main.post(() -> {
                     if (destroyed) return;
                     getSharedPreferences("chat", 0).edit().putString("history", history.toString()).apply();
-                    pendingFiles.clear();updateFilesButton();
+                    if(!voice){pendingFiles.clear();updateFilesButton();}
                     busy = false; composer.setEnabled(true); sendButton.setEnabled(true);
                     applyContextualMode(PetService.this, mode, pet);
                     pendingMotion = preserveRunIntent(motion);
@@ -1036,20 +972,19 @@ public class PetService extends Service {
         if (destroyed) return;
         if (typingTask != null) { main.removeCallbacks(typingTask); typingTask = null; }
         if (tts != null) tts.stop();
-        setAvatarSpeaking(false);
         pendingUtterance = null; ttsPending = false; speechTypingDone = true; speechFinalized = true;
         speechTarget = text; speech.setText(text); setAnimation("idle"); resetIdleTimers();
     }
 
     private boolean handleGreetingCommand(String text) {
         String value = normalizeCommand(text).replaceAll("[.!?,;:]+", " ").replaceAll("\\s+", " ").trim();
-        if (!(value.equals("saluta") || value.equals("fai ciao") || value.equals("saluta con la mano") ||
+        if (!(VoicePhrases.greeting(text) || value.equals("saluta") || value.equals("fai ciao") || value.equals("saluta con la mano") ||
                 value.equals("ciao con la mano") || value.equals("saluta utente"))) return false;
         composer.setText("");
         ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
         speechEndMood = "wave";
         pendingMotion = "stay";
-        typeSpeech("Ciao!");
+        typeSpeech("Cosa posso fare per te?");
         return true;
     }
 
@@ -1060,12 +995,11 @@ public class PetService extends Service {
         String id = "solphivia-" + serial;
         String spokenText = englishAccentActive ? ItalianEnglishAccent.respell(text) : text;
         int limit=Math.max(100,TextToSpeech.getMaxSpeechInputLength()-1);
-        setAvatarSpeaking(!spokenText.isEmpty());
         for(int start=0;start<spokenText.length();) {
             int end=Math.min(start+limit,spokenText.length());
             if(end<spokenText.length() && Character.isLowSurrogate(spokenText.charAt(end)))end--;
             int result=tts.speak(spokenText.substring(start,end),start==0?TextToSpeech.QUEUE_FLUSH:TextToSpeech.QUEUE_ADD,null,end==spokenText.length()?id:id+"-part-"+start);
-            if(result==TextToSpeech.ERROR) {tts.stop();setAvatarSpeaking(false);ttsPending=false;finishSpokenLine();break;}
+            if(result==TextToSpeech.ERROR) {tts.stop();ttsPending=false;finishSpokenLine();break;}
             start=end;
         }
         if(spokenText.isEmpty()){ttsPending=false;finishSpokenLine();}
@@ -1128,7 +1062,6 @@ public class PetService extends Service {
         main.post(() -> {
             if (destroyed) return;
             if (id == null || !id.equals("solphivia-" + currentUtteranceSerial)) return;
-            setAvatarSpeaking(false);
             ttsPending = false;
             finishSpokenLine();
         });
@@ -1387,11 +1320,7 @@ public class PetService extends Service {
     }
 
     @Override public void onDestroy() {
-        android.util.Log.i("SolphiviaVoice", "Overlay service destroyed");
         destroyed = true;
-        unregisterReceiver(screenReceiver);
-        if (voiceController != null) { voiceController.onDestroy(); voiceController = null; }
-        setAvatarSpeaking(false);
         if (activeInstance == this) activeInstance = null;
         weatherRevision++;
         getSharedPreferences("pet", 0).edit().putBoolean("overlay_active", false).apply();
@@ -1412,5 +1341,4 @@ public class PetService extends Service {
     }
 
     @Override public IBinder onBind(Intent intent) { return null; }
-
 }

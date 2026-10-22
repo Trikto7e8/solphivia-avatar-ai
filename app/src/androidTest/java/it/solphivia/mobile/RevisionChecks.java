@@ -48,6 +48,18 @@ final class RevisionChecks {
             test.runOnMainSync(()->{try{for(Field f:PetView.class.getDeclaredFields())if(f.getType()==Bitmap[].class){f.setAccessible(true);for(Bitmap b:(Bitmap[])f.get(holder[0]))if(b==null)loaded[0]=false;}}catch(Exception e){throw new AssertionError(e);}});
             if(loaded[0])break;android.os.SystemClock.sleep(100);
         }
+        // A second live view must reuse sprite pixels even after temporary loader arrays are collected.
+        System.gc();
+        final PetView[] secondHolder=new PetView[1];test.runOnMainSync(()->secondHolder[0]=new PetView(context));
+        deadline=android.os.SystemClock.uptimeMillis()+15000;
+        boolean shared=false;
+        while(android.os.SystemClock.uptimeMillis()<deadline){
+            final boolean[] loaded={true};
+            test.runOnMainSync(()->{try{for(Field f:PetView.class.getDeclaredFields())if(f.getType()==Bitmap[].class){f.setAccessible(true);Bitmap[] original=(Bitmap[])f.get(holder[0]),second=(Bitmap[])f.get(secondHolder[0]);for(int i=0;i<second.length;i++){if(second[i]==null)loaded[0]=false;else check(second[i]==original[i],"live views share sprite pixels: "+f.getName());}}}catch(Exception e){throw new AssertionError(e);}});
+            if(loaded[0]){shared=true;break;}android.os.SystemClock.sleep(100);
+        }
+        check(shared,"second view loads shared sprites within timeout");
+        test.runOnMainSync(()->secondHolder[0].pause());
         test.runOnMainSync(()->{
             try{
                 PetView pet=holder[0];pet.layout(0,0,180,224);

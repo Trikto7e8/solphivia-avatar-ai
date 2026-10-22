@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
 import android.graphics.Insets;
 import android.graphics.Color;
 import android.graphics.Canvas;
@@ -11,6 +13,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -52,10 +55,12 @@ public class MainActivity extends Activity {
     private PetView inlinePet;
     private BubbleTail speechTail;
     private boolean authBrowser;
-    private boolean launchingVoice;
     private boolean busy;
     private boolean activityPaused;
     private boolean sendAfterConnect;
+    private boolean homeShortcutPromptPending;
+    private boolean homeShortcutAttempted;
+    private boolean notificationRequestPending;
     private boolean connectionNoticePending;
     private String queuedFirstMessage = "";
     private String currentAnimation = "idle";
@@ -71,14 +76,54 @@ public class MainActivity extends Activity {
     private Button filesButton;
     private boolean inputPending;
     private DeviceSpeech inlineVoice;
+    private boolean openingGreetingDone;
+    private boolean voiceWakeAttempted,voiceWakePermissionPending;
+    private boolean backgroundNoticePending,wakeSettingsOpened;
+    private AlertDialog backgroundDialog;
+    private static MainActivity visibleChat;
+    static void voiceServiceReady(){
+        MainActivity activity=visibleChat;
+        if(activity!=null)activity.runOnUiThread(()->{
+            if(visibleChat==activity&&!activity.activityPaused&&!activity.isFinishing())activity.startHomeOverlayIfReady();
+        });
+    }
+    static boolean voiceBusy(){return DeviceSpeech.outputBusy() || (visibleChat!=null && (visibleChat.busy || visibleChat.inputPending || visibleChat.typingTask!=null));}
+    static boolean acceptVoiceMessage(String text){
+        if(visibleChat==null)return false;
+        if(!visibleChat.busy){visibleChat.composer.setText(text);visibleChat.sendMessage(true);}
+        return true;
+    }
+    private boolean prepareOpeningWake(){
+        getSharedPreferences("voice_health",0).edit()
+            .putBoolean("wake_enabled",getSharedPreferences("pet",0).getBoolean("wake_on_open",true))
+            .putBoolean("can_overlay",Settings.canDrawOverlays(this))
+            .putBoolean("microphone_granted",checkSelfPermission("android.permission.RECORD_AUDIO")==android.content.pm.PackageManager.PERMISSION_GRANTED)
+            .putBoolean("background_restricted",VoiceSessionService.backgroundRestricted(this))
+            .putBoolean("wake_service_running",VoiceSessionService.running()).apply();
+        if(voiceWakePermissionPending)return true;
+        if(voiceWakeAttempted)return false;
+        voiceWakeAttempted=true;
+        if(!getSharedPreferences("pet",0).getBoolean("wake_on_open",true) || !Settings.canDrawOverlays(this) || VoiceSessionService.running())return false;
+        if(VoiceSessionService.backgroundRestricted(this)){
+            backgroundNoticePending=true;
+            backgroundDialog=new AlertDialog.Builder(this).setTitle("Consenti l’ascolto in background")
+                .setMessage("Android limita Solphivia in background e silenzia il microfono quando torni alla Home. Nelle informazioni dell’app apri Utilizzo batteria. Lascia attivo Consenti l’utilizzo in background; se la voce è apribile, tocca il testo e seleziona Senza limitazioni (o Senza restrizioni). Il microfono resterà indicato dalla notifica e potrai spegnerlo in ogni momento.")
+                .setPositiveButton("Apri impostazioni",(dialog,which)->{wakeSettingsOpened=true;startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName())));})
+                .setNegativeButton("Non ora",(dialog,which)->{})
+                .setOnDismissListener(dialog->backgroundNoticePending=false).show();
+            return true;
+        }
+        if(backgroundDialog!=null){backgroundDialog.dismiss();backgroundDialog=null;}
+        if(checkSelfPermission("android.permission.RECORD_AUDIO")!=android.content.pm.PackageManager.PERMISSION_GRANTED){
+            voiceWakePermissionPending=true;
+            requestPermissions(new String[]{"android.permission.RECORD_AUDIO"},82);return true;
+        }
+        startForegroundService(new Intent(this,VoiceSessionService.class).setAction(VoiceSessionService.WAKE));
+        return false;
+    }
 
     @Override public void onCreate(Bundle state) {
-        Intent launch = getIntent();
-        if (launch != null && Intent.ACTION_MAIN.equals(launch.getAction())
-                && launch.hasCategory(Intent.CATEGORY_LAUNCHER) && Settings.canDrawOverlays(this))
-            setTheme(R.style.CompanionRelayTheme);
         super.onCreate(state);
-        if (startFloatingVoiceIfLauncher()) return;
         VoicePreferences.initialize(this);
         inlineVoice=new DeviceSpeech(this);
         getWindow().setStatusBarColor(Color.rgb(250, 247, 252));
@@ -373,9 +418,7 @@ public class MainActivity extends Activity {
                         Toast.makeText(MainActivity.this, "Chat pronta. Puoi attivare l’avatar flottante dal messaggio di stato.", Toast.LENGTH_LONG).show();
                     }
                     showFirstUseNotice();
-                    if (!connectionNoticePending) {
-                        submitQueuedFirstMessage();
-                    }
+                    if (!connectionNoticePending) startHomeOverlayIfReady();
                 });
             }
             @Override public void onError(String message) {
@@ -388,21 +431,27 @@ public class MainActivity extends Activity {
         });
     }
 
-    private void sendMessage() {
+    private void sendMessage() { sendMessage(false); }
+
+    private void sendMessage(boolean voice) {
         if (authBrowser || OpenAiChatClient.isAuthorizing() || busy) return;
         String text = composer.getText().toString().trim();
         if (text.isEmpty() && pendingFiles.isEmpty()) return;
         if (text.isEmpty()) text="Puoi esaminare questi allegati e aiutarmi?";
-        if (!pendingFiles.isEmpty()) { sendInlineFiles(text); return; }
+        if (!voice && !pendingFiles.isEmpty()) { sendInlineFiles(text); return; }
+        String appReply=LocalAppCommands.handle(this,text);
+        if(appReply!=null){composer.setText("");speak(appReply,"nod","stay",false);return;}
         String memoryReply=MemoryCommands.handle(this,text);
         if(memoryReply!=null){composer.setText("");speak(memoryReply,"idle","stay",false);return;}
         if(text.equalsIgnoreCase("memoria")){composer.setText("");startActivity(new Intent(this,MemoryActivity.class));return;}
         if(text.equalsIgnoreCase("impostazioni voce")){composer.setText("");startActivity(new Intent(this,VoiceSettingsActivity.class));return;}
+        if(VoicePhrases.greeting(text)){composer.setText("");speak("Cosa posso fare per te?","wave","stay",false);return;}
         if (text.equalsIgnoreCase("nuova chat")) {
             getSharedPreferences("chat", 0).edit().remove("history").apply();
             composer.setText(""); setSpeech("Nuova chat pronta.", false); return;
         }
         if (PetService.isShutdownCommand(text)) {
+            stopService(new Intent(this,VoiceSessionService.class));
             getSharedPreferences("pet", 0).edit().putBoolean("overlay_off", true).apply();
             stopService(new Intent(this, PetService.class));
             finishAndRemoveTask();
@@ -426,7 +475,7 @@ public class MainActivity extends Activity {
         final String requestText=text;
         try {history.put(new JSONObject().put("role","user").put("content",requestText));}catch(Exception e){throw new IllegalStateException(e);}
         while(history.length()>16)history.remove(0);
-        OpenAiChatClient.respond(this, worker, history, new OpenAiChatClient.ChatCallback() {
+        OpenAiChatClient.respond(this, worker, history, new JSONArray(), voice, new OpenAiChatClient.ChatCallback() {
             @Override public void onSuccess(String reply, String animation, String motion, String mode) {
                 runOnUiThread(() -> {
                     if (isFinishing() || isDestroyed()) return;
@@ -457,6 +506,7 @@ public class MainActivity extends Activity {
 
     private void openInlineInput(String action) {
         if(busy || inputPending)return;
+        if(CompanionInputActivity.ACTION_VOICE.equals(action)){startActivity(new Intent(this,VoiceSessionActivity.class));return;}
         inputPending=true;
         try {startActivityForResult(new Intent(this,CompanionInputActivity.class).setAction(action).putExtra("inline",true),71);}
         catch(RuntimeException e){inputPending=false;status.setText("Funzione non disponibile sul telefono.");}
@@ -656,9 +706,7 @@ public class MainActivity extends Activity {
                 .setOnDismissListener(dialog -> {
                     connectionNoticePending = false;
                     p.edit().putBoolean("plan_welcome_seen",true).apply();
-                    if (!isFinishing() && !isDestroyed()) {
-                        submitQueuedFirstMessage();
-                    }
+                    if (!isFinishing() && !isDestroyed()) startHomeOverlayIfReady();
                 }).show();
     }
 
@@ -669,14 +717,16 @@ public class MainActivity extends Activity {
 
     @Override protected void onStart() {
         super.onStart();
-        if (!launchingVoice) PetService.setInternalChatVisible(true);
+        visibleChat=this;
+        PetService.setInternalChatVisible(true);
     }
 
     @Override protected void onStop() {
         super.onStop();
+        if(visibleChat==this)visibleChat=null;
         if (!isChangingConfigurations()) {
-            PetService.setInternalChatVisible(false);
-            if (!launchingVoice && !authBrowser && Settings.canDrawOverlays(this)
+            PetService.setInternalChatVisible(visibleChat!=null);
+            if (!authBrowser && !homeShortcutPromptPending && Settings.canDrawOverlays(this)
                     && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
                 Intent service = new Intent(this, PetService.class);
                 if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
@@ -686,58 +736,87 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume(); activityPaused = false;
+        if(!VoiceSessionService.running()&&!voiceWakePermissionPending)voiceWakeAttempted=false;
+        if(wakeSettingsOpened){wakeSettingsOpened=false;voiceWakeAttempted=false;}
         authBrowser = OpenAiChatClient.isAuthorizing();
+        if(!authBrowser && prepareOpeningWake())return;
+        if (!authBrowser && homeShortcutAttempted && !homeShortcutPromptPending && startHomeOverlayIfReady()) return;
         if (status != null) refreshConnectionState();
     }
 
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (startFloatingVoiceIfLauncher()) return;
+        voiceWakeAttempted=false;
         authBrowser = OpenAiChatClient.isAuthorizing();
-    }
-
-    private boolean startFloatingVoiceIfLauncher() {
-        Intent launch = getIntent();
-        if (launch == null || !Intent.ACTION_MAIN.equals(launch.getAction())
-                || !launch.hasCategory(Intent.CATEGORY_LAUNCHER)
-                || !Settings.canDrawOverlays(this) || OpenAiChatClient.isAuthorizing()) return false;
-        getSharedPreferences("pet", 0).edit().putBoolean("overlay_off", false).apply();
-        launchingVoice = true;
-        PetService.setInternalChatVisible(false);
-        startActivity(new Intent(this, VoiceAccessActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_SINGLE_TOP));
-        overridePendingTransition(0, 0);
-        finish();
-        return true;
+        if(!authBrowser && prepareOpeningWake())return;
+        if (!authBrowser && homeShortcutAttempted && !homeShortcutPromptPending) startHomeOverlayIfReady();
     }
 
     @Override public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (!hasFocus || isFinishing() || OpenAiChatClient.isAuthorizing()) return;
+        if(voiceWakePermissionPending||backgroundNoticePending)return;
+        homeShortcutAttempted=true;
+        homeShortcutPromptPending=false;
+        if(!startHomeOverlayIfReady() && !openingGreetingDone && !activityPaused){
+            openingGreetingDone=true;
+            if(GreetingPolicy.claim())speak("Hola! Sono Solphivia, sono qui con te.","wave","stay",false);
+        }
     }
 
-    private void submitQueuedFirstMessage() {
-        if (queuedFirstMessage.isEmpty() || composer == null || busy) return;
-        composer.setText(queuedFirstMessage);
-        queuedFirstMessage = "";
-        sendMessage();
+    /** Once setup is complete, the launcher returns directly to Home with the floating chat. */
+    private boolean startHomeOverlayIfReady() {
+        if(voiceWakePermissionPending||backgroundNoticePending)return false;
+        // Android must grant the microphone foreground service while this activity is visible.
+        if(!VoiceSessionService.backgroundRestricted(this)&&getSharedPreferences("pet",0).getBoolean("wake_on_open",true)
+                && checkSelfPermission("android.permission.RECORD_AUDIO")==android.content.pm.PackageManager.PERMISSION_GRANTED
+                && !VoiceSessionService.ready())return false;
+        if (isFinishing() || isDestroyed() || busy || inputPending || !pendingFiles.isEmpty() || connectionNoticePending || notificationRequestPending) return false;
+        if (!Settings.canDrawOverlays(this) || !OpenAiChatClient.isConnected(this)) return false;
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED &&
+                !getSharedPreferences("pet", 0).getBoolean("notification_prompted", false)) {
+            notificationRequestPending = true;
+            getSharedPreferences("pet", 0).edit().putBoolean("notification_prompted", true).apply();
+            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 33);
+            return true;
+        }
+        getSharedPreferences("pet",0).edit().putBoolean("overlay_off",false).apply();
+        Intent service = new Intent(this, PetService.class).setAction(PetService.ACTION_GREET);
+        String draft = composer == null ? "" : composer.getText().toString().trim();
+        if (!queuedFirstMessage.isEmpty()) {
+            service.putExtra(PetService.EXTRA_SEND_MESSAGE, queuedFirstMessage);
+            queuedFirstMessage = "";
+        } else if (!draft.isEmpty()) service.putExtra(PetService.EXTRA_DRAFT_MESSAGE, draft);
+        if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
+        moveTaskToBack(true);
+        finish();
+        return true;
+    }
+
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grants) {
+        super.onRequestPermissionsResult(requestCode, permissions, grants);
+        if(requestCode==82){
+            voiceWakePermissionPending=false;
+            if(grants.length>0 && grants[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){
+                startForegroundService(new Intent(this,VoiceSessionService.class).setAction(VoiceSessionService.WAKE));
+            }else Toast.makeText(this,"Per il richiamo automatico serve il permesso microfono.",Toast.LENGTH_LONG).show();
+            startHomeOverlayIfReady();return;
+        }
+        if (requestCode == 33) {
+            notificationRequestPending = false;
+            startHomeOverlayIfReady();
+        }
     }
 
     @Override protected void onPause() {
         super.onPause(); activityPaused = true;
         if(inlineVoice!=null)inlineVoice.stop();
-        if (!isFinishing() && !authBrowser && Settings.canDrawOverlays(this) && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
+        if (!isFinishing() && !homeShortcutPromptPending && !authBrowser && Settings.canDrawOverlays(this) && !getSharedPreferences("pet",0).getBoolean("overlay_off",false)) {
             Intent service = new Intent(this, PetService.class).setAction(PetService.ACTION_ANIMATE).putExtra(PetService.EXTRA_ANIMATION, currentAnimation);
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
         }
     }
-
-    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-    TextView voiceStatusView() { return status; }
 
     private GradientDrawable roundRect(int color, int radius, int stroke) {
         GradientDrawable d = new GradientDrawable(); d.setColor(color); d.setCornerRadius(radius);

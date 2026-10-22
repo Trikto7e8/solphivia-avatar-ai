@@ -2,11 +2,11 @@
 
 # Ti presento Solphivia
 
-**Novità alpha5 — «Hola, Solphivia!»** Saluto a voce, apertura di WhatsApp e altri comandi con un solo avatar flottante. Riconoscimento offline, a schermo acceso e sbloccato. [Novità, installazione e limiti](docs/releases/v0.9.2-alpha5.md). Cerchiamo tester Android!
+**Novità alpha9 — comandi senza toccare Invia.** Di’ «Hola Solphivia», attendi la risposta e chiedi qualcosa o apri WhatsApp. Attesa del richiamo locale; il riconoscitore Android dei comandi può usare Internet. Niente conferma della memoria per le richieste vocali. [Prove, installazione e limiti](docs/releases/v0.9.2-alpha9.md).
 
 Una compagna animata sullo schermo Android. Puoi parlarle, scriverle, allegare un file e personalizzare la memoria dell'assistente mantenendone il controllo.
 
-**[Prova l’alpha Android](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha5)** · **[Aiutaci a farla crescere](COLLABORATE.md)** · [Read in English](README.md)
+**[Prova l’alpha Android](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha9)** · **[Aiutaci a farla crescere](COLLABORATE.md)** · [Read in English](README.md)
 
 > Alpha comunitaria · Android disponibile per le prove · Google Play e iOS sono obiettivi da realizzare.
 
@@ -26,7 +26,7 @@ Fotogrammi reali del personaggio nell’app Android. Le illustrazioni restano ri
 
 ## Comincia in pochi minuti
 
-1. Scarica l’APK dalla [release alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha5). È una build debug di prova, non una versione degli store.
+1. Scarica l’APK dalla [release alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha9). È una build debug di prova, non una versione degli store.
 2. Segui la [guida al primo avvio](AVVIO-RAPIDO-IT.md), attiva l’avatar flottante e scegli un motore vocale Android installato.
 3. Prova l’avatar e condividi un [test riproducibile](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6) con esempi inventati.
 
@@ -112,8 +112,12 @@ Scrivi `scegli tu` o `modalità auto` per la scelta contestuale. I comandi espli
 - Radar DPC aggiornato: dati, timestamp ed errori visibili. Segnala echi vicini, senza stimare direzione o tempo di arrivo.
 - Sonno animato, proporzioni corrette e schermata `☰ → Prova animazioni`; 108 sprite e 1248 combinazioni verificate.
 
-Scarica l’APK dalla [pre-release v0.9.2-alpha5](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha5). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.
+Scarica l’APK dalla [pre-release v0.9.2-alpha5](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha9). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.
 
 ## Voice Access e ShareBridge (MVP del modulo v0.1)
 
 Saluto “Hola, Solphivia!”, risposta personalizzata, apertura di WhatsApp e condivisione con anteprima e conferma. Vedi [funzioni, privacy, limiti e test Android](docs/VOICE-ACCESS-IT.md). La numerazione 0.1 riguarda il modulo, non sostituisce la versione dell’app.
+
+## Verifica corrente — 22 ottobre 2026
+
+Alpha9 (38): compilazione, Lint e controlli isolati superati. Confermati dall’utente richiamo, risposta vocale, apertura WhatsApp e invio automatico. Memoria personale e allegati non vengono aggiunti alle richieste vocali; la conferma resta nella chat scritta. Schermo bloccato, consumi prolungati e altri dispositivi restano da verificare.

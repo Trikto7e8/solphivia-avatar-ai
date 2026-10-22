@@ -16,7 +16,7 @@ import java.io.InputStream;
 /** Sprite-state controller for Solphivia's expressions, movement, rest, and outfits. */
 public class PetView extends View {
     private static final java.util.concurrent.ExecutorService SPRITE_LOADER = java.util.concurrent.Executors.newSingleThreadExecutor();
-    private static final java.util.Map<String, java.lang.ref.WeakReference<Bitmap[]>> SPRITES = new java.util.HashMap<>();
+    private static final java.util.Map<String, java.util.List<java.lang.ref.WeakReference<Bitmap>>> SPRITES = new java.util.HashMap<>();
     private static final android.os.Handler MAIN = new android.os.Handler(android.os.Looper.getMainLooper());
     private static final String TAG = "SolphiviaPet";
     private static final int IDLE_FRAME_COUNT = 4;
@@ -105,18 +105,21 @@ public class PetView extends View {
         Context app = context.getApplicationContext();
         java.lang.ref.WeakReference<PetView> view = new java.lang.ref.WeakReference<>(this);
         SPRITE_LOADER.execute(() -> {
-            java.lang.ref.WeakReference<Bitmap[]> cached = SPRITES.get(name);
-            Bitmap[] frames = cached == null ? null : cached.get();
-            if (frames == null) {
-                frames = new Bitmap[target.length];
-                for (int i = 0; i < frames.length; i++) {
+            java.util.List<java.lang.ref.WeakReference<Bitmap>> cached = SPRITES.get(name);
+            Bitmap[] frames = new Bitmap[target.length];
+            java.util.List<java.lang.ref.WeakReference<Bitmap>> references=new java.util.ArrayList<>();
+            for (int i = 0; i < frames.length; i++) {
+                frames[i]=cached!=null&&i<cached.size()?cached.get(i).get():null;
+                if(frames[i]==null){
                     String path = String.format(java.util.Locale.ROOT, "solphivia/%s/frame_%02d.png", name, i);
                     try (InputStream input = app.getAssets().open(path)) {
                         frames[i] = BitmapFactory.decodeStream(input, null, options);
                     } catch (IOException | RuntimeException error) { Log.e(TAG, "Impossibile caricare " + path, error); }
                 }
-                SPRITES.put(name, new java.lang.ref.WeakReference<>(frames));
+                references.add(new java.lang.ref.WeakReference<>(frames[i]));
             }
+            // Keep weak references to the bitmaps held by live views, rather than a temporary array.
+            SPRITES.put(name,references);
             Bitmap[] ready = frames;
             MAIN.post(() -> {
                 PetView current = view.get();

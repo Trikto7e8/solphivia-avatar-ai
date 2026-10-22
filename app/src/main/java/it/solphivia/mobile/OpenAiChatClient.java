@@ -209,9 +209,24 @@ final class OpenAiChatClient {
 
     static void respond(Context context, ExecutorService worker, JSONArray history,
                         JSONArray attachments, ChatCallback callback) {
+        respond(context,worker,history,attachments,false,callback);
+    }
+
+    static JSONArray requestHistory(JSONArray history, boolean voice) throws Exception {
+        JSONArray copy=new JSONArray(history.toString());
+        if(voice)for(int i=0;i<copy.length();i++){JSONObject line=copy.optJSONObject(i);if(line!=null)line.remove("attachments");}
+        return copy;
+    }
+
+    static void respond(Context context, ExecutorService worker, JSONArray history,
+                        JSONArray attachments, boolean voice, ChatCallback callback) {
         if (worker.isShutdown()) return;
         try {
-            JSONArray frozenHistory = new JSONArray(history.toString());
+            JSONArray frozenHistory = requestHistory(history,voice);
+            if(voice){
+                // Speaking is an explicit send. Personal vault memory and files still require their separate review.
+                respondApproved(context,worker,frozenHistory,new JSONArray(),"",callback);return;
+            }
             JSONArray frozenAttachments = new JSONArray(attachments.toString());
             String memory = context.getSharedPreferences("memory", 0).getBoolean("enabled", true) ? AssistantMemory.read(context) : "";
             StringBuilder preview = new StringBuilder("Conversazione inviata:\n");

@@ -25,7 +25,11 @@ public final class OverlayLifecycleInstrumentation extends Instrumentation {
     }
     @Override public void callActivityOnCreate(Activity activity, Bundle state) {
         super.callActivityOnCreate(activity, state);
+        activity.getSharedPreferences("pet",0).edit().putBoolean("wake_on_open",false).apply();
         if (activity instanceof MainActivity) try {
+            Field f=MainActivity.class.getDeclaredField("homeShortcutAttempted");
+            f.setAccessible(true); f.setBoolean(activity,true);
+            // Keep the test chat open instead of taking the connected launcher's Home shortcut.
             Field busy=MainActivity.class.getDeclaredField("busy");
             busy.setAccessible(true);busy.setBoolean(activity,true);
         } catch (Exception e) { throw new AssertionError(e); }
@@ -35,6 +39,16 @@ public final class OverlayLifecycleInstrumentation extends Instrumentation {
         Field f=PetService.class.getDeclaredField(name);f.setAccessible(true);return f.get(instance);
     }
     private void progress(String text) { Bundle b=new Bundle();b.putString("stream",text+"\n");sendStatus(0,b); }
+    private void awaitOverlay(Object service,boolean expected,String message)throws Exception{
+        long end=android.os.SystemClock.elapsedRealtime()+5000;
+        boolean[] attached={false};
+        do{
+            runOnMainSync(()->{try{attached[0]=Boolean.TRUE.equals(field(service,"overlayAttached"));}catch(Exception e){throw new AssertionError(e);}});
+            if(attached[0]==expected)return;
+            android.os.SystemClock.sleep(100);
+        }while(android.os.SystemClock.elapsedRealtime()<end);
+        RevisionChecks.check(false,message+"; internalChatVisible="+field(null,"internalChatVisible"));
+    }
     @Override public void onStart() {
         Bundle result=new Bundle();
         Context context=getTargetContext();
@@ -50,19 +64,13 @@ public final class OverlayLifecycleInstrumentation extends Instrumentation {
             RevisionChecks.check(service!=null,"overlay service running");
             RevisionChecks.check(Boolean.FALSE.equals(field(service,"overlayAttached")),"no floating window over internal chat; visible="+field(null,"internalChatVisible")+", finishing="+chat.isFinishing()+", focus="+chat.hasWindowFocus());
             progress("hidden window verified");
-            runOnMainSync(()->{PetService.setInternalChatVisible(false);PetService.setVoiceAccessVisible(true);});
-            android.os.SystemClock.sleep(300);
-            RevisionChecks.check(Boolean.TRUE.equals(field(service,"overlayAttached")),"voice listening keeps the single floating avatar visible");
-            runOnMainSync(()->{PetService.setVoiceAccessVisible(false);PetService.setInternalChatVisible(true);});
-            android.os.SystemClock.sleep(300);
-            RevisionChecks.check(Boolean.FALSE.equals(field(service,"overlayAttached")),"returning to chat keeps floating avatar hidden");
             runOnMainSync(chat::finish);android.os.SystemClock.sleep(1000);
-            RevisionChecks.check(Boolean.TRUE.equals(field(service,"overlayAttached")),"floating window returns after chat closes");
+            awaitOverlay(service,true,"floating window returns after chat closes");
             Activity reopened=openChat(context);
             progress("chat reopened");android.os.SystemClock.sleep(500);
             RevisionChecks.check(Boolean.FALSE.equals(field(service,"overlayAttached")),"reopening chat hides floating window again");
             runOnMainSync(reopened::finish);android.os.SystemClock.sleep(500);
-            RevisionChecks.check(Boolean.TRUE.equals(field(service,"overlayAttached")),"second exit restores floating window");
+            awaitOverlay(service,true,"second exit restores floating window");
             result.putString("stream","PASS: internal chat hides floating window; exiting restores it; repeated transition succeeds\n");
             finish(Activity.RESULT_OK,result);
         } catch(Throwable e) {

@@ -1,0 +1,14 @@
+Vosk API 0.3.75 — Copyright Alpha Cephei Inc. — Apache License 2.0.
+https://github.com/alphacep/vosk-api
+
+Italian speech model vosk-model-small-it-0.22 — Apache License 2.0,
+as declared by the publisher: https://alphacephei.com/vosk/models
+Downloaded from https://alphacephei.com/vosk/models/vosk-model-small-it-0.22.zip
+Archive SHA-256: 9ec65e75861d1c6c2e457cccd932705340dcdf233f5b239f00733b4de0bf3267
+Original model README retained in wake-it/README.
+
+Java Native Access 5.18.1 — used under Apache License 2.0.
+https://github.com/java-native-access/jna/tree/5.18.1
+See jna-LICENSE.txt and jna-APACHE-2.0.txt.
+
+The included Apache license texts apply to these third-party components.

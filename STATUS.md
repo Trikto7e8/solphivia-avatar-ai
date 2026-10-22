@@ -1,5 +1,5 @@
-# Project status
+# Current status / Stato corrente
 
-Version **0.9.2-alpha2** (code 31) was built, passed Android Lint and isolated Motorola regression tests, and was installed on the Motorola. On 13 October 2026 the user confirmed it works and approved this alpha. Further improvements and listening evaluation remain; The user has confirmed that eSpeak works on the phone. See the [verification report](VERIFICA-0.9.2-alpha2.md).
+0.9.2-alpha9 (38), 22 October 2026. User-confirmed wake, spoken response, WhatsApp opening and automatic voice requests. Build, Android Lint and isolated command/consent checks passed. Community alpha; long battery sessions, locked-screen behavior and other devices remain to test.
 
-Community alpha; target/compile SDK 35, JDK 17. Provider adapters and Google Play preparation remain on the roadmap.
+[Release notes](docs/releases/v0.9.2-alpha9.md) · [Help build Solphivia](COLLABORATE.md)

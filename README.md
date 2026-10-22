@@ -2,11 +2,11 @@
 
 # Meet Solphivia
 
-**New in alpha5 — say “Hola, Solphivia!”** Get a spoken greeting, open WhatsApp by voice, and keep talking with the floating avatar. Offline recognition; screen must remain on and unlocked. [Release notes and limits](docs/releases/v0.9.2-alpha5.md). Android testers welcome!
+**New in alpha9 — hands-free commands.** Say “Hola Solphivia”, wait for the spoken reply, then ask a question or open WhatsApp. Local wake listening; Android command recognition may use the network. Voice requests no longer stop at the memory confirmation screen. [What is tested, setup and limits](docs/releases/v0.9.2-alpha9.md).
 
 An animated companion on your Android screen. Talk, type, attach a file, and keep your assistant's personal memory under your control.
 
-**[Try the Android alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha5)** · **[Help build Solphivia](COLLABORATE.md)** · [Leggi in italiano](README-IT.md)
+**[Try the Android alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha9)** · **[Help build Solphivia](COLLABORATE.md)** · [Leggi in italiano](README-IT.md)
 
 > Community alpha · Android available for testing · Google Play and iOS are work ahead.
 
@@ -26,7 +26,7 @@ Actual character frames from the Android app. Artwork is reserved under [ASSETS-
 
 ## Start in a few minutes
 
-1. Get the APK from the [alpha release](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha5). This is a debug test build, not a store release.
+1. Get the APK from the [alpha release](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha9). This is a debug test build, not a store release.
 2. Follow the [Italian setup guide](AVVIO-RAPIDO-IT.md), enable the overlay and choose an installed Android speech engine.
 3. Try the avatar and share a [reproducible test report](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6) using synthetic examples.
 
@@ -52,7 +52,7 @@ The goal is to keep Solphivia's avatar and interaction layer independent from an
 2. Local connections to a model server such as LM Studio or Ollama.
 3. Additional cloud provider adapters, configured with each user's own account or credentials.
 4. A later on-device model option, subject to phone memory, performance, and model licenses.
-5. A voice conversation mode that renders Solphivia's face or full-body avatar in Solphivia itself.
+5. Better multilingual voice, wake accuracy and battery measurements across devices.
 
 These are roadmap items, not current features. Each provider will need its own adapter; compatibility with every LLM cannot be promised.
 
@@ -92,7 +92,7 @@ Code contributions are welcome. Please read `CONTRIBUTING.md` first. Do not post
 
 ## Current verification status
 
-Version **0.9.2-alpha4** (code 33) was built, passed Android Lint and isolated Motorola regression tests, and was installed on the Motorola. The alpha4 update was tested and installed on 14 October 2026. Further improvements and listening evaluation remain; voice quality depends on the selected Android engine and installed voices. See the [verification report](VERIFICA-0.9.2-alpha4.md).
+Version **0.9.2-alpha9** (code 38) passed build, Android Lint and isolated command/consent checks. The device user confirmed wake, WhatsApp opening and automatic voice submission on 22 October 2026. Screen-lock behavior, long battery sessions and other devices still need testing. [Release notes](docs/releases/v0.9.2-alpha9.md).
 
 ## New in alpha4
 
@@ -112,4 +112,4 @@ Use `scegli tu` or `modalità auto` to enable contextual outfit choice. Explicit
 - Radar DPC aggiornato: dati, timestamp ed errori visibili. Segnala echi vicini, senza stimare direzione o tempo di arrivo.
 - Sonno animato, proporzioni corrette e schermata `☰ → Prova animazioni`; 108 sprite e 1248 combinazioni verificate.
 
-Scarica l’APK dalla [pre-release v0.9.2-alpha2](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha4). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.
+Scarica l’APK dalla [pre-release v0.9.2-alpha2](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha9). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.

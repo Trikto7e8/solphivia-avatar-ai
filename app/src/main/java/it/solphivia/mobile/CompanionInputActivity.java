@@ -212,11 +212,8 @@ public class CompanionInputActivity extends Activity {
     }
 
     private void openVoiceInput() {
-        Intent voice = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        voice.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        voice.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.ITALIAN.toLanguageTag());
+        Intent voice = VoicePhrases.recognitionIntent();
         voice.putExtra(RecognizerIntent.EXTRA_PROMPT, "Parla con Solphivia");
-        voice.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
         try { externalRequestPending = true; startActivityForResult(voice, REQUEST_VOICE); }
         catch (Exception e) {
             Toast.makeText(this, "Riconoscimento vocale non disponibile sul telefono.", Toast.LENGTH_LONG).show();
@@ -252,8 +249,9 @@ public class CompanionInputActivity extends Activity {
         if (requestCode == REQUEST_VOICE) {
             ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             if (matches != null && !matches.isEmpty() && !matches.get(0).trim().isEmpty()) {
-                if(getIntent().getBooleanExtra("inline",false)) { setResult(RESULT_OK,new Intent().putExtra("dictation",matches.get(0))); }
-                else { Intent send = new Intent(this, PetService.class).putExtra(PetService.EXTRA_DRAFT_MESSAGE, matches.get(0)); startForegroundService(send); }
+                String recognized=VoicePhrases.best(matches);
+                if(getIntent().getBooleanExtra("inline",false)) { setResult(RESULT_OK,new Intent().putExtra("dictation",recognized)); }
+                else { Intent send = new Intent(this, PetService.class).putExtra(PetService.EXTRA_DRAFT_MESSAGE, recognized); startForegroundService(send); }
             }
         } else if (requestCode == REQUEST_FILES) {
             ArrayList<Uri> selected = new ArrayList<>();

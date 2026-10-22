@@ -1,5 +1,7 @@
-name: Voice Access verification
+name: Android alpha verification
 on:
+  push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -17,25 +19,13 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
           log-accepted-android-sdk-licenses: false
-      - name: Verify command allowlist and ShareBridge parsing
-        run: |
-          mkdir -p /tmp/voice-tests
-          javac -encoding UTF-8 -d /tmp/voice-tests app/src/main/java/it/solphivia/mobile/VoiceAccessRules.java app/src/main/java/it/solphivia/mobile/ShareBridge.java verification/VoiceAccessRulesTest.java
-          java -cp /tmp/voice-tests it.solphivia.mobile.VoiceAccessRulesTest
-      - name: Build isolated APK and instrumentation tests
-        run: bash gradlew --no-daemon -PverificationBuild assembleDebug assembleDebugAndroidTest
-      - name: Android lint
-        run: bash gradlew --no-daemon -PverificationBuild lintDebug
+      - name: Build isolated app and instrumentation tests
+        run: bash gradlew --no-daemon -PverificationBuild assembleDebug assembleDebugAndroidTest lintDebug
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: voice-access-verification
+          name: android-verification
           path: |
             app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/androidTest/debug/*.apk
             app/build/reports/lint-results-debug.*
-      - name: Build APK with existing application ID for local update signing
-        run: bash gradlew --no-daemon assembleDebug
-      - uses: actions/upload-artifact@v4
-        with:
-          name: voice-access-update
-          path: app/build/outputs/apk/debug/*.apk

@@ -24,6 +24,7 @@ public final class VoiceSettingsActivity extends Activity {
         android.content.SharedPreferences prefs = getSharedPreferences("pet", 0);
         Switch accent = new Switch(this); accent.setText("Italiano con accento inglese"); accent.setChecked(prefs.getBoolean("english_accent", false)); page.addView(accent);
         Switch aloud = new Switch(this); aloud.setText("Leggi le risposte ad alta voce"); aloud.setChecked(prefs.getBoolean("read_aloud", true)); page.addView(aloud);
+        Switch wake = new Switch(this); wake.setText("Richiamo automatico all’apertura"); wake.setChecked(prefs.getBoolean("wake_on_open", true)); page.addView(wake);
         status = new TextView(this); page.addView(status);
         Button save = new Button(this); save.setText("Salva e prova la voce"); page.addView(save); save.setEnabled(false);
         Button system = new Button(this); system.setText("Installa o configura voci Android"); page.addView(system);
@@ -39,6 +40,8 @@ public final class VoiceSettingsActivity extends Activity {
         save.setOnClickListener(v -> {
             String selected = engines.get(engine.getSelectedItemPosition());
             prefs.edit().putString("tts_engine", selected).putBoolean("english_accent", accent.isChecked()).putBoolean("read_aloud", aloud.isChecked()).apply();
+            prefs.edit().putBoolean("wake_on_open",wake.isChecked()).apply();
+            if(!wake.isChecked())stopService(new Intent(this,VoiceSessionService.class));
             if (android.provider.Settings.canDrawOverlays(this)) {
                 Intent update = new Intent(this, PetService.class).setAction(PetService.ACTION_VOICE_SETTINGS);
                 startForegroundService(update);

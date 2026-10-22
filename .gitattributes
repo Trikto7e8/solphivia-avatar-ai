@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Preserve downloaded speech-model bytes exactly.
+app/src/main/assets/wake-it/** -text -diff -whitespace

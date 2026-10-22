@@ -58,3 +58,7 @@ L'icona con il viso è una normale icona Android: si tocca per aprire la scherma
 **La voce o il microfono non funzionano.** Controlla il motore di sintesi vocale e il servizio di riconoscimento vocale scelti nelle impostazioni Android; la qualità e le lingue disponibili dipendono dal dispositivo e dai servizi installati.
 
 **Non si collega o compare un limite.** Controlla Internet, account autorizzato e limiti dell'account. Le funzionalità SIWC possono cambiare e non sono garantite per tutti gli account o in tutte le aree.
+
+## Percorso corrente alpha9
+
+Per la voce segui [questa guida](docs/VOICE-SESSION.md): «Hola Solphivia» → attendi la risposta → richiesta. Il modello del richiamo è incluso, senza download separato. I passaggi Voice Access alpha5 eventualmente descritti sopra sono storici. ShareBridge non è attivo nella alpha9.
