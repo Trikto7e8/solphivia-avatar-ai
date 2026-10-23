@@ -310,7 +310,7 @@ final class OpenAiChatClient {
                             return;
                         }
                         MemoryConsentActivity.RequestHandle consent = MemoryConsentActivity.request(
-                                context, preview.toString(), memory, "OpenAI / ChatGPT", grant.getId(),
+                                context, preview.toString(), memory, "OpenAI / ChatGPT",
                                 approved -> {
                                     PENDING_CONSENTS.remove(requestId);
                                     try {

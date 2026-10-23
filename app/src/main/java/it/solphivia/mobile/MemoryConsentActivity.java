@@ -31,25 +31,21 @@ public final class MemoryConsentActivity extends Activity {
         }
     }
     private static final class Pending {
-        final String preview, memory, destination, requestFingerprint; final Consumer<String> approved; final Runnable cancelled; final RequestHandle handle;
-        Pending(String p, String m, String d, String f, Consumer<String> a, Runnable c, RequestHandle h) { preview=p; memory=m; destination=d; requestFingerprint=f; approved=a; cancelled=c; handle=h; }
+        final String preview, memory, destination; final Consumer<String> approved; final Runnable cancelled; final RequestHandle handle;
+        Pending(String p, String m, String d, Consumer<String> a, Runnable c, RequestHandle h) { preview=p; memory=m; destination=d; approved=a; cancelled=c; handle=h; }
     }
     private String id;
     static RequestHandle request(Context context, String preview, String memory, Consumer<String> approved, Runnable cancelled) {
-        return request(context, preview, memory, "OpenAI / ChatGPT", "", approved, cancelled);
+        return request(context, preview, memory, "OpenAI / ChatGPT", approved, cancelled);
     }
     static RequestHandle request(Context context, String preview, String memory, String destination,
                                  Consumer<String> approved, Runnable cancelled) {
-        return request(context, preview, memory, destination, "", approved, cancelled);
-    }
-    static RequestHandle request(Context context, String preview, String memory, String destination,
-                                 String requestFingerprint, Consumer<String> approved, Runnable cancelled) {
         RequestHandle handle = new RequestHandle(cancelled);
         MAIN.post(() -> {
             if (memory.trim().isEmpty()) { handle.finish(); approved.accept(""); return; }
             String key = UUID.randomUUID().toString();
             handle.attach(key);
-            PENDING.put(key, new Pending(preview, memory, destination, requestFingerprint, approved, cancelled, handle));
+            PENDING.put(key, new Pending(preview, memory, destination, approved, cancelled, handle));
             MAIN.postDelayed(() -> {
                 Pending expired = PENDING.remove(key);
                 if (expired != null) { expired.handle.finish(); expired.cancelled.run(); }
