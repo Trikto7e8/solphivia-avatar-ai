@@ -16,12 +16,16 @@ public final class VoiceSessionService extends Service implements RecognitionLis
     private SpeechRecognizer recognizer;
     private LocalWakeDetector localWake;
     private final VoiceStatusState voiceStatus = new VoiceStatusState();
+    private final VoiceFollowUpWindow followUp = new VoiceFollowUpWindow();
     private long wakeGeneration;
     private int commandStarts;
     private boolean listening,stopped,foregroundReady;
     private final VoiceSessionState session=new VoiceSessionState();
     private long nextListen;
     private long recognitionStarted;
+    private long recognitionGeneration;
+    private VoiceTranscriptComposer transcript;
+    private void cancelTranscript(){if(transcript!=null){transcript.cancel();transcript=null;}}
     static boolean running(){return instance!=null;}
     static boolean ready(){return instance!=null&&instance.foregroundReady&&!instance.stopped;}
     static boolean backgroundRestricted(android.content.Context context){
@@ -35,11 +39,12 @@ public final class VoiceSessionService extends Service implements RecognitionLis
         if(checkSelfPermission("android.permission.RECORD_AUDIO")!=android.content.pm.PackageManager.PERMISSION_GRANTED){stopSelf();return START_NOT_STICKY;}
         if(!SpeechRecognizer.isRecognitionAvailable(this)){notifyState("Riconoscimento vocale non disponibile");stopSelf();return START_NOT_STICKY;}
         session.paused=recovery||PAUSE.equals(intent.getAction()) || WAKE.equals(intent.getAction());
+        followUp.rest();
+        recognitionGeneration++;cancelTranscript();
         getSharedPreferences("pet",0).edit().putBoolean("voice_requested",true).apply();
-        if(listening&&session.paused){listening=false;recognizer.cancel();PetService.voiceListening(false);}
+        if(listening&&session.paused){listening=false;recognitionGeneration++;recognizer.cancel();PetService.voiceListening(false);}
         try{notifyState(session.paused?"Richiamo attivo: Hola Solphivia":"Sessione vocale attiva");}
         catch(RuntimeException error){statusText="Ascolto interrotto: riapri Solphivia per autorizzare il microfono.";getSharedPreferences("pet",0).edit().putBoolean("voice_requested",false).commit();stopSelf();return START_NOT_STICKY;}
-        if(recognizer==null){recognizer=SpeechRecognizer.createSpeechRecognizer(this);recognizer.setRecognitionListener(this);}
         main.removeCallbacks(tick);main.post(tick);
         MainActivity.voiceServiceReady();
         if(recovery){
@@ -50,7 +55,34 @@ public final class VoiceSessionService extends Service implements RecognitionLis
         return START_STICKY;
     }
     private void closeWake(){wakeGeneration++;if(localWake!=null){localWake.close();localWake=null;}}
-    private void deliver(String text){if(!MainActivity.acceptVoiceMessage(text))startForegroundService(new Intent(this,PetService.class).putExtra(PetService.EXTRA_SEND_MESSAGE,text).putExtra("voice_message",true));}
+    private void deliver(String text){followUp.replyStarted();if(!MainActivity.acceptVoiceMessage(text))startForegroundService(new Intent(this,PetService.class).putExtra(PetService.EXTRA_SEND_MESSAGE,text).putExtra("voice_message",true));}
+    private void restForWake(){
+        cancelTranscript();
+        listening=false;recognitionGeneration++;followUp.rest();session.paused=true;voiceStatus.idle();
+        if(recognizer!=null)recognizer.cancel();
+        PetService.voiceListening(false);nextListen=SystemClock.elapsedRealtime()+250;
+        notifyState("A riposo · di’ Hola Solphivia per riprendere");
+    }
+    private void startCapture(){
+        cancelTranscript();
+        android.widget.EditText field=MainActivity.voiceComposer();
+        if(field==null)field=PetService.voiceComposer();
+        if(field!=null)transcript=new VoiceTranscriptComposer(field);
+        long generation=++recognitionGeneration;
+        if(recognizer!=null){recognizer.cancel();recognizer.destroy();}
+        recognizer=SpeechRecognizer.createSpeechRecognizer(this);
+        recognizer.setRecognitionListener(new RecognitionListener(){
+            private boolean current(){return !stopped && listening && recognitionGeneration==generation;}
+            public void onReadyForSpeech(Bundle p){if(current())VoiceSessionService.this.onReadyForSpeech(p);}
+            public void onBeginningOfSpeech(){if(current())VoiceSessionService.this.onBeginningOfSpeech();}
+            public void onEndOfSpeech(){if(current())VoiceSessionService.this.onEndOfSpeech();}
+            public void onError(int e){if(current())VoiceSessionService.this.onError(e);}
+            public void onResults(Bundle b){if(current())VoiceSessionService.this.onResults(b);}
+            public void onRmsChanged(float r){} public void onBufferReceived(byte[] b){}
+            public void onPartialResults(Bundle b){if(current())VoiceSessionService.this.onPartialResults(b);} public void onEvent(int t,Bundle b){}
+        });
+        recognizer.startListening(VoicePhrases.recognitionIntent());
+    }
     private void startWake(){
         long generation=++wakeGeneration;
         localWake=new LocalWakeDetector(this,new LocalWakeDetector.Listener(){
@@ -62,18 +94,21 @@ public final class VoiceSessionService extends Service implements RecognitionLis
     private final Runnable tick=new Runnable(){public void run(){
         if(stopped)return;
         long now=SystemClock.elapsedRealtime();
-        if(listening && now-recognitionStarted>60000L){listening=false;recognizer.cancel();session.paused=true;nextListen=now+1000;}
+        if((!session.paused && followUp.expired(now)) || (listening && now-recognitionStarted>60000L)){restForWake();}
         if(PetService.voiceOutputBusy()){
             if(localWake!=null)localWake.suspend(true);
-            if(listening){listening=false;recognizer.cancel();session.paused=true;}
+            if(listening){listening=false;recognitionGeneration++;recognizer.cancel();cancelTranscript();PetService.voiceListening(false);}
+            // The next five seconds start only after output has ended and capture is ready.
+            if(!session.paused && !followUp.awaitingReply())followUp.replyStarted();
             nextListen=now+650;
         }else if(now>=nextListen){
+            if(followUp.awaitingReply()){followUp.replyFinished();session.paused=false;}
             if(session.paused){if(!listening && localWake==null){notifyState("In ascolto locale · Hola Solphivia");startWake();}else if(localWake!=null)localWake.suspend(false);}
             else if(!listening){
-                closeWake();listening=true;voiceStatus.captureStarted();notifyState(voiceStatus.label());recognitionStarted=now;commandStarts++;
+                closeWake();listening=true;notifyState(VoiceStatusState.CAPTURE_STARTING_LABEL);recognitionStarted=now;commandStarts++;
                 getSharedPreferences("voice_health",0).edit().putInt("command_starts",commandStarts).apply();
-                try{recognizer.startListening(VoicePhrases.recognitionIntent());}
-                catch(RuntimeException error){listening=false;voiceStatus.idle();session.paused=true;nextListen=now+1500;notifyState("Comando non disponibile · torno al richiamo locale");}
+                try{startCapture();}
+                catch(RuntimeException error){restForWake();notifyState("Comando non disponibile · di’ Hola Solphivia per riprovare");}
             }
         }
         main.postDelayed(this,250);
@@ -98,25 +133,58 @@ public final class VoiceSessionService extends Service implements RecognitionLis
         ArrayList<String> matches=bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         VoiceSessionState.Decision decision=session.accept(VoicePhrases.best(matches));
         if(decision.action==VoiceSessionState.OFF){stopSelf();return;}
-        if(decision.action==VoiceSessionState.PAUSE){voiceStatus.idle();notifyState("Richiamo attivo: Hola Solphivia");return;}
-        if(decision.action==VoiceSessionState.IGNORE){voiceStatus.idle();session.paused=true;return;}
-        session.paused=!VoicePhrases.greeting(decision.text);
+        if(decision.action==VoiceSessionState.PAUSE){restForWake();return;}
+        if(decision.action==VoiceSessionState.IGNORE){restForWake();return;}
+        session.paused=false;
+        if(transcript!=null){
+            transcript.show(decision.text);
+            if(!transcript.canSubmit()){restForWake();notifyState("Bozza scritta conservata · premi Invia quando vuoi");return;}
+        }
         voiceStatus.generationStarted();notifyState(voiceStatus.label());
-        deliver(decision.text);
+        followUp.replyStarted();
+        long generation=recognitionGeneration;
+        // Give the final transcript one visible frame before the normal automatic send.
+        main.postDelayed(()->{
+            if(stopped || session.paused || generation!=recognitionGeneration)return;
+            if(transcript!=null){
+                if(!transcript.canSubmit()){restForWake();notifyState("Bozza modificata · premi Invia quando vuoi");return;}
+                transcript.finish();transcript=null;
+            }
+            if(!PetService.voiceOutputBusy())deliver(decision.text);
+        },350);
         nextListen=SystemClock.elapsedRealtime()+1000;
     }
     @Override public void onError(int error){
         if(stopped || !listening)return;
         listening=false;voiceStatus.error();
+        cancelTranscript();
         PetService.voiceListening(false);
         if(error==SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS){stopSelf();return;}
-        session.paused=true;nextListen=SystemClock.elapsedRealtime()+1000;
         getSharedPreferences("voice_health",0).edit().putInt("command_error",error).apply();
-        notifyState("Comando terminato · torno al richiamo locale");
+        if((error==SpeechRecognizer.ERROR_NO_MATCH || error==SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
+                && followUp.canRetry(SystemClock.elapsedRealtime())){
+            nextListen=SystemClock.elapsedRealtime()+150;
+            notifyState(VoiceStatusState.CAPTURE_STARTING_LABEL);
+        }else restForWake();
     }
 
-    @Override public void onReadyForSpeech(Bundle params){voiceStatus.captureStarted();PetService.voiceListening(true);} @Override public void onBeginningOfSpeech(){} @Override public void onRmsChanged(float rms){}
-    @Override public void onBufferReceived(byte[] bytes){} @Override public void onEndOfSpeech(){} @Override public void onPartialResults(Bundle partial){} @Override public void onEvent(int type,Bundle params){}
+    @Override public void onReadyForSpeech(Bundle params){
+        if(stopped || !listening || PetService.voiceOutputBusy())return;
+        followUp.captureReady(SystemClock.elapsedRealtime());voiceStatus.captureStarted();notifyState(voiceStatus.label());PetService.voiceListening(true);
+    }
+    @Override public void onBeginningOfSpeech(){
+        if(stopped || !listening)return;
+        if(!followUp.speechStarted(SystemClock.elapsedRealtime()))restForWake();
+    }
+    @Override public void onRmsChanged(float rms){}
+    @Override public void onBufferReceived(byte[] bytes){}
+    @Override public void onEndOfSpeech(){if(stopped || !listening)return;voiceStatus.transcriptionStarted();notifyState(voiceStatus.label());}
+    @Override public void onPartialResults(Bundle partial){
+        if(stopped || !listening || partial==null || transcript==null)return;
+        ArrayList<String> matches=partial.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+        if(matches!=null && !matches.isEmpty())transcript.show(matches.get(0));
+    }
+    @Override public void onEvent(int type,Bundle params){}
     @Override public IBinder onBind(Intent intent){return null;}
-    @Override public void onDestroy(){getSharedPreferences("pet",0).edit().putBoolean("voice_requested",false).commit();stopped=true;listening=false;closeWake();main.removeCallbacksAndMessages(null);if(recognizer!=null){recognizer.cancel();recognizer.destroy();recognizer=null;}if(instance==this)instance=null;if(!statusText.startsWith("Ascolto interrotto") && !statusText.startsWith("Richiamo locale non disponibile"))statusText="Microfono spento.";PetService.voiceListening(false);stopForeground(true);super.onDestroy();}
+    @Override public void onDestroy(){cancelTranscript();getSharedPreferences("pet",0).edit().putBoolean("voice_requested",false).commit();stopped=true;listening=false;closeWake();main.removeCallbacksAndMessages(null);if(recognizer!=null){recognizer.cancel();recognizer.destroy();recognizer=null;}if(instance==this)instance=null;if(!statusText.startsWith("Ascolto interrotto") && !statusText.startsWith("Richiamo locale non disponibile"))statusText="Microfono spento.";PetService.voiceListening(false);stopForeground(true);super.onDestroy();}
 }

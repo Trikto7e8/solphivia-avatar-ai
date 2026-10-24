@@ -11,7 +11,7 @@ Questi sono obiettivi del progetto, non promesse sulle funzioni della versione a
 
 ## Collegamenti ai modelli
 
-- Definire un'interfaccia provider per testo, allegati, risposte in streaming e dichiarazione delle capacità.
+- Estendere la interfaccia provider Stage A integrata in alpha11 con adattatori e impostazioni delle capacità, da verificare separatamente.
 - Mantenere il collegamento open source documentato a Sign in with ChatGPT come adattatore facoltativo.
 - Aggiungere connessioni configurabili dall'utente a server locali LM Studio/Ollama.
 - Aggiungere adattatori cloud usando i metodi di autenticazione e fatturazione supportati da ciascun fornitore.

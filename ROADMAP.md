@@ -11,7 +11,7 @@ These are project goals, not promises about the current release.
 
 ## Model connections
 
-- Define a provider interface for text, attachments, streaming, and capability reporting.
+- Extend the Stage A provider interface delivered in alpha11 with separately reviewed adapters and capability settings.
 - Keep the documented open-source Sign in with ChatGPT connection as an optional adapter.
 - Add user-configured connections to local LM Studio/Ollama servers.
 - Add cloud provider adapters using each provider's supported authentication and billing model.

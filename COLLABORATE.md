@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/media/solphivia-cover.svg" alt="Help build Solphivia: Android, voice and portable memory" width="100%" /></p>
+<p align="center"><img src="docs/media/solphivia-alpha11-cover.png" alt="Help build Solphivia: Android, voice and portable memory" width="100%" /></p>
 
 # Help build Solphivia / Aiutaci a far crescere Solphivia
 

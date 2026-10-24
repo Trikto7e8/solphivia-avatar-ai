@@ -19,8 +19,8 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
           log-accepted-android-sdk-licenses: false
-      - name: Build isolated app and instrumentation tests
-        run: bash gradlew --no-daemon -PverificationBuild assembleDebug assembleDebugAndroidTest lintDebug
+      - name: Run JVM tests, build isolated app and instrumentation APKs
+        run: bash gradlew --no-daemon -PverificationBuild testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -29,3 +29,4 @@ jobs:
             app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/androidTest/debug/*.apk
             app/build/reports/lint-results-debug.*
+            app/build/test-results/testDebugUnitTest/*.xml

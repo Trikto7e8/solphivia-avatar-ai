@@ -1,64 +1,43 @@
-# Solphivia Avatar AI: guida rapida per Android
+# Solphivia alpha11: guida rapida Android
 
-Questa guida descrive la versione di prova attuale. Le schermate e i nomi delle voci Android possono cambiare leggermente in base al modello del telefono.
+## Installare o aggiornare
 
-## Prima di iniziare
+Scarica l’APK dalla [release alpha11](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11). È una build debug alpha per le prove, non una versione Google Play. Richiede Android 8 o successivo e ARM64/ARMv7.
 
-- Installa Solphivia Avatar AI da un APK che hai compilato o ricevuto da una fonte fidata.
-- Installa o aggiorna un browser, per esempio Chrome, e verifica di avere una connessione Internet.
-- Accedi prima a [chatgpt.com](https://chatgpt.com) nel browser del telefono con l'account ChatGPT che vuoi collegare. Se il browser te lo chiede, completa lì l'accesso. Solphivia non chiede né riceve la password.
-- Per il collegamento diretto occorrono un account e le autorizzazioni ChatGPT compatibili con Sign in with ChatGPT. Il servizio può cambiare disponibilità e requisiti.
+Se aggiorni un’installazione con lo stesso certificato, installa sopra quella esistente: non disinstallare e non cancellare i dati per aggiornare. I dati cifrati dipendono anche dal Keystore dell’installazione. In caso di firma diversa, fermati e conserva l’app originale prima di decidere come trasferire i dati.
 
 ## Primo collegamento
 
-1. Apri l'app **Solphivia Avatar AI** dall'icona con il viso di Solphivia.
-2. Tocca **Collega ChatGPT**. Android apre il browser; usa lo stesso browser in cui hai già effettuato l'accesso.
-3. Controlla che sia selezionato l'account giusto. Leggi la schermata di consenso e approva solo se vuoi autorizzare questa app. Se compare l'opzione per usare il piano ChatGPT, è facoltativa e soggetta a disponibilità, limiti e condizioni dell'account.
-4. Attendi il ritorno automatico all'app. Se la pagina mostra **Torna a Solphivia Avatar AI**, toccalo. Non scrivere manualmente l'indirizzo `127.0.0.1` nel browser: è un passaggio locale temporaneo gestito dall'app.
-5. Se l'avatar non compare perché manca il permesso, torna nella schermata dell'app e tocca la riga di stato **Chat pronta · avatar flottante disattivato**. Android apre **Mostra sopra altre app**: abilita Solphivia Avatar AI e torna indietro. Questo permesso serve a disegnare il personaggio flottante sulla schermata Home e sopra le altre app. Non consente a Solphivia di leggere ciò che appare nelle altre app.
-6. Conferma l'aggiunta dell'icona alla schermata Home, se il launcher Motorola lo chiede. L'icona avvia l'app; non è l'avatar flottante.
-7. Quando il collegamento è completato, Solphivia compare sulla schermata Home con fumetto e riga per scrivere. Se non la vedi, torna nell'app e tocca **Collega ChatGPT** solo se risulta disconnessa; controlla anche il permesso di overlay.
+1. Apri **Solphivia Avatar AI**. Le installazioni isolate di collaudo hanno il nome **PROVA**: non sono l’app principale.
+2. Tocca **Collega ChatGPT** e completa personalmente l’autorizzazione nel browser con l’account desiderato. Solphivia non chiede la password. Disponibilità e limiti dipendono dall’account e dal fornitore.
+3. Attendi il ritorno all’app. Non aprire manualmente l’indirizzo locale temporaneo `127.0.0.1`.
+4. Concedi **Mostra sopra altre app** per il personaggio flottante e il permesso microfono per la voce. La notifica Android indica quando il microfono è attivo.
+5. Se Android propone il collegamento Home, puoi confermarlo. Icona launcher e avatar flottante sono elementi diversi; chiudere l’avatar non disinstalla l’app.
 
-## Usare l'avatar
+## Parlare o scrivere
 
-### Voice Access nell’alpha5
+Di’ **«Hola Solphivia»**, attendi **«Cosa posso fare per te?»**, poi pronuncia la domanda o una normale risposta. Le parole riconosciute compaiono nel rigo di scrittura e vengono inviate automaticamente. L’anteprima progressiva dipende dal servizio Android. Una bozza scritta o modificata a mano viene conservata.
 
-Aprire l’app dall’icona avvia volontariamente l’ascolto se overlay e microfono sono autorizzati. Al primo avvio serve il Wi-Fi per scaricare il modello italiano offline (circa 48 MB). A schermo acceso e sbloccato, di’ **«Hola, Solphivia!»**, attendi il saluto e poi **«Apri WhatsApp»**. L’ascolto continua sopra le altre app. **«Fermati»** spegne il microfono; **Ferma** nella notifica chiude anche l’avatar. Il blocco schermo sospende la registrazione.
+Dopo ogni risposta hai **cinque secondi dal microfono pronto** per iniziare a parlare ancora senza richiamo. Se inizi in tempo puoi finire la frase. In silenzio torna al riposo; per riprendere di’ «Hola Solphivia». Il servizio Android può interrompersi per errori: non è una garanzia di ascolto in ogni condizione. «Stop dialogo» torna al richiamo; «Spegni microfono» ferma la cattura.
 
-Le richieste libere dopo il saluto vengono inoltrate alla connessione ChatGPT già autorizzata. Gli invii WhatsApp richiedono anteprima e conferma. Sul Moto g35, se la vignetta non cambia mentre parli, disattiva e riattiva **Consenti utilizzo in background** nelle impostazioni batteria della sola app e riaprila: Android può ripristinare la restrizione dopo aggiornamenti debug. [Dettagli e limiti della release](docs/releases/v0.9.2-alpha5.md).
+Puoi sempre scrivere nel rigo e premere Invia. La dettatura singola da modificare resta disponibile nella schermata Voce. [Guida vocale completa](docs/VOICE-SESSION.md).
 
-### Testo e dettatura dal pulsante
+## Comandi locali
 
-- Tocca la riga di testo sotto l'avatar, scrivi e premi la freccia di invio.
-- Tocca il microfono per dettare in italiano. Il riconoscimento usa il servizio vocale configurato su Android; il trattamento audio dipende da quel servizio e dalle impostazioni del telefono.
-- Usa **+** per selezionare fino a 5 file PDF, DOC/DOCX o immagini. Limite: 8 MB per file e 15 MB complessivi per invio. Il contenuto selezionato viene inviato al servizio AI per rispondere.
-- Trascina Solphivia sullo schermo o chiedile un movimento supportato, per esempio «corri a destra».
-- La notifica persistente di Android permette di controllare o fermare il servizio flottante.
-- Per chiudere il personaggio, scrivi o detta **«spegni Solphivia»**, **«spegni l'app»** o **«chiudi Solphivia»**. Il servizio flottante si ferma.
+«Apri Maps», «apri» seguito dal nome completo dell’app, «cerca una farmacia su Maps», «portami a Roma», «apri fotocamera», «chiama» seguito da un numero. La chiamata va confermata nel telefono: nessuna chiamata automatica o lettura della rubrica. «Comandi» mostra il riepilogo. Questi comandi non leggono lo schermo e non inviano messaggi in altre app.
 
-## Icona e avatar flottante: due cose diverse
+## Memoria e allegati
 
-L'icona con il viso è una normale icona Android: si tocca per aprire la schermata dell'app. L'avatar flottante è un servizio separato, avviato dopo l'autorizzazione, che mostra Solphivia sopra la Home e le altre app. Puoi quindi vedere l'icona nel launcher e, dopo il primo collegamento, anche il personaggio sulla Home. Rimuovere l'icona non disinstalla l'app; fermare il servizio dalla notifica nasconde l'avatar senza rimuovere l'icona.
+La voce invia la cronologia testuale recente senza aggiungere ricordi personali del vault o allegati. Per condividere memoria usa la chat scritta e la conferma modificabile, monouso. Gli allegati scelti vengono letti per la richiesta e il consenso è legato anche al digest del contenuto. Limiti: fino a 5 file, 8 MB per file e 15 MB complessivi nella conversazione inviata.
 
-## Cosa aspettarsi dal collegamento ChatGPT
+La chat di Solphivia è separata da quella di ChatGPT: non importa chat o memoria dell’app/sito ChatGPT. [Privacy tecnica](PRIVACY-IT.md).
 
-- La chat di Solphivia è separata dalle chat dell'app/sito ChatGPT. Solphivia non legge la memoria, le chat passate o la schermata di ChatGPT.
-- La connessione invia il testo della conversazione e gli allegati selezionati a OpenAI per generare la risposta. La richiesta usa l'opzione `store: false`; consulta comunque i termini e l'informativa del fornitore per le regole di trattamento e conservazione applicabili.
-- L'uso del piano ChatGPT, quando disponibile, è distinto dalla fatturazione API di OpenAI. Questa versione non richiede di incollare una chiave API.
-- Se il browser è entrato nell'account sbagliato, scollega l'app dal browser/account e rifai l'autorizzazione con l'account desiderato. Non condividere codici temporanei, token o schermate di consenso pubblicamente.
+## Se qualcosa non funziona
 
-## Problemi frequenti
+- Controlla di usare l’installazione giusta: il campo delle versioni di test contiene «PROVA».
+- Se non compare l’avatar, controlla il permesso overlay della sola Solphivia.
+- Se non ascolta, controlla permesso microfono, servizio di riconoscimento e impostazioni batteria della sola app. Il richiamo locale usa il modello incluso; riconoscimento dei comandi e TTS possono usare Internet.
+- Se il browser non torna all’app, lascia Solphivia aperta in background, completa il consenso e usa il collegamento di ritorno. Non condividere token o codici temporanei.
+- Per problemi di account o limiti, controlla il messaggio e le impostazioni del fornitore.
 
-**Il browser non torna all'app.** Lascia Solphivia aperta in background, completa l'autorizzazione e tocca il collegamento di ritorno nella pagina. Se la callback scade, riapri l'app e riprova il collegamento.
-
-**Errore `127.0.0.1` o connessione rifiutata.** Non aprire quel link manualmente e non usare una scheda in incognito. Riapri Solphivia, avvia di nuovo **Collega ChatGPT** e completa il flusso nella stessa sessione del browser.
-
-**Il personaggio non appare sulla Home.** In Android vai in **Impostazioni → App → Accesso speciale app → Mostra sopra altre app → Solphivia Avatar AI** e abilita il permesso. Poi riapri l'app. Le etichette possono variare sul Motorola.
-
-**La voce o il microfono non funzionano.** Controlla il motore di sintesi vocale e il servizio di riconoscimento vocale scelti nelle impostazioni Android; la qualità e le lingue disponibili dipendono dal dispositivo e dai servizi installati.
-
-**Non si collega o compare un limite.** Controlla Internet, account autorizzato e limiti dell'account. Le funzionalità SIWC possono cambiare e non sono garantite per tutti gli account o in tutte le aree.
-
-## Percorso corrente alpha9
-
-Per la voce segui [questa guida](docs/VOICE-SESSION.md): «Hola Solphivia» → attendi la risposta → richiesta. Il modello del richiamo è incluso, senza download separato. I passaggi Voice Access alpha5 eventualmente descritti sopra sono storici. ShareBridge non è attivo nella alpha9.
+[Note di rilascio, prove e limiti](docs/releases/v0.9.2-alpha11.md). Blocco schermo, sessioni prolungate, recupero rete e altri dispositivi richiedono ancora collaudo.

@@ -1,12 +1,12 @@
-<p align="center"><img src="docs/media/solphivia-cover.svg" alt="Solphivia: avatar IA per Android con chat, voce e memoria portabile" width="100%" /></p>
+<p align="center"><img src="docs/media/solphivia-alpha11-cover.png" alt="Solphivia: avatar IA per Android con chat, voce e memoria portabile" width="100%" /></p>
 
 # Ti presento Solphivia
 
-**Novità alpha9 — comandi senza toccare Invia.** Di’ «Hola Solphivia», attendi la risposta e chiedi qualcosa o apri WhatsApp. Attesa del richiamo locale; il riconoscitore Android dei comandi può usare Internet. Niente conferma della memoria per le richieste vocali. [Prove, installazione e limiti](docs/releases/v0.9.2-alpha9.md).
+**Novità alpha11 — la conversazione continua.** Di’ «Hola Solphivia», fai una domanda e parla ancora entro cinque secondi da quando il microfono è pronto dopo la risposta. Le parole compaiono nel rigo della chat e vengono inviate automaticamente. Comandi app, Maps e preparazione del numero si uniscono ai miglioramenti provider Stage A. [Prove, installazione e limiti](docs/releases/v0.9.2-alpha11.md).
 
 Una compagna animata sullo schermo Android. Puoi parlarle, scriverle, allegare un file e personalizzare la memoria dell'assistente mantenendone il controllo.
 
-**[Prova l’alpha Android](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha9)** · **[Aiutaci a farla crescere](COLLABORATE.md)** · [Read in English](README.md)
+**[Prova l’alpha Android](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11)** · **[Aiutaci a farla crescere](COLLABORATE.md)** · [Read in English](README.md)
 
 > Alpha comunitaria · Android disponibile per le prove · Google Play e iOS sono obiettivi da realizzare.
 
@@ -24,9 +24,13 @@ Fotogrammi reali del personaggio nell’app Android. Le illustrazioni restano ri
 | --- | --- | --- |
 | Avatar trascinabile, animazioni, chat e voce Android. | Memoria locale cifrata, anteprima modificabile prima della condivisione ed export cifrato Memory Vault. | Miglioriamo Android, accessibilità e test; progettiamo i collegamenti ai modelli locali e la versione iOS. |
 
+<p align="center"><img src="docs/media/solphivia-alpha11-modes.png" alt="Solphivia: everyday, professor and cyborg outfits — promotional illustration" width="100%" /></p>
+
+Illustrazioni promozionali generate a partire dagli sprite originali: non sono schermate dell’app. I fotogrammi nella tabella sopra provengono invece dalla build.
+
 ## Comincia in pochi minuti
 
-1. Scarica l’APK dalla [release alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha9). È una build debug di prova, non una versione degli store.
+1. Scarica l’APK dalla [release alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11). È una build debug di prova, non una versione degli store.
 2. Segui la [guida al primo avvio](AVVIO-RAPIDO-IT.md), attiva l’avatar flottante e scegli un motore vocale Android installato.
 3. Prova l’avatar e condividi un [test riproducibile](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6) con esempi inventati.
 
@@ -112,7 +116,7 @@ Scrivi `scegli tu` o `modalità auto` per la scelta contestuale. I comandi espli
 - Radar DPC aggiornato: dati, timestamp ed errori visibili. Segnala echi vicini, senza stimare direzione o tempo di arrivo.
 - Sonno animato, proporzioni corrette e schermata `☰ → Prova animazioni`; 108 sprite e 1248 combinazioni verificate.
 
-Scarica l’APK dalla [pre-release v0.9.2-alpha5](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha9). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.
+Scarica l’APK dalla [pre-release v0.9.2-alpha5](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.
 
 ## Voice Access e ShareBridge (MVP del modulo v0.1)
 

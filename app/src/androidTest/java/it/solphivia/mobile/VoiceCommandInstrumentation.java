@@ -41,8 +41,9 @@ public final class VoiceCommandInstrumentation extends Instrumentation {
                 public void onError(String message){throw new AssertionError(message);}
             }));
             RevisionChecks.check(scheduled[0]==1,"voice schedules request without manual memory consent");
+            DeviceCommandChecks.run(context);
             ConsentChecks.run(this);
-            result.putString("stream","PASS: explicit WhatsApp launcher without messaging; voice sends automatically without file references; typed memory consent remains single-use and cancellable. No provider request, WhatsApp launch, or microphone used.\n");
+            result.putString("stream","PASS: local app/map/directions/dial commands, exact app matching, encoded destinations and invalid/blocked requests; explicit WhatsApp launcher without messaging; voice sends automatically without file references; typed memory consent remains single-use and cancellable. No provider request, WhatsApp launch, or microphone used.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable error){result.putString("stream","FAIL: "+android.util.Log.getStackTraceString(error));finish(Activity.RESULT_CANCELED,result);}
     }
