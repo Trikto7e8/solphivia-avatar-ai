@@ -523,7 +523,7 @@ public class PetService extends Service {
             return;
         }
         if (destroyed || busy) return;
-        if (ACTION_PICK_VOICE.equals(action)) { setSpeech("Ti ascolto…"); cancelIdleTimers(); setAnimation("listen"); }
+        if (ACTION_PICK_VOICE.equals(action)) { setSpeech(VoiceStatusState.CAPTURE_STARTING_LABEL); cancelIdleTimers(); setAnimation("listen"); }
         try { startActivity(new Intent(this, CompanionInputActivity.class).setAction(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
         catch (RuntimeException error) { setSpeech("Non riesco ad aprire questa funzione sul telefono."); }
     }
@@ -612,7 +612,7 @@ public class PetService extends Service {
         ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
         composer.clearFocus();
         busy = true; composer.setEnabled(false); sendButton.setEnabled(false);
-        setAnimation("thinking"); setSpeech(attachmentUris.isEmpty() ? "Ti ascolto…" : "Sto preparando gli allegati…");
+        setAnimation("thinking"); setSpeech(attachmentUris.isEmpty() ? VoiceStatusState.THINKING_LABEL : "Sto preparando gli allegati…");
         if (attachmentUris.isEmpty()) {
             dispatchMessage(text, new JSONArray(), voice);
             return;
@@ -1331,6 +1331,7 @@ public class PetService extends Service {
             movementAnimator.removeAllUpdateListeners(); movementAnimator.removeAllListeners();
             movementAnimator.cancel(); movementAnimator = null;
         }
+        OpenAiChatClient.cancelRequests(worker);
         worker.shutdownNow();
         weatherWorker.shutdownNow();
         if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }
