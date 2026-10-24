@@ -16,4 +16,6 @@ local.properties
 *~
 
 .tools/
-releases/
+/releases/
+
+.kotlin/

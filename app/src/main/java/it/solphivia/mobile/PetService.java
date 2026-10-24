@@ -95,6 +95,7 @@ public class PetService extends Service {
     static boolean voiceOutputBusy() {
         return MainActivity.voiceBusy() || (activeInstance!=null && (activeInstance.busy || activeInstance.typingTask!=null || activeInstance.ttsPending));
     }
+    static EditText voiceComposer(){return activeInstance!=null && !internalChatVisible && !activeInstance.destroyed && !activeInstance.busy ? activeInstance.composer : null;}
     static void voiceListening(boolean listening) {
         if(activeInstance==null || voiceOutputBusy())return;
         if(listening){activeInstance.cancelIdleTimers();activeInstance.setAnimation("listen");}
@@ -103,7 +104,7 @@ public class PetService extends Service {
     private void greetOnOpen() {
         if (internalChatVisible) { greetWhenVisible=true;return; }
         greetWhenVisible=false;
-        if (!busy && GreetingPolicy.claim()) { speechEndMood="wave";typeSpeech("Hola! Sono Solphivia, sono qui con te."); }
+        if (!busy && GreetingPolicy.claim()) { speechEndMood="wave";typeSpeech("Hola! Sono Solphivia. Per iniziare, di’ Hola Solphivia."); }
     }
     public static final String ACTION_INPUT_DONE = "it.solphivia.mobile.action.INPUT_DONE";
     public static final String ACTION_WEATHER_LOCATION = "it.solphivia.mobile.action.WEATHER_LOCATION";
@@ -374,7 +375,7 @@ public class PetService extends Service {
         composer.setTextSize(14);
         composer.setTextColor(0xFF29232D);
         composer.setHintTextColor(0xFF766D7B);
-        composer.setHint("Scrivi a Solphivia…");
+        composer.setHint(getPackageName().endsWith(".verification") ? "Scrivi a Solphivia · PROVA…" : "Scrivi a Solphivia…");
         composer.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         composer.setPadding(dp(12), 0, dp(126), 0);
         composer.setBackground(shape(0xFFFCFEFF, dp(23), 0xFF9BE9F1));

@@ -1,5 +1,10 @@
-# Current status / Stato corrente
+# Stato corrente
 
-0.9.2-alpha9 (38), 22 October 2026. User-confirmed wake, spoken response, WhatsApp opening and automatic voice requests. Build, Android Lint and isolated command/consent checks passed. Community alpha; long battery sessions, locked-screen behavior and other devices remain to test.
+**0.9.2-alpha11 (44), 24 ottobre 2026.** La PR #16 (architettura provider Stage A) è integrata. Alpha11 la unisce ai comandi app/Maps/composizione numero di alpha10, alla finestra di ascolto successiva e alla trascrizione nel campo di scrittura.
 
-[Release notes](docs/releases/v0.9.2-alpha9.md) · [Help build Solphivia](COLLABORATE.md)
+- Automatici: 38 test JVM superati; build app e test riuscite; Android Lint con 0 errori e 118 avvisi. Quattro suite instrumentation isolate superate su Moto g35 5G (Android 16).
+- Manuali: il manutentore conferma trascrizione visibile e continuazione della conversazione sull’alpha11 finale installata. È un riscontro dell’utente, distinto dalle prove automatiche.
+- App principale aggiornata senza disinstallazione; memoria cifrata e preferenze del collegamento ChatGPT preservate.
+- Restano da verificare sessioni prolungate in background/a schermo bloccato, interruzioni di rete e altri dispositivi. Alpha comunitaria con firma debug, non versione degli store.
+
+[Scarica alpha11](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11) · [Note di rilascio](docs/releases/v0.9.2-alpha11.md) · [Collaborazione](COLLABORATE.md)

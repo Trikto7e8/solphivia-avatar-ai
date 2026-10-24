@@ -1,39 +1,36 @@
-# Compilare e preparare la pubblicazione
+# Compilare e verificare alpha11
 
-Questa procedura serve a produrre sul tuo computer l'APK di prova e a caricare manualmente i sorgenti su GitHub. Non caricare password, token OAuth, chiavi API, keystore o password del keystore.
+Servono JDK 17 e Android SDK Platform 35 / Build Tools 35.0.0. Imposta `JAVA_HOME` e `ANDROID_HOME`, oppure configura Android Studio e un `local.properties` locale che non va pubblicato.
 
-## A. Aprire il progetto
+## Build principale
 
-1. Estrai lo ZIP in una cartella locale facile da trovare.
-2. In Android Studio scegli **Open** e seleziona la cartella `solphivia-avatar-ai` (quella che contiene `settings.gradle`).
-3. Attendi **Gradle Sync**. Se Android Studio chiede di installare Android SDK Platform 35 o Build Tools, accetta l'installazione.
-4. Se la sincronizzazione fallisce, copia il messaggio completo dell'errore; non aggiungere chiavi o password nei file del progetto.
+```text
+./gradlew --no-daemon testDebugUnitTest assembleDebug lintDebug
+```
 
-## B. Creare un APK di prova
+APK: `app/build/outputs/apk/debug/app-debug.apk`, pacchetto `it.solphivia.mobile`, alpha11 / codice 44. È una build debug per le prove, non il pacchetto Google Play. Per aggiornare dati esistenti occorrono la stessa firma e un codice versione compatibile; non disinstallare per forzare un aggiornamento.
 
-1. Dal menu **Build → Build Bundle(s) / APK(s) → Build APK(s)**.
-2. Attendi il messaggio **APK(s) generated successfully**.
-3. Premi **Locate** nel messaggio di Android Studio. Il file previsto è `app/build/outputs/apk/debug/app-debug.apk`.
-4. Trasferisci l'APK sul Motorola, installalo e prova avvio, icona, consenso browser, overlay, chat, audio e allegati.
+## Collaudo isolato
 
-Questo APK debug è adatto a test personali; non è la release firmata per Google Play. Prima di una pubblicazione stabile servono revisione privacy, target API richiesto da Play, verifiche delle policy e test su dispositivi. La configurazione sorgente attuale è API 35: non inviare ancora a Play senza aggiornamento e verifica dei requisiti correnti.
+```text
+./gradlew --no-daemon -PverificationBuild testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug
+```
 
-## C. Preparare i sorgenti per GitHub
+Pacchetto `it.solphivia.mobile.alpha11.verification`, nome launcher «Solphivia alpha11 · PROVA». Le suite che manipolano memoria e impostazioni vanno eseguite solo su un’installazione di test senza dati/account dell’utente.
 
-1. Crea su GitHub un repository pubblico chiamato **Solphivia Avatar AI** (o un nome disponibile), senza generare file iniziali se vuoi caricare la cartella già pronta.
-2. In Android Studio verifica la lista dei file: non includere `local.properties`, cartelle `.gradle/` e `build/`, APK/AAB, log, token, chiavi o configurazioni personali. Il `.gitignore` del progetto esclude gli elementi di build e i segreti comuni.
-3. Carica solo la cartella di progetto `solphivia-avatar-ai` e i file di documentazione. Puoi usare il sito GitHub con **Add file → Upload files**, oppure Git da terminale. Non selezionare mai `.jks`/`.keystore`, `.env`, `local.properties` o `app/build/`.
-4. Prima di confermare, controlla la schermata dei file selezionati e fai una ricerca nel repository per email personali, percorsi del tuo computer, password, `sk-`, `ghp_`, `Bearer ` e token.
-5. In **About** imposta la descrizione breve contenuta in `PRESENTAZIONE-IT.md` e aggiungi i topic suggeriti.
-6. Rileggi `README.md`, `PRIVACY-IT.md` e `ASSETS-LICENSE.md` dalla pagina pubblica appena creato il repository.
+Dopo installazione app e APK test, concedi i permessi necessari della sola variante isolata. Esegui il runner desiderato:
 
-## D. APK nelle release GitHub (opzionale)
+```text
+adb shell am instrument -w it.solphivia.mobile.alpha11.verification.test/it.solphivia.mobile.RegressionInstrumentation
+adb shell am instrument -w it.solphivia.mobile.alpha11.verification.test/it.solphivia.mobile.VoiceCommandInstrumentation
+adb shell am instrument -w it.solphivia.mobile.alpha11.verification.test/it.solphivia.mobile.FollowUpInstrumentation
+adb shell am instrument -w it.solphivia.mobile.alpha11.verification.test/it.solphivia.mobile.TranscriptComposerInstrumentation
+```
 
-Quando hai verificato l'APK sul tuo telefono, puoi allegare `app-debug.apk` a una GitHub Release marcata chiaramente come **alpha/debug, solo test**. Un APK debug non è un pacchetto Play Store. Per Google Play si prepara in seguito un Android App Bundle firmato (`.aab`) con una chiave privata conservata in modo sicuro e mai caricata nel repository.
+I test generali richiedono overlay; alcuni controlli usano dati DPC via rete. I test dei comandi intercettano gli intent e non effettuano chiamate. Le sonde tempo/trascrizione non usano il microfono reale. Login, qualità del parlato e comportamento reale si verificano separatamente con l’utente.
 
-## Verifiche prima del caricamento
+## Pubblicazione
 
-- Controlla che nome e icona visualizzati siano quelli voluti.
-- Prova il flusso con il tuo account ma non pubblicare screenshot che mostrino email, nomi o contenuti personali.
-- Se cambi sorgenti dopo la build, ricrea l'APK: il file già prodotto non contiene le modifiche successive.
-- Il manutentore deve fornire un recapito e una privacy policy web prima di distribuire l'app al pubblico o candidarla a uno store.
+Mantieni APK, keystore, chiavi, preferenze, token, log privati e backup memoria fuori dal codice. Pubblica l’APK verificato e i sorgenti come allegati di una GitHub prerelease marcata alpha/debug, indicando hash e certificato. Il tag deve riferirsi al commit dei sorgenti pubblicati. Le immagini promozionali sono illustrazioni; non vanno presentate come screenshot.
+
+[Note alpha11 e risultati](docs/releases/v0.9.2-alpha11.md). La pubblicazione Google Play, gli adattatori Ollama/LM Studio e iOS restano lavori separati.

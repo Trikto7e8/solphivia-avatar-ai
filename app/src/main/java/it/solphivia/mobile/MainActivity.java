@@ -88,6 +88,7 @@ public class MainActivity extends Activity {
         });
     }
     static boolean voiceBusy(){return DeviceSpeech.outputBusy() || (visibleChat!=null && (visibleChat.busy || visibleChat.inputPending || visibleChat.typingTask!=null));}
+    static EditText voiceComposer(){return visibleChat!=null && !visibleChat.activityPaused && !visibleChat.busy ? visibleChat.composer : null;}
     static boolean acceptVoiceMessage(String text){
         if(visibleChat==null)return false;
         if(!visibleChat.busy){visibleChat.composer.setText(text);visibleChat.sendMessage(true);}
@@ -236,7 +237,7 @@ public class MainActivity extends Activity {
         micButton.setOnClickListener(v -> openInlineInput(CompanionInputActivity.ACTION_VOICE));
         composer = new EditText(this);
         composer.setTextSize(16); composer.setSingleLine(true); composer.setMaxLines(1);
-        composer.setHint("Scrivi a Solphivia…");
+        composer.setHint(getPackageName().endsWith(".verification") ? "Scrivi a Solphivia · PROVA…" : "Scrivi a Solphivia…");
         composer.setTextColor(0xFF29232D); composer.setHintTextColor(0xFF766D7B);
         composer.setPadding(dp(14), dp(9), dp(12), dp(9));
         composer.setBackground(roundRect(0xFFFCFEFF, dp(20), 0xFF9BE9F1));
@@ -762,7 +763,7 @@ public class MainActivity extends Activity {
         homeShortcutPromptPending=false;
         if(!startHomeOverlayIfReady() && !openingGreetingDone && !activityPaused){
             openingGreetingDone=true;
-            if(GreetingPolicy.claim())speak("Hola! Sono Solphivia, sono qui con te.","wave","stay",false);
+            if(GreetingPolicy.claim())speak("Hola! Sono Solphivia. Per iniziare, di’ Hola Solphivia.","wave","stay",false);
         }
     }
 
