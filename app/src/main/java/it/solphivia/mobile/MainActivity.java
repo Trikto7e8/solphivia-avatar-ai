@@ -470,7 +470,7 @@ public class MainActivity extends Activity {
         ((InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
         busy = true; sendButton.setEnabled(false); composer.setEnabled(false);
         status.setText("Solphivia sta pensando…");
-        setAnimation("thinking"); setSpeech("Ti ascolto…", false);
+        setAnimation("thinking"); setSpeech(VoiceStatusState.THINKING_LABEL, false);
         JSONArray history = loadHistory();
         final String requestText=text;
         try {history.put(new JSONObject().put("role","user").put("content",requestText));}catch(Exception e){throw new IllegalStateException(e);}
@@ -663,6 +663,7 @@ public class MainActivity extends Activity {
         main.removeCallbacksAndMessages(null);
         cancelIdleTimers();
         if (typingTask != null) main.removeCallbacks(typingTask);
+        OpenAiChatClient.cancelRequests(worker);
         worker.shutdownNow();
         super.onDestroy();
     }
