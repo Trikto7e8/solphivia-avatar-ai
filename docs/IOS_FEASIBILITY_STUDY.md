@@ -4,9 +4,9 @@
 **Contributor:** @sunny-kavixo. **AI assistance:** ChatGPT (GPT-6) assisted with source review, research and drafting; observations are differentiated from proposals.
 **Reviewed basis:** repository Android Java sources on default `main` and linked Apple Developer documentation (accessed October 2026). This is not a substitute for runtime verification, iOS developer-account entitlements, or Apple's App Review decision.
 
-## Maintainer update — 22 October 2026
+## Maintainer update — 24 October 2026
 
-The Android source now uses alpha9 local wake listening and Android command transcription with automatic text submission, without adding vault memory or files. Editable single-phrase dictation remains separate. The source-observation table below records the earlier inspection; it is not a claim that iOS has Android wake or overlay parity. [Current Android voice behavior](VOICE-SESSION.md).
+The current Android release is alpha11 (44), with merged Stage A provider contracts, local wake listening, five-second follow-up conversation and transcript preview before automatic submission, without adding vault memory or files. Editable single-phrase dictation remains separate. [Current Android version and verification](CURRENT_RELEASE.md). The source-observation table below records the earlier inspection; it is not a claim that iOS has Android wake or overlay parity. [Current Android voice behavior](VOICE-SESSION.md).
 
 Approved first implementation scope: a small **foreground SwiftUI prototype** with an in-app placeholder avatar, local text chat and deterministic mock replies. The contributor should propose the minimum iOS deployment target and iPhone/iPad scope in the PR, and report exact Xcode/simulator versions and checks actually run. No real accounts, credentials or signing material are needed for that first slice. TestFlight/App Store signing and distribution remain separate maintainer decisions.
 
@@ -20,7 +20,7 @@ Apple system speech is an initial playback option, not a promise of identical vo
 
 Do **not** attempt Android's draggable **system-wide** `SYSTEM_ALERT_WINDOW` overlay, a general foreground service, permanent background listening, or out-of-app autonomous avatar actions: these are **not normal third-party iOS app capabilities**. No background-audio tricks, accessibility abuse or private APIs as substitutes. An avatar **inside Solphivia's own foreground scene** is appropriate.
 
-## 2. Evidence from existing Android source
+## 2. Historical Android source observations from the original study
 
 | Android component | Source-observed behavior | Proposed iOS mapping / divergence |
 | --- | --- | --- |

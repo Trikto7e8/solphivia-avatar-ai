@@ -1,16 +1,16 @@
 # Model-provider boundary proposal — Issue #5
 
-**Status:** design proposal only; no adapter implemented, no Android build/device test run.
+**Status:** historical design proposal; Stage A is now implemented and merged in alpha11. The original source-inspection evidence below remains historical, not a new runtime verification.
 **Scope:** original Android alpha2 source review; API contracts proposed for maintainer review.
 **Provenance:** Prepared by @sunny-kavixo with ChatGPT (GPT-6) assisting source inspection and drafting. Source inspection via GitHub; architectural recommendations are proposals, not verified functionality.
 
-## Maintainer update — 22 October 2026, alpha9
+## Maintainer update — 24 October 2026, alpha11
 
-This is a design document, not a working local-model feature. The original inspection describes the earlier alpha2 request path. Alpha9 is the current runtime baseline: [release notes](releases/v0.9.2-alpha9.md), [voice behavior](VOICE-SESSION.md).
+This proposal is retained for design provenance. Alpha11 is the current runtime baseline: [release notes](releases/v0.9.2-alpha11.md), [implemented Stage A](MODEL_PROVIDER_IMPLEMENTATION_STAGE_A.md), [voice behavior](VOICE-SESSION.md). The original inspection describes the earlier alpha2 request path. Ollama/LM Studio adapters and configurable provider settings remain unimplemented; the completed OpenAI compatibility boundary must not be mistaken for working local-model integration.
 
 Voice requests already send automatically with recent text history, **no added vault memory and no attachment payloads or historical file references**. Typed requests retain editable, single-use memory approval. An adapter must preserve both paths without adding a manual memory screen to every voice command. Pending typed attachments stay selected for a separate typed send. Local app commands are handled before provider dispatch and never execute model output.
 
-Agreed first implementation: dependency-light contracts and mock/state tests, followed by an OpenAI compatibility wrapper. Keep `ChatCallback` as a shim and settings in a separate screen. Ollama native chat is the first planned text-only local adapter **after** that slice is reviewed; LM Studio follows separately. These are approved directions for focused PRs, not implemented capabilities.
+Completed first slice: dependency-light contracts, snapshot/consent/stream tests and the OpenAI compatibility wrapper, merged in PR #16 and shipped in alpha11. `ChatCallback` remains the compatibility shim. Settings and Ollama/LM Studio adapters are separate future slices whose exact implementation scope still needs agreement.
 
 ## 1. Original behavior and coupling (historical source inspection)
 

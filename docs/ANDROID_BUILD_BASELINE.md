@@ -2,11 +2,11 @@
 
 Related issue: #3
 
-**Historical contributor baseline:** the measurements below apply only to commit `71409324733826d5a5e03bc992ab1e06b075bc15` (alpha2). They are contributor-reported observations, not a fresh reproduction by the maintainer on that Mac. APK size/hash, version and task counts are not expected to match alpha9.
+**Historical contributor baseline:** the measurements below apply only to commit `71409324733826d5a5e03bc992ab1e06b075bc15` (alpha2). They are contributor-reported observations, not a fresh reproduction by the maintainer on that Mac. APK size/hash, version and task counts are not expected to match alpha11.
 
-**Maintainer update, 22 October 2026:** alpha9 (38) is now the runtime baseline. Its build, Lint, isolated command/consent checks and user-confirmed voice/WhatsApp flow are documented in [the alpha9 release notes](releases/v0.9.2-alpha9.md). These do not establish API 36 target compatibility; compileSdk/targetSdk remain 35. Preserve the original evidence below instead of relabelling it as a current-build test.
+**Current maintainer baseline, 24 October 2026:** alpha11 (44) is the current release. Its 38 JVM tests, four isolated Android suites, build/lint results and user-reported transcript/conversation checks are documented in [the alpha11 release notes](releases/v0.9.2-alpha11.md). compileSdk/targetSdk remain 35; running on Android 16 does not establish targetSdk 36 compatibility. The original Mac observations below remain historical evidence, not alpha11 measurements.
 
-## Verified environment
+## Historical verified environment
 
 - Date: 2026-10-14
 - Approximate APK generation time: 00:39 IST (UTC+05:30); this is a file timestamp, not an independently recorded build start time

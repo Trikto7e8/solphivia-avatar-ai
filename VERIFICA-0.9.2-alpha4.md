@@ -1,5 +1,7 @@
 # Verifica locale alpha4 — 14 ottobre 2026
 
+> Rapporto storico: date, versione e risultati qui sotto restano quelli originali. La versione corrente è [alpha11 (44)](docs/CURRENT_RELEASE.md); [download consigliato](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11). Non usare questo rapporto come collaudo dell’ultima versione.
+
 APK debug 0.9.2-alpha4, codice 33, installato sul Motorola senza cancellazione dati.
 
 - Compilazione e Android Lint: riusciti.

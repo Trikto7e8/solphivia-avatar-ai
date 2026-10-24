@@ -1,6 +1,6 @@
 # Stato corrente
 
-**0.9.2-alpha11 (44), 24 ottobre 2026.** La PR #16 (architettura provider Stage A) è integrata. Alpha11 la unisce ai comandi app/Maps/composizione numero di alpha10, alla finestra di ascolto successiva e alla trascrizione nel campo di scrittura.
+**0.9.2-alpha11 (44), 24 ottobre 2026.** La PR #16 (architettura provider Stage A) è integrata. Alpha11 la unisce ai comandi locali app/Maps/composizione numero, alla finestra di ascolto successiva e alla trascrizione nel campo di scrittura.
 
 - Automatici: 38 test JVM superati; build app e test riuscite; Android Lint con 0 errori e 118 avvisi. Quattro suite instrumentation isolate superate su Moto g35 5G (Android 16).
 - Manuali: il manutentore conferma trascrizione visibile e continuazione della conversazione sull’alpha11 finale installata. È un riscontro dell’utente, distinto dalle prove automatiche.
