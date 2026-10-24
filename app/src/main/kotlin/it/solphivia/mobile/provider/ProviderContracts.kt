@@ -1,10 +1,12 @@
 package it.solphivia.mobile.provider
 
 import java.net.URI
+import java.security.MessageDigest
 import java.util.UUID
 import java.util.Collections
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.Base64
 
 enum class ProviderId {
     OPENAI_CHATGPT,
@@ -151,6 +153,11 @@ data class AttachmentSnapshot(
     val sizeBytes: Long,
     val dataUri: String?
 ) {
+    /** Lazily computed from the immutable materialized bytes, never supplied independently. */
+    val contentSha256: String by lazy(LazyThreadSafetyMode.NONE) {
+        dataUri?.let { AttachmentContentDigest.sha256DataUri(it) }.orEmpty()
+    }
+
     val kind: AttachmentKind
         get() = when {
             mimeType.lowercase().startsWith("image/") -> AttachmentKind.IMAGE
@@ -168,13 +175,50 @@ data class AttachmentSnapshot(
     init {
         require(fileName.isNotBlank()) { "Attachment filename must not be blank" }
         require(mimeType.isNotBlank()) { "Attachment MIME type must not be blank" }
-        require(sizeBytes >= 0L) { "Attachment size must not be negative" }
+        require(sizeBytes in 0L..MAX_APPLICATION_ATTACHMENT_BYTES) {
+            "Attachment size is outside the application limit"
+        }
         if (dataUri != null) require(dataUri.startsWith("data:")) {
             "Materialized attachment content must be a data URI"
+        }
+        if (dataUri != null) {
+            require(AttachmentContentDigest.decodedSize(dataUri) == sizeBytes) {
+                "Materialized attachment size does not match its content"
+            }
         }
     }
 
     override fun toString(): String = "AttachmentSnapshot(fileName=$fileName, mimeType=$mimeType, sizeBytes=$sizeBytes, materialized=${dataUri != null})"
+}
+
+/** Decodes only bounded, already-materialized data URIs and hashes their bytes. */
+internal object AttachmentContentDigest {
+    private const val MAX_BASE64_CONTENT_LENGTH = ((MAX_APPLICATION_ATTACHMENT_BYTES + 2L) / 3L) * 4L
+
+    private fun encodedContent(dataUri: String): String {
+        require(dataUri.startsWith("data:") && dataUri.contains(";base64,")) {
+            "Materialized attachment content must be a base64 data URI"
+        }
+        return dataUri.substringAfter(";base64,")
+    }
+
+    fun decode(dataUri: String): ByteArray = try {
+        val encoded = encodedContent(dataUri)
+        require(encoded.length.toLong() <= MAX_BASE64_CONTENT_LENGTH) {
+            "Materialized attachment content exceeds the application limit"
+        }
+        Base64.getDecoder().decode(encoded)
+    } catch (error: IllegalArgumentException) {
+        throw IllegalArgumentException("Materialized attachment content is not valid base64", error)
+    }
+
+    fun decodedSize(dataUri: String): Long = decode(dataUri).size.toLong()
+
+    fun sha256DataUri(dataUri: String): String = sha256(decode(dataUri))
+
+    private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
+        .digest(bytes)
+        .joinToString("") { "%02x".format(it) }
 }
 
 data class ConversationMessage(

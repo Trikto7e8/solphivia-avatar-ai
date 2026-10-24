@@ -109,8 +109,8 @@ class ProviderPolicyTest {
 
     @Test
     fun snapshotRejectsAnAttachmentAboveTheApplicationLimit() {
-        val oversized = image.copy(sizeBytes = 16L * 1024L * 1024L)
         assertThrows(IllegalArgumentException::class.java) {
+            val oversized = image.copy(sizeBytes = 16L * 1024L * 1024L)
             RequestSnapshotFactory.freeze(
                 listOf(ConversationMessage("user", "large", listOf(oversized))),
                 RequestMode.TYPED,
@@ -139,6 +139,7 @@ class ProviderPolicyTest {
 class MemoryConsentTest {
     private val config = ProviderConfigurations.chatGpt("mock-model")
     private val file = AttachmentSnapshot("content://synthetic/file", "note.txt", "text/plain", 4, "data:text/plain;base64,dGVzdA==")
+    private val otherFile = AttachmentSnapshot("content://synthetic/other", "other.txt", "text/plain", 4, "data:text/plain;base64,Zm9vIQ==")
 
     @Test
     fun approvalIsSingleUseAndBoundToProviderAndAttachments() {
@@ -176,6 +177,70 @@ class MemoryConsentTest {
 
         val omitted = store.issue(config, emptyList(), "")
         assertEquals(MemoryConsentResult.Approved(""), store.consume(omitted.id, config, emptyList(), ""))
+    }
+
+    @Test
+    fun approvalRejectsChangedBytesWithIdenticalMetadata() {
+        val store = SingleUseMemoryConsent { 10L }
+        val grant = store.issue(config, listOf(file), "memory")
+        val changedBytes = AttachmentSnapshot(
+            sourceUri = file.sourceUri,
+            fileName = file.fileName,
+            mimeType = file.mimeType,
+            sizeBytes = file.sizeBytes,
+            dataUri = "data:text/plain;base64,ZXZpbA=="
+        )
+
+        val result = store.consume(grant.id, config, listOf(changedBytes), "memory")
+
+        assertTrue(result is MemoryConsentResult.Rejected)
+        assertEquals(ProviderErrorCategory.CONFIGURATION, (result as MemoryConsentResult.Rejected).error.category)
+    }
+
+    @Test
+    fun changingOnlyOneOfSeveralAttachmentsRejectsTheWholeApproval() {
+        val store = SingleUseMemoryConsent { 10L }
+        val grant = store.issue(config, listOf(file, otherFile), "memory")
+        val changedOther = AttachmentSnapshot(
+            sourceUri = otherFile.sourceUri,
+            fileName = otherFile.fileName,
+            mimeType = otherFile.mimeType,
+            sizeBytes = otherFile.sizeBytes,
+            dataUri = "data:text/plain;base64,YmFyIQ=="
+        )
+
+        val result = store.consume(grant.id, config, listOf(file, changedOther), "memory")
+
+        assertTrue(result is MemoryConsentResult.Rejected)
+    }
+
+    @Test
+    fun missingOrUnreadableAttachmentCannotReceiveConsent() {
+        val store = SingleUseMemoryConsent { 10L }
+        val missing = AttachmentSnapshot("content://synthetic/missing", "missing.txt", "text/plain", 4, null)
+
+        assertThrows(IllegalArgumentException::class.java) {
+            store.issue(config, listOf(missing), "memory")
+        }
+    }
+
+    @Test
+    fun approvedSnapshotRetainsTheBytesUsedForProviderSubmission() {
+        val store = SingleUseMemoryConsent { 10L }
+        val grant = store.issue(config, listOf(file), "memory")
+        val frozen = RequestSnapshotFactory.freeze(
+            listOf(ConversationMessage("user", "read", listOf(file))),
+            RequestMode.TYPED,
+            config,
+            approvedMemory = "memory",
+            memoryConsentId = grant.id
+        )
+
+        val result = store.consume(grant.id, config, frozen.messages.single().attachments, "memory")
+
+        assertEquals(MemoryConsentResult.Approved("memory"), result)
+        assertEquals(file.dataUri, frozen.messages.single().attachments.single().dataUri)
+        assertEquals(file.contentSha256, frozen.messages.single().attachments.single().contentSha256)
     }
 }
 
@@ -230,5 +295,59 @@ class ResponseParserTest {
         val output = filter.feed("Visible [[solphivia:nod") + filter.finish()
 
         assertEquals("Visible ", output)
+    }
+
+    @Test
+    fun malformedSingleClosingBracketDoesNotLeakIntoVisibleText() {
+        val parsed = SolphiviaResponseParser.parse("Ciao [[SOLPHIVIA:mod]")
+
+        assertEquals("Ciao", parsed.text)
+        assertTrue(!parsed.text.contains("SOLPHIVIA", ignoreCase = true))
+    }
+
+    @Test
+    fun malformedControlPreservesNaturalLanguageAfterItsFragment() {
+        val parsed = SolphiviaResponseParser.parse("Ciao [[SOLPHIVIA:mod] mondo [test]")
+
+        assertEquals("Ciao  mondo [test]", parsed.text)
+    }
+
+    @Test
+    fun parserHandlesMultipleControlsAndNestedMalformedControls() {
+        val parsed = SolphiviaResponseParser.parse(
+            "Prima [[SOLPHIVIA:nod]] centro [[SOLPHIVIA:mode-codex]] [[SOLPHIVIA:nod [[SOLPHIVIA:sad]] dopo"
+        )
+        assertEquals("Prima  centro   dopo", parsed.text)
+        assertEquals("nod", parsed.animation)
+        assertEquals("codex", parsed.mode)
+    }
+
+    @Test
+    fun ordinaryBracketLikeTextIsNotRemoved() {
+        val parsed = SolphiviaResponseParser.parse("Usa [[questa sintassi]] e [test] senza comandi.")
+
+        assertEquals("Usa [[questa sintassi]] e [test] senza comandi.", parsed.text)
+    }
+
+    @Test
+    fun malformedSingleClosingBracketAcrossStreamingChunksIsFiltered() {
+        val filter = StreamingTagFilter()
+
+        val first = filter.feed("Visibile [[SOLPHIVIA:mod]")
+        val second = filter.feed(" testo")
+        val final = filter.finish()
+
+        assertEquals("Visibile ", first)
+        assertEquals(" testo", second)
+        assertEquals("", final)
+    }
+
+    @Test
+    fun validControlClosingDelimiterSplitAcrossChunksStillWorksAsFilteredOutput() {
+        val filter = StreamingTagFilter()
+
+        val output = filter.feed("Prima [[SOLPHIVIA:nod]") + filter.feed("] dopo") + filter.finish()
+
+        assertEquals("Prima  dopo", output)
     }
 }

@@ -3,6 +3,8 @@ package it.solphivia.mobile.provider
 import org.json.JSONArray
 import org.json.JSONObject
 import java.security.MessageDigest
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -38,7 +40,8 @@ class SingleUseMemoryConsent @JvmOverloads constructor(
         val grant = MemoryConsentGrant(
             id = UUID.randomUUID().toString(),
             providerFingerprint = configuration.stableFingerprint(),
-            attachmentFingerprint = fingerprintAttachments(attachments),
+            attachmentFingerprint = fingerprintAttachments(attachments)
+                ?: throw IllegalArgumentException("Il consenso richiede allegati materializzati e verificabili."),
             approvedText = approvedText,
             expiresAtMillis = clockMillis() + ttlMillis
         )
@@ -58,8 +61,10 @@ class SingleUseMemoryConsent @JvmOverloads constructor(
         if (clockMillis() >= grant.expiresAtMillis) return MemoryConsentResult.Rejected(
             ProviderError(ProviderErrorCategory.CONFIGURATION, "Il consenso memoria è scaduto.")
         )
+        val currentAttachmentFingerprint = fingerprintAttachments(attachments)
         if (grant.providerFingerprint != configuration.stableFingerprint() ||
-            grant.attachmentFingerprint != fingerprintAttachments(attachments)
+            currentAttachmentFingerprint == null ||
+            grant.attachmentFingerprint != currentAttachmentFingerprint
         ) {
             return MemoryConsentResult.Rejected(
                 ProviderError(ProviderErrorCategory.CONFIGURATION, "La destinazione o gli allegati sono cambiati: approva di nuovo questa richiesta.")
@@ -72,12 +77,31 @@ class SingleUseMemoryConsent @JvmOverloads constructor(
 
     fun pendingCount(): Int = grants.size
 
-    private fun fingerprintAttachments(attachments: List<AttachmentSnapshot>): String =
-        sha256(attachments.joinToString("|") { "${it.sourceUri}|${it.fileName}|${it.mimeType}|${it.sizeBytes}" })
+    /** Canonical, length-delimited metadata plus the SHA-256 of every attachment's bytes. */
+    private fun fingerprintAttachments(attachments: List<AttachmentSnapshot>): String? {
+        if (attachments.any { it.dataUri == null || it.contentSha256.isEmpty() }) return null
+        val digest = MessageDigest.getInstance("SHA-256")
+        digest.update(ByteBuffer.allocate(Int.SIZE_BYTES).putInt(attachments.size).array())
+        attachments.forEach { attachment ->
+            updateField(digest, attachment.sourceUri)
+            updateField(digest, attachment.fileName)
+            updateField(digest, attachment.mimeType)
+            digest.update(ByteBuffer.allocate(Long.SIZE_BYTES).putLong(attachment.sizeBytes).array())
+            updateField(digest, attachment.contentSha256)
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
 
-    private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")
-        .digest(value.toByteArray(Charsets.UTF_8))
-        .joinToString("") { "%02x".format(it) }
+    private fun updateField(digest: MessageDigest, value: String?) {
+        val bytes = value?.toByteArray(StandardCharsets.UTF_8)
+        if (bytes == null) {
+            digest.update(0xFF.toByte())
+            return
+        }
+        digest.update(0x00.toByte())
+        digest.update(ByteBuffer.allocate(Int.SIZE_BYTES).putInt(bytes.size).array())
+        digest.update(bytes)
+    }
 }
 
 object RequestSnapshotFactory {
@@ -189,10 +213,9 @@ object ProviderRequestFactory {
             require(dataUri.startsWith("data:") && dataUri.contains(";base64,")) {
                 "Contenuto allegato non valido: $name"
             }
-            val encoded = dataUri.substringAfter(";base64,")
-            val padding = encoded.takeLastWhile { it == '=' }.length
-            val decodedSize = (encoded.length * 3L / 4L) - padding
-            require(decodedSize == size) { "Dimensione allegato non verificabile: $name" }
+            require(AttachmentContentDigest.decodedSize(dataUri) == size) {
+                "Dimensione allegato non verificabile: $name"
+            }
             aggregateBytes[0] += size
             require(aggregateBytes[0] <= MAX_ATTACHMENT_TOTAL_BYTES) {
                 "Allegati della conversazione oltre 15 MB. Inizia una nuova chat."

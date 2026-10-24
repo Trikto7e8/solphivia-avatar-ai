@@ -1,5 +1,7 @@
 package it.solphivia.mobile.provider
 
+import java.util.Locale
+
 private const val TAG_PREFIX = "[[SOLPHIVIA:"
 
 private val KNOWN_TAGS = setOf(
@@ -14,21 +16,35 @@ object SolphiviaResponseParser {
         var animation = "idle"
         var motion = "stay"
         var mode = ""
-        val cleaned = Regex("\\[\\[SOLPHIVIA:([^]]*)]]", RegexOption.IGNORE_CASE).replace(raw) { match ->
-            val tag = match.groupValues[1].lowercase()
-            when {
-                tag in setOf("idle", "look", "happy", "concerned", "sad", "wave", "nod", "explain", "celebrate", "sit") -> animation = tag
-                tag.startsWith("mode-") && tag in KNOWN_TAGS -> mode = tag.removePrefix("mode-")
-                tag in KNOWN_TAGS -> motion = tag
+        val cleaned = StringBuilder()
+        var cursor = 0
+        while (cursor < raw.length) {
+            val start = raw.indexOf(TAG_PREFIX, cursor, ignoreCase = true)
+            if (start < 0) {
+                cleaned.append(raw, cursor, raw.length)
+                break
             }
-            ""
+            cleaned.append(raw, cursor, start)
+            val bodyStart = start + TAG_PREFIX.length
+            val close = raw.indexOf(']', bodyStart)
+            if (close < 0) break
+            val tag = raw.substring(bodyStart, close).lowercase(Locale.ROOT)
+            val complete = close + 1 < raw.length && raw[close + 1] == ']'
+            if (complete) {
+                when {
+                    tag in setOf("idle", "look", "happy", "concerned", "sad", "wave", "nod", "explain", "celebrate", "sit") -> animation = tag
+                    tag.startsWith("mode-") && tag in KNOWN_TAGS -> mode = tag.removePrefix("mode-")
+                    tag in KNOWN_TAGS -> motion = tag
+                }
+                cursor = close + 2
+            } else {
+                // A control prefix reserves only its malformed fragment; ordinary text after
+                // a single closing bracket remains visible.
+                cursor = close + 1
+            }
         }
-        val withoutMalformedTags = cleaned.replace(
-            Regex("\\[\\[SOLPHIVIA:[^]]*(?:]]|$)", RegexOption.IGNORE_CASE),
-            ""
-        ).trim()
         return ProviderResponse(
-            text = withoutMalformedTags.ifEmpty { "Sono qui con te." },
+            text = cleaned.toString().trim().ifEmpty { "Sono qui con te." },
             animation = animation,
             motion = motion,
             mode = mode
@@ -68,11 +84,15 @@ class StreamingTagFilter {
             val value = candidate.toString()
             if (value.length <= TAG_PREFIX.length && TAG_PREFIX.regionMatches(0, value, 0, value.length, ignoreCase = true)) return
             if (value.regionMatches(0, TAG_PREFIX, 0, TAG_PREFIX.length, ignoreCase = true)) {
-                val end = value.indexOf("]]", TAG_PREFIX.length)
-                if (end < 0) return
-                // Complete control tags are consumed even when unknown, so malformed provider
-                // controls cannot leak into the avatar bubble or speech output.
-                candidate.delete(0, end + 2)
+                val close = value.indexOf(']', TAG_PREFIX.length)
+                if (close < 0) return
+                // Hold a trailing single bracket until the next chunk so a split `]]` remains
+                // indistinguishable from a complete control.
+                if (close == value.length - 1) return
+                val end = if (value[close + 1] == ']') close + 2 else close + 1
+                // Complete controls and malformed controls are both consumed; only text after a
+                // malformed single bracket is allowed back into the visible stream.
+                candidate.delete(0, end)
                 continue
             }
             output.append(candidate[0])

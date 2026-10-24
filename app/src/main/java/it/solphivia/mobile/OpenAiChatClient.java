@@ -14,6 +14,8 @@ import it.solphivia.mobile.provider.RequestLifecycle;
 import it.solphivia.mobile.provider.RequestMode;
 import it.solphivia.mobile.provider.SingleUseMemoryConsent;
 import it.solphivia.mobile.provider.MemoryConsentResult;
+import it.solphivia.mobile.provider.AttachmentSnapshot;
+import it.solphivia.mobile.provider.ConversationMessage;
 
 import android.app.Activity;
 import android.content.Context;
@@ -403,9 +405,9 @@ final class OpenAiChatClient {
             OpenAiCompatibilityProvider provider = new OpenAiCompatibilityProvider(
                     worker,
                     (frozen, stream, cancellation) -> {
-                        String answer = callResponses(
-                                context, materialized, new JSONArray(), frozen.getApprovedMemory(),
-                                frozen.getConfiguration().getModel(), cancellation, stream);
+                        // Dispatch only the immutable, consent-bound request. Do not reread the
+                        // URI-backed history after approval or use the mutable JSON preflight copy.
+                        String answer = callResponses(context, frozen, cancellation, stream);
                         stream.onCompleted(answer);
                     });
             synchronized (REQUEST_LOCK) {
@@ -526,16 +528,66 @@ final class OpenAiChatClient {
         return input;
     }
 
+    private static JSONArray buildInput(FrozenChatRequest request) throws Exception {
+        JSONArray input = new JSONArray();
+        for (ConversationMessage message : request.getMessages()) {
+            JSONArray messageAttachments = new JSONArray();
+            if ("user".equals(message.getRole())) {
+                for (AttachmentSnapshot attachment : message.getAttachments()) {
+                    messageAttachments.put(new JSONObject()
+                            .put("filename", attachment.getFileName())
+                            .put("mime_type", attachment.getMimeType())
+                            .put("data_uri", attachment.getDataUri()));
+                }
+            }
+            if ("user".equals(message.getRole()) && messageAttachments.length() > 0) {
+                JSONArray content = new JSONArray().put(new JSONObject()
+                        .put("type", "input_text").put("text", message.getContent()));
+                for (int index = 0; index < messageAttachments.length(); index++) {
+                    JSONObject file = messageAttachments.getJSONObject(index);
+                    String mime = file.optString("mime_type", "application/octet-stream");
+                    String data = file.optString("data_uri", "");
+                    String filename = file.optString("filename", "allegato");
+                    if (data.isEmpty()) throw new IllegalStateException("Allegato non materializzato.");
+                    if (mime.startsWith("image/")) {
+                        content.put(new JSONObject().put("type", "input_image")
+                                .put("detail", "auto").put("image_url", data));
+                    } else {
+                        content.put(new JSONObject().put("type", "input_file")
+                                .put("filename", filename).put("file_data", data));
+                    }
+                }
+                input.put(new JSONObject().put("role", message.getRole()).put("content", content));
+            } else {
+                input.put(new JSONObject().put("role", message.getRole()).put("content", message.getContent()));
+            }
+        }
+        return input;
+    }
+
     private static String callResponses(Context context, JSONArray history, JSONArray attachments, String memory) throws Exception {
         return callResponses(context, history, attachments, memory, null, null, null);
     }
 
     private static String callResponses(Context context, JSONArray history, JSONArray attachments, String memory,
-                                        String modelOverride, RequestCancellation cancellation,
+                                         String modelOverride, RequestCancellation cancellation,
+                                         OpenAiStreamListener streamListener) throws Exception {
+        return callResponses(context, buildInput(context, history, attachments), memory, modelOverride,
+                cancellation, streamListener);
+    }
+
+    private static String callResponses(Context context, FrozenChatRequest request,
+                                        RequestCancellation cancellation,
                                         OpenAiStreamListener streamListener) throws Exception {
+        return callResponses(context, buildInput(request), request.getApprovedMemory(),
+                request.getConfiguration().getModel(), cancellation, streamListener);
+    }
+
+    private static String callResponses(Context context, JSONArray input, String memory,
+                                         String modelOverride, RequestCancellation cancellation,
+                                         OpenAiStreamListener streamListener) throws Exception {
         refreshIfNeeded(context);
         String access=secret(context,"access_token");
-        JSONArray input = buildInput(context, history, attachments);
         android.content.SharedPreferences prefs=context.getSharedPreferences(PREFS,0);
         String model=modelOverride;
         if(model==null||model.isEmpty()) { model=prefs.getString("model",null); }
@@ -703,18 +755,8 @@ final class OpenAiChatClient {
     private static final class Callback {final java.util.Map<String,String> params;Callback(java.util.Map<String,String> p){params=p;}}
     private static final class Parsed {final String text,animation,motion,mode;Parsed(String t,String a,String m,String md){text=t;animation=a;motion=m;mode=md;}}
     private static Parsed parseAssistant(String raw) {
-        String animation="idle",motion="stay",mode="",text=raw;
-        java.util.regex.Matcher matcher=java.util.regex.Pattern.compile("(?i)\\[\\[SOLPHIVIA:(idle|look|happy|concerned|sad|wave|nod|explain|celebrate|sit|stay|left|right|center|up|down|near|away|bounce|run-left|run-right|mode-prof|mode-vj|mode-codex|mode-meteorina)\\]\\]").matcher(raw);
-        StringBuffer clean=new StringBuffer();
-        while(matcher.find()) {
-            String tag=matcher.group(1).toLowerCase(Locale.ROOT);
-            if(tag.equals("idle")||tag.equals("look")||tag.equals("happy")||tag.equals("concerned")||tag.equals("sad")||tag.equals("wave")||tag.equals("nod")||tag.equals("explain")||tag.equals("celebrate")||tag.equals("sit")) animation=tag;
-            else if(tag.startsWith("mode-")) mode=tag.substring(5);
-            else motion=tag;
-            matcher.appendReplacement(clean,"");
-        }
-        matcher.appendTail(clean); text=clean.toString().trim();
-        return new Parsed(text.isEmpty()?"Sono qui con te.":text,animation,motion,mode);
+        ProviderResponse parsed = it.solphivia.mobile.provider.SolphiviaResponseParser.parse(raw);
+        return new Parsed(parsed.getText(), parsed.getAnimation(), parsed.getMotion(), parsed.getMode());
     }
 
     private static String secret(Context c,String name) {
