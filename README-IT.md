@@ -42,7 +42,9 @@ Illustrazioni promozionali generate a partire dagli sprite originali: non sono s
 
 - Mostra Solphivia come avatar Android flottante, spostabile, con fumetto e riga per scrivere.
 - Include animazioni di riposo, corsa, salto, seduta, sonno e costume cyborg.
-- Supporta la sintesi vocale, il riconoscimento vocale Android e gli allegati di documenti e immagini.
+- Supporta voce Android, trascrizione nel rigo di chat e cinque secondi per iniziare un altro messaggio dopo la risposta, dal microfono pronto.
+- Apre app per nome, Maps/percorsi e il compositore telefonico su richiesta esplicita; la chiamata richiede conferma manuale.
+- Include memoria locale cifrata, import/export del vault, consenso monouso e allegati di documenti/immagini.
 - Si collega a ChatGPT tramite Sign in with ChatGPT di OpenAI e, per gli account idonei, all'uso di Responses. Non legge le conversazioni né la memoria dell'utente su ChatGPT.
 - Salva la cronologia locale sul dispositivo e cifra le credenziali OAuth con Android Keystore.
 
@@ -52,13 +54,13 @@ Il collegamento a ChatGPT è facoltativo e dipende dall'idoneità dell'account e
 
 L'obiettivo è mantenere l'avatar e il livello di interazione di Solphivia indipendenti da un singolo fornitore di modelli. I lavori pianificati includono:
 
-1. Una piccola interfaccia comune per chat e capacità dei modelli.
+1. Estendere l’interfaccia provider Stage A già integrata con nuovi adattatori e impostazioni delle capacità.
 2. Connessioni locali a server di modelli come LM Studio o Ollama.
 3. Altri adattatori per servizi cloud, configurati con l'account o le credenziali dell'utente.
 4. Una possibile opzione per modelli eseguiti sul dispositivo, subordinata a memoria, prestazioni e licenze dei modelli.
 5. Una modalità vocale con il volto o l'avatar a figura intera di Solphivia mostrato nell'app stessa.
 
-Questi sono obiettivi futuri, non funzioni già disponibili. Ogni fornitore richiederà un proprio adattatore; non si può garantire la compatibilità con qualsiasi LLM.
+Stage A è già integrata in alpha11; gli altri punti restano obiettivi futuri, non funzioni già disponibili. Ogni fornitore richiederà un proprio adattatore; non si può garantire la compatibilità con qualsiasi LLM.
 
 ## Compilare il prototipo attuale
 
@@ -94,34 +96,10 @@ Per i dettagli su archiviazione locale, voce, allegati e overlay del prototipo a
 
 I contributi al codice sono benvenuti. Leggi prima `CONTRIBUTING.md` o [la versione italiana](CONTRIBUTI-IT.md). Non inserire credenziali, token di accesso, contenuti personali o schermate private nelle segnalazioni o nelle pull request. Contribuire al codice non concede diritti di riutilizzo del personaggio o delle illustrazioni di Solphivia.
 
-## Stato delle verifiche
+## Verifica corrente — alpha11
 
-La versione **0.9.2-alpha4** (codice 33) è stata compilata, verificata con Android Lint e installata sul Motorola. I test automatici nella copia isolata sono passati e l’aggiornamento alpha4 è stato verificato e installato il 14 ottobre 2026. Restano miglioramenti successivi e la valutazione della voce: il timbro dipende dal motore Android scelto e dalle voci installate. Vedere [rapporto di verifica](VERIFICA-0.9.2-alpha4.md).
+**0.9.2-alpha11, codice 44, 24 ottobre 2026.** 38 test JVM e quattro suite Android isolate superati su Moto g35 5G / Android 16. Build app/test riuscite; lint con **0 errori e 118 avvisi**. Il manutentore conferma trascrizione visibile e continuazione del dialogo sull’alpha11 principale installata. Le prove automatiche e la conferma manuale sono distinte nelle [note di rilascio](docs/releases/v0.9.2-alpha11.md).
 
-## Novità nell’alpha4
+Schermo bloccato, sessioni prolungate, recupero rete e altri dispositivi richiedono ancora prove. La voce non aggiunge automaticamente memoria del vault o allegati; il consenso modificabile resta nella chat scritta.
 
-- Una Solphivia alla volta: la finestra flottante si nasconde nella chat interna e torna quando esci.
-- Rispetta la voce selezionata nel motore Android, senza sostituirla con un’altra variante equivalente.
-- Abiti contestuali Prof, VJ, Codex e Meteorina, con priorità ai comandi manuali e almeno 20 secondi tra cambi automatici.
-- Tre gesti brevi: cenno, inclinazione di spiegazione e piccolo rimbalzo di gioia, animando gli sprite esistenti. Opzione Movimenti ridotti nell’anteprima.
-- Seduta e sonno conservati; riflessione attiva mentre si prepara la risposta.
-
-Scrivi `scegli tu` o `modalità auto` per la scelta contestuale. I comandi espliciti `prof`, `vj`, `codex` o `meteorina` fissano l’abito. Il contesto viene dalla conversazione, non dall’osservazione delle altre app. Vedi [le note sul comportamento](docs/CONTEXTUAL-AVATAR-DECISIONS.md).
-
-## 0.9.2-alpha2
-
-- Memoria personale cifrata sul dispositivo, editor e comando `ricorda:`; import/export cifrato compatibile con AI Memory Vault v1. Anteprima modificabile per ogni invio remoto. Nessuna sincronizzazione automatica e nessun nuovo adattatore LLM.
-- Pulsanti `+` e microfono visibili anche nella schermata interna; dettatura modificabile prima dell’invio e allegati mantenuti nei turni successivi.
-- Scelta del motore TTS e accento inglese con voce offline, quando disponibile. eSpeak NG è separato e non incluso nell’APK.
-- Radar DPC aggiornato: dati, timestamp ed errori visibili. Segnala echi vicini, senza stimare direzione o tempo di arrivo.
-- Sonno animato, proporzioni corrette e schermata `☰ → Prova animazioni`; 108 sprite e 1248 combinazioni verificate.
-
-Scarica l’APK dalla [pre-release v0.9.2-alpha5](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.
-
-## Voice Access e ShareBridge (MVP del modulo v0.1)
-
-Saluto “Hola, Solphivia!”, risposta personalizzata, apertura di WhatsApp e condivisione con anteprima e conferma. Vedi [funzioni, privacy, limiti e test Android](docs/VOICE-ACCESS-IT.md). La numerazione 0.1 riguarda il modulo, non sostituisce la versione dell’app.
-
-## Verifica corrente — 22 ottobre 2026
-
-Alpha9 (38): compilazione, Lint e controlli isolati superati. Confermati dall’utente richiamo, risposta vocale, apertura WhatsApp e invio automatico. Memoria personale e allegati non vengono aggiunti alle richieste vocali; la conferma resta nella chat scritta. Schermo bloccato, consumi prolungati e altri dispositivi restano da verificare.
+[Versione corrente e download](docs/CURRENT_RELEASE.md) · [Archivio storico](docs/RELEASE_HISTORY.md)

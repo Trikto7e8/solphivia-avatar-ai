@@ -42,7 +42,9 @@ Promotional illustrations generated from the original character sprites; these a
 
 - Shows Solphivia as a draggable Android overlay with a speech bubble and one-line chat input.
 - Includes idle, run, bounce, sit, sleep, and cyborg animation states.
-- Supports speech output, Android speech recognition, and document/image attachments.
+- Supports Android speech, transcript preview in the composer and five seconds from microphone readiness to start a follow-up after each response.
+- Opens apps by exact name, Maps/directions and dialer preparation on explicit user requests; calls still need manual confirmation.
+- Includes encrypted local memory, vault import/export, single-use consent and document/image attachments.
 - Connects to ChatGPT through OpenAI's Sign in with ChatGPT flow and eligible Responses API usage. It does not read the user's ChatGPT conversations or memory.
 - Stores the local conversation on the device and encrypts OAuth credentials with Android Keystore.
 
@@ -52,13 +54,13 @@ The ChatGPT connection is optional and depends on account eligibility and user c
 
 The goal is to keep Solphivia's avatar and interaction layer independent from any one model provider. Planned work includes:
 
-1. A small provider interface for chat and model capabilities.
+1. Extend the delivered Stage A provider interface with additional adapters and capability settings.
 2. Local connections to a model server such as LM Studio or Ollama.
 3. Additional cloud provider adapters, configured with each user's own account or credentials.
 4. A later on-device model option, subject to phone memory, performance, and model licenses.
 5. Better multilingual voice, wake accuracy and battery measurements across devices.
 
-These are roadmap items, not current features. Each provider will need its own adapter; compatibility with every LLM cannot be promised.
+Stage A is already included in alpha11; the remaining items are roadmap work, not current features. Each provider will need its own adapter; compatibility with every LLM cannot be promised.
 
 ## Build the current prototype
 
@@ -94,26 +96,10 @@ For the current Android prototype's local storage, voice, attachment, and overla
 
 Code contributions are welcome. Please read `CONTRIBUTING.md` first. Do not post credentials, access tokens, private user content, or private screenshots in issues or pull requests. Contributions to code do not grant rights to reuse the Solphivia character or artwork.
 
-## Current verification status
+## Current verification — alpha11
 
-Version **0.9.2-alpha9** (code 38) passed build, Android Lint and isolated command/consent checks. The device user confirmed wake, WhatsApp opening and automatic voice submission on 22 October 2026. Screen-lock behavior, long battery sessions and other devices still need testing. [Release notes](docs/releases/v0.9.2-alpha11.md).
+**0.9.2-alpha11, code 44, 24 October 2026.** 38 JVM tests and four isolated Android suites passed on Moto g35 5G / Android 16. App/test builds pass; lint reports **0 errors and 118 warnings**. The maintainer confirms visible transcription and continued conversation on the installed final main-package alpha11. Automated evidence and the manual report are separated in the [release notes](docs/releases/v0.9.2-alpha11.md).
 
-## New in alpha4
+Locked-screen/background sessions, prolonged use, network recovery and other devices still need testing. Voice does not automatically add vault memory or attachments; editable memory consent remains in typed chat.
 
-- One avatar at a time: the floating window hides while the internal chat is visible and returns when you leave.
-- Keeps the voice selected in the Android speech engine instead of choosing another equivalent variant.
-- Contextual Prof, VJ, Codex and Meteorina modes, with manual outfit priority and a 20-second interval between automatic changes.
-- Three brief gestures: nod, explain and celebrate, animated from existing sprites; reduced-motion option in the preview.
-- Existing sitting and sleep states preserved; thinking remains active while a response is pending.
-
-Use `scegli tu` or `modalità auto` to enable contextual outfit choice. Explicit `prof`, `vj`, `codex` or `meteorina` commands pin the outfit. Contextual suggestions come from the conversation, not observation of other apps. See [the behavior notes](docs/CONTEXTUAL-AVATAR-DECISIONS.md).
-
-## 0.9.2-alpha2
-
-- Memoria personale cifrata sul dispositivo, editor e comando `ricorda:`; import/export cifrato compatibile con AI Memory Vault v1. Anteprima modificabile per ogni invio remoto. Nessuna sincronizzazione automatica e nessun nuovo adattatore LLM.
-- Pulsanti `+` e microfono visibili anche nella schermata interna; dettatura modificabile prima dell’invio e allegati mantenuti nei turni successivi.
-- Scelta del motore TTS e accento inglese con voce offline, quando disponibile. eSpeak NG è separato e non incluso nell’APK.
-- Radar DPC aggiornato: dati, timestamp ed errori visibili. Segnala echi vicini, senza stimare direzione o tempo di arrivo.
-- Sonno animato, proporzioni corrette e schermata `☰ → Prova animazioni`; 108 sprite e 1248 combinazioni verificate.
-
-Scarica l’APK dalla [pre-release v0.9.2-alpha2](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11). È una build debug per test, non una distribuzione Google Play. Il profilo iniziale è generico e può essere personalizzato localmente nell’editor Memoria.
+[Current version and downloads](docs/CURRENT_RELEASE.md) · [Historical archive](docs/RELEASE_HISTORY.md)

@@ -1,13 +1,13 @@
 # Contributing to Solphivia Avatar AI
 
-Thanks for considering a contribution. The repository is an early Android prototype; please open an issue first for substantial changes so we can agree on scope.
+Thanks for considering a contribution. The repository contains the current Android alpha11 ([version and verification](docs/CURRENT_RELEASE.md)); please open an issue first for substantial changes so we can agree on scope.
 
 ## Scope
 
 - Software source code is licensed under the MIT license.
 - Solphivia's character, face, sprite animations, clothing, and visual identity are reserved; see `ASSETS-LICENSE.md`.
 - Please do not add API keys, OAuth tokens, personal data, private screenshots, or credentials to issues or pull requests.
-- Keep AI actions user-directed and limited to the explicitly supported avatar controls.
+- Keep model output limited to supported avatar controls. Device commands must come from explicit user input, not model output; preserve voice draft protection and per-request memory consent.
 
 ## Pull requests
 

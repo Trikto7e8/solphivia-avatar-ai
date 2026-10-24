@@ -1,5 +1,7 @@
 # Android Release Readiness — Initial Review
 
+**Historical initial review.** This inspection describes commit `47be7626601a9c08dbea74c1372a78c879197b59`, not current alpha11. For the current build/device results use [alpha11 notes](releases/v0.9.2-alpha11.md) and [current version](CURRENT_RELEASE.md). Current source also has a microphone foreground service and local command/follow-up/transcript paths. The original unchecked checklist below is preserved as evidence of that inspection; it does not negate later build/device results or establish store readiness.
+
 Related issue: #3
 
 ## Review scope and evidence

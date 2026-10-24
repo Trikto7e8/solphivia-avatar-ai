@@ -2,7 +2,7 @@
 
 # Help build Solphivia / Aiutaci a far crescere Solphivia
 
-Solphivia is an animated AI assistant with a working Android alpha: chat, voice, attachments, encrypted portable memory and an avatar. We want to make it reliable, let users choose local or cloud models, and design a serious iPhone version.
+Solphivia is an animated AI assistant with the current alpha11 Android release: chat, voice, attachments, encrypted portable memory and an avatar. We want to make it reliable, let users choose local or cloud models, and design a serious iPhone version.
 
 We are looking for Android/Google Play contributors, iOS/SwiftUI developers, local-LLM integrators, accessibility reviewers, translators and testers. A focused review or one reproducible bug report is useful too.
 
@@ -32,7 +32,7 @@ Sai sviluppare, fare test, migliorare accessibilità o documentazione? Scegli un
 
 ## Share the project
 
-Try the [latest alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha9), star the repository if it is useful, and share this page with people interested in Android, SwiftUI, accessibility or local AI. Describe it as a community alpha, not a finished App Store/Google Play product.
+Try the [latest alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11), star the repository if it is useful, and share this page with people interested in Android, SwiftUI, accessibility or local AI. Describe it as a community alpha, not a finished App Store/Google Play product.
 
 ## Licenses and personal data
 
