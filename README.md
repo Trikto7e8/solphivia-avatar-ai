@@ -8,7 +8,7 @@
 
 An animated companion on your Android screen. Talk, type, attach a file, and keep your assistant's personal memory under your control.
 
-**[Try the Android beta](https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/docs/CURRENT_RELEASE.md)** · **[Help build Solphivia](COLLABORATE.md)** · [Leggi in italiano](README-IT.md)
+**[Try the Android beta](docs/CURRENT_RELEASE.md)** · **[Help build Solphivia](COLLABORATE.md)** · [Leggi in italiano](README-IT.md)
 
 > Community beta · Android available for testing · Google Play and iOS are work ahead.
 
@@ -31,7 +31,7 @@ Promotional illustrations generated from the original character sprites; these a
 
 ## Start in a few minutes
 
-1. Get the APK from the [alpha release](https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/docs/CURRENT_RELEASE.md). This is a debug test build, not a store release.
+1. Get the APK from the [alpha release](docs/CURRENT_RELEASE.md). This is a debug test build, not a store release.
 2. Follow the [Italian setup guide](AVVIO-RAPIDO-IT.md), enable the overlay and choose an installed Android speech engine.
 3. Try the avatar and share a [reproducible test report](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6) using synthetic examples.
 

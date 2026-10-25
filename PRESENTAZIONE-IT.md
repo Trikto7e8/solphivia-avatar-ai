@@ -8,7 +8,7 @@ Un avatar Android animato e flottante che rappresenta Solphivia, assistente IA e
 
 ## Presentazione del progetto
 
-Solphivia Avatar AI porta sullo schermo del telefono un personaggio animato con cui scrivere, parlare e interagire. L'avatar può essere spostato con il dito, reagisce con animazioni e presenta la conversazione in un fumetto vicino al volto. La versione corrente è **1.0.0-beta.1 (44)**, pubblicata il 25 ottobre 2026: [APK, sorgenti e note](https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/docs/CURRENT_RELEASE.md). Si collega facoltativamente a ChatGPT tramite autorizzazione nel browser del telefono.
+Solphivia Avatar AI porta sullo schermo del telefono un personaggio animato con cui scrivere, parlare e interagire. L'avatar può essere spostato con il dito, reagisce con animazioni e presenta la conversazione in un fumetto vicino al volto. La versione corrente è **1.0.0-beta.1 (44)**, pubblicata il 25 ottobre 2026: [APK, sorgenti e note](docs/CURRENT_RELEASE.md). Si collega facoltativamente a ChatGPT tramite autorizzazione nel browser del telefono.
 
 L’interfaccia provider Stage A è integrata in 1.0 beta 1; la comunità può contribuire ad adattatori separati per altri servizi cloud o server locali. Queste connessioni alternative sono obiettivi di sviluppo, non funzioni già disponibili. Il repository pubblica il codice con licenza MIT; il personaggio, le animazioni e le illustrazioni restano riservati e non possono essere riutilizzati senza autorizzazione.
 

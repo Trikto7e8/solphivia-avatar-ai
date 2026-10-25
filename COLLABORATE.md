@@ -32,7 +32,7 @@ Sai sviluppare, fare test, migliorare accessibilità o documentazione? Scegli un
 
 ## Share the project
 
-Try the [beta review](https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/docs/CURRENT_RELEASE.md), star the repository if it is useful, and share this page with people interested in Android, SwiftUI, accessibility or local AI. Describe it as a community beta, not a finished App Store/Google Play product.
+Try the [beta review](docs/CURRENT_RELEASE.md), star the repository if it is useful, and share this page with people interested in Android, SwiftUI, accessibility or local AI. Describe it as a community beta, not a finished App Store/Google Play product.
 
 ## Licenses and personal data
 

@@ -8,7 +8,7 @@
 
 Una compagna animata sullo schermo Android. Puoi parlarle, scriverle, allegare un file e personalizzare la memoria dell'assistente mantenendone il controllo.
 
-**[Prova l’beta Android](https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/docs/CURRENT_RELEASE.md)** · **[Aiutaci a farla crescere](COLLABORATE.md)** · [Read in English](README.md)
+**[Prova l’beta Android](docs/CURRENT_RELEASE.md)** · **[Aiutaci a farla crescere](COLLABORATE.md)** · [Read in English](README.md)
 
 > Beta comunitaria · Android disponibile per le prove · Google Play e iOS sono obiettivi da realizzare.
 
@@ -31,7 +31,7 @@ Illustrazioni promozionali generate a partire dagli sprite originali: non sono s
 
 ## Comincia in pochi minuti
 
-1. Scarica l’APK dalla [release alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/docs/CURRENT_RELEASE.md). È una build debug di prova, non una versione degli store.
+1. Scarica l’APK dalla [release alpha](docs/CURRENT_RELEASE.md). È una build debug di prova, non una versione degli store.
 2. Segui la [guida al primo avvio](AVVIO-RAPIDO-IT.md), attiva l’avatar flottante e scegli un motore vocale Android installato.
 3. Prova l’avatar e condividi un [test riproducibile](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6) con esempi inventati.
 
