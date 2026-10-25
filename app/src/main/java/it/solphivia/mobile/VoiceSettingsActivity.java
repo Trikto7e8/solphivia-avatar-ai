@@ -36,7 +36,7 @@ public final class VoiceSettingsActivity extends Activity {
         EditText sample=new EditText(this);sample.setText(SAMPLE);sample.setMinLines(3);sample.setGravity(android.view.Gravity.TOP);sample.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);sample.setSaveEnabled(false);sample.setContentDescription("Frase per confrontare le pronunce");page.addView(sample);
         status=new TextView(this);page.addView(status);
         Button natural=new Button(this);natural.setText("Ascolta italiano naturale · consigliato");page.addView(natural);
-        Button classic=new Button(this);classic.setText("Ascolta inglese classico alpha11");page.addView(classic);
+        Button classic=new Button(this);classic.setText("Ascolta inglese classico");page.addView(classic);
         Button improved=new Button(this);improved.setText("Ascolta inglese con correzione Chiara");page.addView(improved);
         Button stop=new Button(this);stop.setText("Ferma la prova");page.addView(stop);stop.setOnClickListener(v->{preview.stop();status.setText("Prova fermata.");});
         Button save=new Button(this);save.setText("Salva e prova la scelta");page.addView(save);
