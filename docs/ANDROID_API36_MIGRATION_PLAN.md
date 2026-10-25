@@ -1,5 +1,6 @@
 # Android API 36 migration plan
 
+**Aggiornamento 1.0 beta 1:** la candidata corrente è descritta in [CURRENT_RELEASE](CURRENT_RELEASE.md). I riferimenti alpha11/alpha2 e le relative misure qui sotto sono snapshot storici, non esiti attribuiti alla beta. Ogni nuova implementazione deve partire dalla candidata corrente.
 Related issue: #3. Original proposal by @sunny-kavixo; refreshed by the maintainer on 24 October 2026 for alpha11.
 
 **Plan only.** This document authorizes a focused migration proposal; no SDK, permission, dependency or application source is changed here. No API 36 build/runtime compatibility or Google Play readiness is claimed.

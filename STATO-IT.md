@@ -1,10 +1,7 @@
-# Stato corrente
+# Solphivia Mobile 1.0 beta 1 — in revisione
 
-**0.9.2-alpha11 (44), 24 ottobre 2026.** La PR #16 (architettura provider Stage A) è integrata. Alpha11 la unisce ai comandi locali app/Maps/composizione numero, alla finestra di ascolto successiva e alla trascrizione nel campo di scrittura.
+Versione 1.0.0-beta.1, codice 46. Italiano naturale come scelta iniziale; pronuncia inglese facoltativa. L’utente ha confermato l’ascolto della precedente build italiana alpha12. La beta aggiunge controlli di chiusura e richiesta esplicita dell’icona Home, da verificare separatamente.
 
-- Automatici: 38 test JVM superati; build app e test riuscite; Android Lint con 0 errori e 118 avvisi. Quattro suite instrumentation isolate superate su Moto g35 5G (Android 16).
-- Manuali: il manutentore conferma trascrizione visibile e continuazione della conversazione sull’alpha11 finale installata. È un riscontro dell’utente, distinto dalle prove automatiche.
-- App principale aggiornata senza disinstallazione; memoria cifrata e preferenze del collegamento ChatGPT preservate.
-- Restano da verificare sessioni prolungate in background/a schermo bloccato, interruzioni di rete e altri dispositivi. Alpha comunitaria con firma debug, non versione degli store.
+La revisione non equivale ad approvazione Google Play, App Store o certificazione di stabilità. L’ultima release pubblicata precedente è archiviata nella cronologia. Nessun nuovo test è attribuito retroattivamente a versioni passate.
 
-[Scarica alpha11](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11) · [Note di rilascio](docs/releases/v0.9.2-alpha11.md) · [Collaborazione](COLLABORATE.md)
+[Stato e istruzioni](docs/CURRENT_RELEASE.md) · [Note della beta](docs/releases/v1.0.0-beta.1.md) · [Prossimi passi](ROADMAP-IT.md).

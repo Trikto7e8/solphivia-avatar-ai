@@ -36,12 +36,13 @@ final class LocalAppCommands {
         catch(RuntimeException error){return "Non riesco ad aprire l’app in questo momento.";}
     }
     static String handle(Context context,String text){
+        if(SessionCommands.help(text))return SessionCommands.CLOSE_HELP;
         DeviceCommand command=DeviceCommand.parse(text);
         if(command==null)return null;
         KeyguardManager keyguard=context.getSystemService(KeyguardManager.class);
         if(command.kind!=DeviceCommand.Kind.HELP&&command.kind!=DeviceCommand.Kind.INVALID&&keyguard!=null&&keyguard.isKeyguardLocked())return "Sblocca il telefono e ripeti il comando.";
         switch(command.kind){
-            case HELP:return "Puoi dire: apri Maps, apri il nome di un’app, cerca una farmacia su Maps, portami a Roma, oppure chiama seguito da un numero. Per telefonare confermi dal telefono. I nomi della rubrica non sono ancora supportati.";
+            case HELP:return "Puoi dire: apri Maps, apri il nome di un’app, cerca una farmacia su Maps, portami a Roma, oppure chiama seguito da un numero. Per telefonare confermi dal telefono. I nomi della rubrica non sono ancora supportati. Per chiudermi usa il menu e Chiudi Solphivia, oppure chiedimi come chiuderti.";
             case INVALID:return command.value.equals("numero")?"Per ora posso preparare una chiamata a un numero, senza cercare nella rubrica. Dettalo cifra per cifra oppure scrivilo; confermerai la chiamata dal telefono.":"Non ho capito il comando. Prova una sola azione, per esempio apri Maps.";
             case MAP_SEARCH:return start(context,mapIntent(command),"Apro la ricerca nelle mappe.");
             case DIRECTIONS:return start(context,mapIntent(command),"Apro il percorso nelle mappe. Controlla la destinazione prima di partire.");

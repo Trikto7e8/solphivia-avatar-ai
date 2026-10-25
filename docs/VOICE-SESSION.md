@@ -1,4 +1,4 @@
-# Voice conversation in alpha11 / Conversazione vocale
+# Voice conversation in 1.0 beta 1 / Conversazione vocale
 
 ## English
 
@@ -28,4 +28,8 @@ Puoi dire «apri Maps», «apri» seguito dal nome completo dell’app, «cerca 
 
 Se Android limita l’ascolto, controlla le impostazioni batteria della sola Solphivia. Non occorre modificare globalmente la gestione batteria. Consumi prolungati, blocco schermo e altri dispositivi richiedono ulteriori prove.
 
-[Release notes and measured limits / Note e limiti](releases/v0.9.2-alpha11.md)
+[Release notes and measured limits / Note e limiti](releases/v1.0.0-beta.1.md)
+
+## Chiudere tutta la sessione
+
+Menu ☰ → Chiudi Solphivia, o il comando omonimo dopo il richiamo. Si fermano avatar, lettura e microfono. Come faccio a chiuderti? spiega i controlli senza chiudere. Stop dialogo lascia il richiamo, Spegni microfono lascia l’avatar. Interruzione vocale mentre il TTS parla: prevista per 1.1, non disponibile in questa beta.

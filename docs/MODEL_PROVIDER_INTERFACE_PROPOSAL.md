@@ -1,5 +1,6 @@
 # Model-provider boundary proposal — Issue #5
 
+**Aggiornamento 1.0 beta 1:** la candidata corrente è descritta in [CURRENT_RELEASE](CURRENT_RELEASE.md). I riferimenti alpha11/alpha2 e le relative misure qui sotto sono snapshot storici, non esiti attribuiti alla beta. Ogni nuova implementazione deve partire dalla candidata corrente.
 **Status:** historical design proposal; Stage A is now implemented and merged in alpha11. The original source-inspection evidence below remains historical, not a new runtime verification.
 **Scope:** original Android alpha2 source review; API contracts proposed for maintainer review.
 **Provenance:** Prepared by @sunny-kavixo with ChatGPT (GPT-6) assisting source inspection and drafting. Source inspection via GitHub; architectural recommendations are proposals, not verified functionality.

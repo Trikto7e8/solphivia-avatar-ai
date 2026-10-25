@@ -183,6 +183,9 @@ public class MainActivity extends Activity {
         Button voiceButton = new Button(this); voiceButton.setText("Voce");
         voiceButton.setOnClickListener(v -> startActivity(new Intent(this, VoiceSettingsActivity.class)));
         settingsRow.addView(voiceButton, new LinearLayout.LayoutParams(0, -2, 1));
+        Button controls=new Button(this);controls.setText("Menu · Chiudi / icona Home");
+        controls.setOnClickListener(v->startActivity(new Intent(this,CompanionInputActivity.class).setAction(CompanionInputActivity.ACTION_SETTINGS)));
+        settingsRow.addView(controls,new LinearLayout.LayoutParams(0,-2,1));
         page.addView(settingsRow);
 
         stage = new FrameLayout(this);
@@ -451,13 +454,8 @@ public class MainActivity extends Activity {
             getSharedPreferences("chat", 0).edit().remove("history").apply();
             composer.setText(""); setSpeech("Nuova chat pronta.", false); return;
         }
-        if (PetService.isShutdownCommand(text)) {
-            stopService(new Intent(this,VoiceSessionService.class));
-            getSharedPreferences("pet", 0).edit().putBoolean("overlay_off", true).apply();
-            stopService(new Intent(this, PetService.class));
-            finishAndRemoveTask();
-            return;
-        }
+        if (PetService.isShutdownCommand(text)) {AppControls.close(this);return;}
+
         boolean modeCommand = PetService.applyModeCommand(this, text, inlinePet);
         Boolean cyborg = modeCommand ? null : PetService.requestedCyborgSuit(text);
         if (cyborg != null) {

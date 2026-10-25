@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <instrumentation android:name="it.solphivia.mobile.RegressionInstrumentation" android:targetPackage="it.solphivia.mobile.alpha11.verification" />
-    <instrumentation android:name="it.solphivia.mobile.VoiceCommandInstrumentation" android:targetPackage="it.solphivia.mobile.alpha11.verification" />
-    <instrumentation android:name="it.solphivia.mobile.FollowUpInstrumentation" android:targetPackage="it.solphivia.mobile.alpha11.verification" />
-    <instrumentation android:name="it.solphivia.mobile.TranscriptComposerInstrumentation" android:targetPackage="it.solphivia.mobile.alpha11.verification" />
+    <instrumentation android:name="it.solphivia.mobile.RegressionInstrumentation" android:targetPackage="it.solphivia.mobile.beta1.verification" />
+    <instrumentation android:name="it.solphivia.mobile.VoiceCommandInstrumentation" android:targetPackage="it.solphivia.mobile.beta1.verification" />
+    <instrumentation android:name="it.solphivia.mobile.FollowUpInstrumentation" android:targetPackage="it.solphivia.mobile.beta1.verification" />
+    <instrumentation android:name="it.solphivia.mobile.TranscriptComposerInstrumentation" android:targetPackage="it.solphivia.mobile.beta1.verification" />
+    <instrumentation android:name="it.solphivia.mobile.SpeechSettingsInstrumentation" android:targetPackage="it.solphivia.mobile.beta1.verification" />
 </manifest>

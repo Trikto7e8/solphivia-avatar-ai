@@ -1,14 +1,16 @@
-<p align="center"><img src="docs/media/solphivia-alpha11-cover.png" alt="Solphivia: avatar IA per Android con chat, voce e memoria portabile" width="100%" /></p>
+> **1.0.0-beta.1 — in revisione / under review.** Italiano naturale, chiusura esplicita e icona Home. [Note e verifiche](docs/releases/v1.0.0-beta.1.md). Non ancora una release stabile o degli store.
+
+<p align="center"><img src="docs/media/solphivia-cover.svg" alt="Solphivia: avatar IA per Android con chat, voce e memoria portabile" width="100%" /></p>
 
 # Ti presento Solphivia
 
-**Novità alpha11 — la conversazione continua.** Di’ «Hola Solphivia», fai una domanda e parla ancora entro cinque secondi da quando il microfono è pronto dopo la risposta. Le parole compaiono nel rigo della chat e vengono inviate automaticamente. Comandi app, Maps e preparazione del numero si uniscono ai miglioramenti provider Stage A. [Prove, installazione e limiti](docs/releases/v0.9.2-alpha11.md).
+**Novità 1.0 beta 1 — italiano naturale e controlli chiari.** Voce italiana installata, chiusura di avatar e microfono dal menu, e richiesta dell’icona Home. L’interruzione vocale durante il parlato è prevista per 1.1. [Revisione e limiti](docs/releases/v1.0.0-beta.1.md).
 
 Una compagna animata sullo schermo Android. Puoi parlarle, scriverle, allegare un file e personalizzare la memoria dell'assistente mantenendone il controllo.
 
-**[Prova l’alpha Android](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11)** · **[Aiutaci a farla crescere](COLLABORATE.md)** · [Read in English](README.md)
+**[Prova l’beta Android](https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/docs/CURRENT_RELEASE.md)** · **[Aiutaci a farla crescere](COLLABORATE.md)** · [Read in English](README.md)
 
-> Alpha comunitaria · Android disponibile per le prove · Google Play e iOS sono obiettivi da realizzare.
+> Beta comunitaria · Android disponibile per le prove · Google Play e iOS sono obiettivi da realizzare.
 
 ## Un personaggio che accompagna la conversazione
 
@@ -24,13 +26,12 @@ Fotogrammi reali del personaggio nell’app Android. Le illustrazioni restano ri
 | --- | --- | --- |
 | Avatar trascinabile, animazioni, chat e voce Android. | Memoria locale cifrata, anteprima modificabile prima della condivisione ed export cifrato Memory Vault. | Miglioriamo Android, accessibilità e test; progettiamo i collegamenti ai modelli locali e la versione iOS. |
 
-<p align="center"><img src="docs/media/solphivia-alpha11-modes.png" alt="Solphivia: everyday, professor and cyborg outfits — promotional illustration" width="100%" /></p>
 
 Illustrazioni promozionali generate a partire dagli sprite originali: non sono schermate dell’app. I fotogrammi nella tabella sopra provengono invece dalla build.
 
 ## Comincia in pochi minuti
 
-1. Scarica l’APK dalla [release alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11). È una build debug di prova, non una versione degli store.
+1. Scarica l’APK dalla [release alpha](https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/docs/CURRENT_RELEASE.md). È una build debug di prova, non una versione degli store.
 2. Segui la [guida al primo avvio](AVVIO-RAPIDO-IT.md), attiva l’avatar flottante e scegli un motore vocale Android installato.
 3. Prova l’avatar e condividi un [test riproducibile](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6) con esempi inventati.
 
@@ -60,7 +61,7 @@ L'obiettivo è mantenere l'avatar e il livello di interazione di Solphivia indip
 4. Una possibile opzione per modelli eseguiti sul dispositivo, subordinata a memoria, prestazioni e licenze dei modelli.
 5. Una modalità vocale con il volto o l'avatar a figura intera di Solphivia mostrato nell'app stessa.
 
-Stage A è già integrata in alpha11; gli altri punti restano obiettivi futuri, non funzioni già disponibili. Ogni fornitore richiederà un proprio adattatore; non si può garantire la compatibilità con qualsiasi LLM.
+Stage A è già integrata in 1.0 beta 1; gli altri punti restano obiettivi futuri, non funzioni già disponibili. Ogni fornitore richiederà un proprio adattatore; non si può garantire la compatibilità con qualsiasi LLM.
 
 ## Compilare il prototipo attuale
 
@@ -96,9 +97,9 @@ Per i dettagli su archiviazione locale, voce, allegati e overlay del prototipo a
 
 I contributi al codice sono benvenuti. Leggi prima `CONTRIBUTING.md` o [la versione italiana](CONTRIBUTI-IT.md). Non inserire credenziali, token di accesso, contenuti personali o schermate private nelle segnalazioni o nelle pull request. Contribuire al codice non concede diritti di riutilizzo del personaggio o delle illustrazioni di Solphivia.
 
-## Verifica corrente — alpha11
+## Verifica corrente — 1.0 beta 1
 
-**0.9.2-alpha11, codice 44, 24 ottobre 2026.** 38 test JVM e quattro suite Android isolate superati su Moto g35 5G / Android 16. Build app/test riuscite; lint con **0 errori e 118 avvisi**. Il manutentore conferma trascrizione visibile e continuazione del dialogo sull’alpha11 principale installata. Le prove automatiche e la conferma manuale sono distinte nelle [note di rilascio](docs/releases/v0.9.2-alpha11.md).
+**1.0.0-beta.1, codice 46, 25 ottobre 2026.** 52 test JVM superati; build e Lint completati (0 errori, 136 avvisi). L’utente ha confermato l’italiano naturale nella precedente prova alpha12; i controlli beta di chiusura/icona sono registrati separatamente nelle [note di revisione](docs/releases/v1.0.0-beta.1.md). Nessuna approvazione store o interruzione vocale 1.1 dichiarata.
 
 Schermo bloccato, sessioni prolungate, recupero rete e altri dispositivi richiedono ancora prove. La voce non aggiunge automaticamente memoria del vault o allegati; il consenso modificabile resta nella chat scritta.
 

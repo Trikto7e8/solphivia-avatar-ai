@@ -1,21 +1,15 @@
-# Current release / Versione corrente
+# Versione corrente in revisione / Current review candidate
 
-**Solphivia Mobile 0.9.2-alpha11 — versionCode 44.** Published 24 October 2026 as an Android community alpha/debug prerelease.
+**Solphivia Mobile 1.0.0-beta.1 — codice 46.** Candidata alla revisione, 25 ottobre 2026; non ancora pubblicata come release stabile. Il passaggio da alpha a beta descrive la fase del progetto e non certifica l’idoneità agli store.
 
-- [Download APK and sources / Scarica APK e sorgenti](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11)
-- [Release notes / Note di rilascio](releases/v0.9.2-alpha11.md)
-- [Setup / Guida rapida](../AVVIO-RAPIDO-IT.md)
-- [Voice conversation / Conversazione vocale](VOICE-SESSION.md)
-- [Build and isolated tests / Build e test isolati](../BUILD-E-GITHUB-IT.md)
-- [Current status EN](../STATUS.md) · [Stato IT](../STATO-IT.md)
-- [Historical release and inspection archive / Archivio storico](RELEASE_HISTORY.md)
+- [Note, comportamento e verifiche beta](releases/v1.0.0-beta.1.md)
+- [Guida rapida](../AVVIO-RAPIDO-IT.md)
+- [Conversazione vocale](VOICE-SESSION.md)
+- [Build e verifiche](../BUILD-E-GITHUB-IT.md)
+- [Archivio delle release già pubblicate](RELEASE_HISTORY.md)
 
-Release tag: `v0.9.2-alpha11`. Published source commit: `f9f65419a9c08459ac7bad95ef8d6bf8f6e03723`. Later documentation corrections on `main` do not change the released APK, tag or original source archive.
+Pacchetto principale: `it.solphivia.mobile`. Variante di verifica: `it.solphivia.mobile.beta1.verification`, etichetta PROVA. minSdk26, compileSdk/targetSdk35, Java17. I dati e i permessi appartengono al pacchetto: non confondere la principale con precedenti copie di test.
 
-Standard package: `it.solphivia.mobile`. Isolated synthetic test package: `it.solphivia.mobile.alpha11.verification`, visibly labelled PROVA. minSdk 26; compileSdk/targetSdk 35; JDK 17, Gradle 8.11.1, AGP 8.9.1 and Kotlin 2.4.20.
+La base pubblicata di questo lavoro è alpha11; la successiva prova italiana alpha12 è stata ascoltata e approvata dall’utente. I rapporti storici mantengono le loro versioni, date e limiti. L’APK della beta non va confuso con quello della vecchia release.
 
-Automated: 38 JVM tests, four isolated Android suites, successful APK builds, 0 lint errors / 118 warnings. Manual: maintainer-reported transcription and continued conversation on the installed final alpha11. Long-running/background, network interruption and other devices remain to test. See the release notes for scope; this is not a store-readiness certificate.
-
-APK SHA-256: `fdea90c115a1750ab9cbb9ec752a4b652ec2fccb3c21fb3feb64eefe5f18b4f6`.
-
-In italiano: alpha11 è la versione corrente. Le sigle più vecchie restano soltanto per provenienza, rapporti datati e cronologia; non indicano il download consigliato né nuovi risultati di collaudo.
+Per chiudere: menu ☰ → Chiudi Solphivia, oppure dopo il richiamo pronunciare Chiudi Solphivia. Come faccio a chiuderti? dà spiegazioni senza chiudere. Spegni microfono lascia l’avatar attivo. Menu → Aggiungi icona sulla Home richiede conferma al launcher e non crea collegamenti automaticamente.

@@ -1,6 +1,6 @@
 # Contributing to Solphivia Avatar AI
 
-Thanks for considering a contribution. The repository contains the current Android alpha11 ([version and verification](docs/CURRENT_RELEASE.md)); please open an issue first for substantial changes so we can agree on scope.
+Thanks for considering a contribution. The repository contains the current Android 1.0 beta 1 ([version and verification](docs/CURRENT_RELEASE.md)); please open an issue first for substantial changes so we can agree on scope.
 
 ## Scope
 

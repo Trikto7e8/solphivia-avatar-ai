@@ -30,6 +30,7 @@ import org.json.JSONObject;
 /** Small relay activity for Android's speech recognizer and document picker. */
 public class CompanionInputActivity extends Activity {
     static final String ACTION_VOICE = "it.solphivia.mobile.action.VOICE_INPUT";
+    static final String ACTION_HOME_ICON = "it.solphivia.mobile.action.HOME_ICON";
     static final String ACTION_SETTINGS = "it.solphivia.mobile.action.SETTINGS";
     static final String ACTION_FILES = "it.solphivia.mobile.action.PICK_FILES";
     static final String ACTION_ATTACHMENTS = "it.solphivia.mobile.action.ATTACHMENTS";
@@ -52,10 +53,14 @@ public class CompanionInputActivity extends Activity {
         externalRequestPending = state != null && state.getBoolean("external_request_pending", false);
         if (externalRequestPending) return;
         String action = getIntent() == null ? null : getIntent().getAction();
+        if(ACTION_HOME_ICON.equals(action)){Toast.makeText(this,AppControls.addHomeIcon(this),Toast.LENGTH_LONG).show();finish();return;}
         if (ACTION_SETTINGS.equals(action)) {
             new AlertDialog.Builder(this).setTitle("Solphivia")
-                    .setItems(new String[]{"Memoria e Memory Vault", "Voce e accento", "Prova animazioni"}, (d,w) -> {
-                        startActivity(new Intent(this,w==0?MemoryActivity.class:w==1?VoiceSettingsActivity.class:AnimationPreviewActivity.class)); finish();
+                    .setItems(new String[]{"Memoria e Memory Vault", "Voce italiana e pronuncia", "Prova animazioni", "Microfono e sessione", "Aggiungi icona sulla Home", "Come chiudere Solphivia", "Chiudi Solphivia"}, (d,w) -> {
+                        if(w==6){AppControls.close(this);return;}
+                        if(w==4){Toast.makeText(this,AppControls.addHomeIcon(this),Toast.LENGTH_LONG).show();finish();return;}
+                        if(w==5){new AlertDialog.Builder(this).setTitle("Chiudere Solphivia").setMessage(SessionCommands.CLOSE_HELP).setPositiveButton("Ho capito",(dialog,which)->finish()).setOnCancelListener(dialog->finish()).show();return;}
+                        startActivity(new Intent(this,w==0?MemoryActivity.class:w==1?VoiceSettingsActivity.class:w==2?AnimationPreviewActivity.class:VoiceSessionActivity.class)); finish();
                     }).setOnCancelListener(d -> finish()).show();
         }
         else if (ACTION_WEATHER_SETUP.equals(action)) chooseWeatherLocation();

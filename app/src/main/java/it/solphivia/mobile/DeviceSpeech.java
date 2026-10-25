@@ -17,22 +17,27 @@ final class DeviceSpeech {
     DeviceSpeech(Context context){this.context=context.getApplicationContext();}
     void stop(){generation++;outputBusy=false;if(tts!=null){tts.stop();tts.shutdown();tts=null;}}
     void speak(String text){
-        stop();
         android.content.SharedPreferences prefs=context.getSharedPreferences("pet",0);
-        if(!prefs.getBoolean("read_aloud",true))return;
+        if(!prefs.getBoolean("read_aloud",true)){stop();return;}
+        speak(text,prefs.getString("tts_engine",""),prefs.getBoolean("english_accent",false),
+                prefs.getBoolean("clear_italian",true),prefs.getInt("voice_rate_percent",100),null);
+    }
+    void speak(String text,String engine,boolean requestedEnglish,boolean clear,int ratePercent,java.util.function.Consumer<String> feedback){
+        stop();
         outputBusy=true;
         int request=generation;
-        String engine=prefs.getString("tts_engine","");
         tts=new TextToSpeech(context,status->main.post(()->{
             if(request!=generation || tts==null)return;
-            if(status!=TextToSpeech.SUCCESS){outputBusy=false;return;}
-            boolean english=prefs.getBoolean("english_accent",false);
+            if(status!=TextToSpeech.SUCCESS){outputBusy=false;if(feedback!=null)feedback.accept("Il motore vocale non è disponibile.");return;}
+            boolean english=requestedEnglish;
             Locale locale=english?Locale.UK:Locale.ITALIAN;
+            android.speech.tts.Voice preferred=tts.getVoice();
             int result=tts.setLanguage(locale);
-            android.speech.tts.Voice best=SpeechVoiceSelection.select(tts,locale,english);
+            android.speech.tts.Voice best=SpeechVoiceSelection.select(tts,locale,english,preferred);
             if(best!=null && tts.setVoice(best)==TextToSpeech.SUCCESS)result=TextToSpeech.LANG_AVAILABLE;
             else if(english){english=false;result=tts.setLanguage(Locale.ITALIAN);}
-            if(result<0){outputBusy=false;return;}
+            if(result<0){outputBusy=false;if(feedback!=null)feedback.accept("Voce non disponibile: controlla i dati vocali Android.");return;}
+            if(feedback!=null)feedback.accept(english?"Prova con la voce inglese del motore selezionato.":(requestedEnglish?"Voce inglese offline non disponibile: questa prova usa la voce italiana.":"Prova con la voce italiana selezionata."));
             tts.setOnUtteranceProgressListener(new android.speech.tts.UtteranceProgressListener(){
                 public void onStart(String id){}
                 public void onDone(String id){if("inline-final".equals(id) && request==generation)outputBusy=false;}
@@ -40,14 +45,12 @@ final class DeviceSpeech {
             });
             int rate=android.provider.Settings.Secure.getInt(context.getContentResolver(),android.provider.Settings.Secure.TTS_DEFAULT_RATE,100);
             int pitch=android.provider.Settings.Secure.getInt(context.getContentResolver(),android.provider.Settings.Secure.TTS_DEFAULT_PITCH,100);
-            tts.setSpeechRate(Math.max(0.1f,rate/100f));tts.setPitch(Math.max(0.1f,pitch/100f));
-            String spoken=english?ItalianEnglishAccent.respell(text):text;
-            if(spoken.isEmpty()){outputBusy=false;return;}
-            int limit=TextToSpeech.getMaxSpeechInputLength()-1;
-            for(int start=0;start<spoken.length();){
-                int end=Math.min(start+limit,spoken.length());if(end<spoken.length()&&Character.isLowSurrogate(spoken.charAt(end)))end--;
-                if(tts.speak(spoken.substring(start,end),start==0?TextToSpeech.QUEUE_FLUSH:TextToSpeech.QUEUE_ADD,null,end==spoken.length()?"inline-final":"inline-"+start)==TextToSpeech.ERROR){outputBusy=false;break;}
-                start=end;
+            tts.setSpeechRate(SpeechText.rate(rate,ratePercent));tts.setPitch(Math.max(0.1f,pitch/100f));
+            String spoken=SpeechText.prepare(text,english,clear);
+            java.util.List<String> chunks=SpeechText.chunks(spoken,Math.max(100,TextToSpeech.getMaxSpeechInputLength()-1));
+            if(chunks.isEmpty()){outputBusy=false;return;}
+            for(int i=0;i<chunks.size();i++){
+                if(tts.speak(chunks.get(i),i==0?TextToSpeech.QUEUE_FLUSH:TextToSpeech.QUEUE_ADD,null,i==chunks.size()-1?"inline-final":"inline-"+i)==TextToSpeech.ERROR){outputBusy=false;break;}
             }
         }),engine.isEmpty()?null:engine);
     }

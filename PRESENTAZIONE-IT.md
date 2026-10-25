@@ -1,16 +1,16 @@
-<p align="center"><img src="docs/media/solphivia-alpha11-cover.png" alt="Solphivia Mobile: chat, voce e memoria portabile" width="100%" /></p>
+<p align="center"><img src="docs/media/solphivia-cover.svg" alt="Solphivia Mobile: chat, voce e memoria portabile" width="100%" /></p>
 
-# Solphivia Avatar AI — alpha11
+# Solphivia Avatar AI — 1.0 beta 1
 
 ## Descrizione breve
 
-Un avatar Android animato e flottante che rappresenta Solphivia, assistente IA e collaboratrice creativa in sviluppo, con fumetto, chat, comandi touch e voce. Alpha comunitaria con collegamento opzionale a ChatGPT e un progetto aperto a nuovi adattatori per modelli AI.
+Un avatar Android animato e flottante che rappresenta Solphivia, assistente IA e collaboratrice creativa in sviluppo, con fumetto, chat, comandi touch e voce. Beta comunitaria con collegamento opzionale a ChatGPT e un progetto aperto a nuovi adattatori per modelli AI.
 
 ## Presentazione del progetto
 
-Solphivia Avatar AI porta sullo schermo del telefono un personaggio animato con cui scrivere, parlare e interagire. L'avatar può essere spostato con il dito, reagisce con animazioni e presenta la conversazione in un fumetto vicino al volto. La versione corrente è **0.9.2-alpha11 (44)**, pubblicata il 24 ottobre 2026: [APK, sorgenti e note](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11). Si collega facoltativamente a ChatGPT tramite autorizzazione nel browser del telefono.
+Solphivia Avatar AI porta sullo schermo del telefono un personaggio animato con cui scrivere, parlare e interagire. L'avatar può essere spostato con il dito, reagisce con animazioni e presenta la conversazione in un fumetto vicino al volto. La versione corrente è **1.0.0-beta.1 (44)**, pubblicata il 25 ottobre 2026: [APK, sorgenti e note](https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/docs/CURRENT_RELEASE.md). Si collega facoltativamente a ChatGPT tramite autorizzazione nel browser del telefono.
 
-L’interfaccia provider Stage A è integrata in alpha11; la comunità può contribuire ad adattatori separati per altri servizi cloud o server locali. Queste connessioni alternative sono obiettivi di sviluppo, non funzioni già disponibili. Il repository pubblica il codice con licenza MIT; il personaggio, le animazioni e le illustrazioni restano riservati e non possono essere riutilizzati senza autorizzazione.
+L’interfaccia provider Stage A è integrata in 1.0 beta 1; la comunità può contribuire ad adattatori separati per altri servizi cloud o server locali. Queste connessioni alternative sono obiettivi di sviluppo, non funzioni già disponibili. Il repository pubblica il codice con licenza MIT; il personaggio, le animazioni e le illustrazioni restano riservati e non possono essere riutilizzati senza autorizzazione.
 
 ## Funzioni presenti nell'alpha
 
@@ -28,7 +28,7 @@ L’interfaccia provider Stage A è integrata in alpha11; la comunità può cont
 
 ## Testo pronto per la descrizione GitHub
 
-**GitHub short description:** `Solphivia alpha11: animated Android companion with voice conversation, transcript preview, local commands and encrypted memory.`
+**GitHub short description:** `Solphivia 1.0 beta 1: animated Android companion with voice conversation, transcript preview, local commands and encrypted memory.`
 
 **Topics suggeriti:** `android`, `android-app`, `ai-assistant`, `avatar`, `text-to-speech`, `openai`, `chatgpt`, `java`.
 

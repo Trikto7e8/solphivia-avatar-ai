@@ -1,5 +1,6 @@
 # Solphivia iOS feasibility study — Issue #4
 
+**Aggiornamento 1.0 beta 1:** la candidata corrente è descritta in [CURRENT_RELEASE](CURRENT_RELEASE.md). I riferimenti alpha11/alpha2 e le relative misure qui sotto sono snapshot storici, non esiti attribuiti alla beta. Ogni nuova implementazione deve partire dalla candidata corrente.
 **Status:** evidence-scoped feasibility and migration study only; **no iOS app, prototype, Xcode build, device test, App Store/TestFlight submission, or security interoperability test performed**.
 **Contributor:** @sunny-kavixo. **AI assistance:** ChatGPT (GPT-6) assisted with source review, research and drafting; observations are differentiated from proposals.
 **Reviewed basis:** repository Android Java sources on default `main` and linked Apple Developer documentation (accessed October 2026). This is not a substitute for runtime verification, iOS developer-account entitlements, or Apple's App Review decision.

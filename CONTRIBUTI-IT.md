@@ -1,6 +1,6 @@
 # Contribuire a Solphivia Avatar AI
 
-Grazie per l'interesse a contribuire. Il repository contiene l’alpha11 Android corrente ([versione e collaudo](docs/CURRENT_RELEASE.md)); prima di proporre modifiche importanti, apri una segnalazione così possiamo concordarne l'ambito.
+Grazie per l'interesse a contribuire. Il repository contiene l’1.0 beta 1 Android corrente ([versione e collaudo](docs/CURRENT_RELEASE.md)); prima di proporre modifiche importanti, apri una segnalazione così possiamo concordarne l'ambito.
 
 ## Ambito
 

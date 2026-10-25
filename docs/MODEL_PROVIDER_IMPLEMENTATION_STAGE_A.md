@@ -1,5 +1,6 @@
 # Model-provider architecture — Stage A implementation
 
+**Aggiornamento 1.0 beta 1:** la candidata corrente è descritta in [CURRENT_RELEASE](CURRENT_RELEASE.md). I riferimenti alpha11/alpha2 e le relative misure qui sotto sono snapshot storici, non esiti attribuiti alla beta. Ogni nuova implementazione deve partire dalla candidata corrente.
 **Status:** merged in PR #16 and released in alpha11 (44); [current release and evidence](CURRENT_RELEASE.md). Ollama, LM Studio and provider settings are intentionally not included.
 
 This slice turns the Issue #5 design proposal into a dependency-light Kotlin boundary while preserving the existing Java callers and ChatGPT OAuth path.

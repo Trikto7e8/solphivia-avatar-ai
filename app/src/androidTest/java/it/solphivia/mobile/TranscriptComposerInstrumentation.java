@@ -12,7 +12,7 @@ public final class TranscriptComposerInstrumentation extends Instrumentation {
     @Override public void onStart(){
         Bundle result=new Bundle();
         try{
-            check(getTargetContext().getPackageName().equals("it.solphivia.mobile.alpha11.verification"));
+            check(getTargetContext().getPackageName().equals("it.solphivia.mobile.beta1.verification"));
             check(VoicePhrases.recognitionIntent().getBooleanExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false));
             runOnMainSync(()->{
                 EditText field=new EditText(getTargetContext());
@@ -25,7 +25,7 @@ public final class TranscriptComposerInstrumentation extends Instrumentation {
                 field.setText("Bozza scritta");p=new VoiceTranscriptComposer(field);p.show("Voce");check(!p.canSubmit());p.cancel();check(field.getText().toString().equals("Bozza scritta"));
                 field.setText("");p=new VoiceTranscriptComposer(field);p.show("Sì");field.setText("No, preferisco altro");p.show("Sì grazie");check(!p.canSubmit());p.cancel();check(field.getText().toString().equals("No, preferisco altro"));
                 VoiceSessionState session=new VoiceSessionState();
-                for(String text:new String[]{"Sì, grazie.","No, preferisco la seconda.","Mi chiamo Marco.","Perché me lo chiedi?"}){
+                for(String text:new String[]{"Sì, grazie.","No, preferisco la seconda.","Questa è una frase di prova.","Perché me lo chiedi?"}){
                     VoiceSessionState.Decision d=session.accept(text);check(d.action==VoiceSessionState.SEND);check(d.text.equals(text));
                 }
                 try{
