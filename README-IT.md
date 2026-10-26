@@ -1,10 +1,10 @@
-> **1.0.0-beta.1 — in revisione / under review.** Italiano naturale, chiusura esplicita e icona Home. [Note e verifiche](docs/releases/v1.0.0-beta.1.md). Non ancora una release stabile o degli store.
+> **1.1.0-beta.1 — candidata sperimentale.** Interruzione con «Basta Solphivia» e controllo «Ferma la voce». Test sintetici superati; prova reale sopra l'altoparlante ancora da svolgere. [Note e limiti](docs/releases/v1.1.0-beta.1.md). La revisione 1.0 resta separata.
 
 <p align="center"><img src="docs/media/solphivia-cover.svg" alt="Solphivia: avatar IA per Android con chat, voce e memoria portabile" width="100%" /></p>
 
 # Ti presento Solphivia
 
-**Novità 1.0 beta 1 — italiano naturale e controlli chiari.** Voce italiana installata, chiusura di avatar e microfono dal menu, e richiesta dell’icona Home. L’interruzione vocale durante il parlato è prevista per 1.1. [Revisione e limiti](docs/releases/v1.0.0-beta.1.md).
+**Novità 1.1 beta 1 — interruzione vocale sperimentale.** Restano italiano naturale, chiusura esplicita e icona Home. Durante la lettura il riconoscitore locale può ascoltare «Basta Solphivia» o «Fermati Solphivia». [Verifiche e limiti](docs/releases/v1.1.0-beta.1.md).
 
 Una compagna animata sullo schermo Android. Puoi parlarle, scriverle, allegare un file e personalizzare la memoria dell'assistente mantenendone il controllo.
 

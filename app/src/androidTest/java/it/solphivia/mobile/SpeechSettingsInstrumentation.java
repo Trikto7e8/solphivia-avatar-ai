@@ -10,7 +10,7 @@ public final class SpeechSettingsInstrumentation extends Instrumentation {
     @Override public void onStart(){
         Bundle result=new Bundle();
         try{
-            if(!getTargetContext().getPackageName().equals("it.solphivia.mobile.beta1.verification"))throw new AssertionError("isolated package only");
+            if(!getTargetContext().getPackageName().equals("it.solphivia.mobile.v11.verification"))throw new AssertionError("isolated package only");
             SharedPreferences prefs=getTargetContext().getSharedPreferences("pet",0);
             prefs.edit().clear().putBoolean("english_accent",true).putString("tts_engine","synthetic.engine").commit();
             VoicePreferences.initialize(getTargetContext());

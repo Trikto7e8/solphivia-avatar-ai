@@ -89,6 +89,12 @@ public class MainActivity extends Activity {
     }
     static boolean voiceBusy(){return DeviceSpeech.outputBusy() || (visibleChat!=null && (visibleChat.busy || visibleChat.inputPending || visibleChat.typingTask!=null));}
     static EditText voiceComposer(){return visibleChat!=null && !visibleChat.activityPaused && !visibleChat.busy ? visibleChat.composer : null;}
+    static void stopReading(){
+        MainActivity activity=visibleChat;if(activity==null)return;
+        if(activity.inlineVoice!=null)activity.inlineVoice.stop();
+        if(activity.typingTask!=null){activity.main.removeCallbacks(activity.typingTask);activity.typingTask=null;}
+        activity.pendingMotion="stay";activity.speech.setText(activity.speechTarget);activity.setAnimation("idle");
+    }
     static boolean acceptVoiceMessage(String text){
         if(visibleChat==null)return false;
         if(!visibleChat.busy){visibleChat.composer.setText(text);visibleChat.sendMessage(true);}
@@ -183,7 +189,7 @@ public class MainActivity extends Activity {
         Button voiceButton = new Button(this); voiceButton.setText("Voce");
         voiceButton.setOnClickListener(v -> startActivity(new Intent(this, VoiceSettingsActivity.class)));
         settingsRow.addView(voiceButton, new LinearLayout.LayoutParams(0, -2, 1));
-        Button controls=new Button(this);controls.setText("Menu · Chiudi / icona Home");
+        Button controls=new Button(this);controls.setText("Menu · Ferma voce / Chiudi");
         controls.setOnClickListener(v->startActivity(new Intent(this,CompanionInputActivity.class).setAction(CompanionInputActivity.ACTION_SETTINGS)));
         settingsRow.addView(controls,new LinearLayout.LayoutParams(0,-2,1));
         page.addView(settingsRow);

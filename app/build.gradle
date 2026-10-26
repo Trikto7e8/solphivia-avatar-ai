@@ -5,8 +5,8 @@ plugins {
 android {
  namespace 'it.solphivia.mobile'
  compileSdk 35
- defaultConfig { applicationId 'it.solphivia.mobile'; minSdk 26; targetSdk 35; versionCode 46; versionName '1.0.0-beta.1'; manifestPlaceholders = [appLabel: 'Solphivia Avatar AI'] }
- if (project.hasProperty('verificationBuild')) { defaultConfig { applicationIdSuffix '.beta1.verification'; manifestPlaceholders = [appLabel: 'Solphivia 1.0 beta 1 · PROVA'] } }
+ defaultConfig { applicationId 'it.solphivia.mobile'; minSdk 26; targetSdk 35; versionCode 47; versionName '1.1.0-beta.1'; manifestPlaceholders = [appLabel: 'Solphivia Avatar AI'] }
+ if (project.hasProperty('verificationBuild')) { defaultConfig { applicationIdSuffix '.v11.verification'; manifestPlaceholders = [appLabel: 'Solphivia 1.1 beta 1 · PROVA'] } }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
  defaultConfig { ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' } }
  defaultConfig { testInstrumentationRunner project.findProperty('testRunner') ?: 'it.solphivia.mobile.RegressionInstrumentation' }

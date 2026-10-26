@@ -12,7 +12,7 @@ public final class TranscriptComposerInstrumentation extends Instrumentation {
     @Override public void onStart(){
         Bundle result=new Bundle();
         try{
-            check(getTargetContext().getPackageName().equals("it.solphivia.mobile.beta1.verification"));
+            check(getTargetContext().getPackageName().equals("it.solphivia.mobile.v11.verification"));
             check(VoicePhrases.recognitionIntent().getBooleanExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false));
             runOnMainSync(()->{
                 EditText field=new EditText(getTargetContext());

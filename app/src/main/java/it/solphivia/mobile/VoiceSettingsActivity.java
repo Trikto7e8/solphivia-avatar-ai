@@ -26,6 +26,7 @@ public final class VoiceSettingsActivity extends Activity {
         Switch clear=new Switch(this);clear.setText("Correzione della voce inglese · sperimentale");clear.setChecked(prefs.getBoolean("clear_italian",true));page.addView(clear);
         Switch aloud=new Switch(this);aloud.setText("Leggi le risposte ad alta voce");aloud.setChecked(prefs.getBoolean("read_aloud",true));page.addView(aloud);
         Switch wake=new Switch(this);wake.setText("Richiamo automatico all’apertura");wake.setChecked(prefs.getBoolean("wake_on_open",true));page.addView(wake);
+        Switch interrupt=new Switch(this);interrupt.setText("Interrompi con Basta Solphivia · sperimentale");interrupt.setChecked(prefs.getBoolean("voice_interrupt",true));page.addView(interrupt);
         TextView rateLabel=new TextView(this);page.addView(rateLabel);
         SeekBar rate=new SeekBar(this);rate.setMax(40);rate.setProgress(SpeechText.boundedRate(prefs.getInt("voice_rate_percent",100))-75);rate.setContentDescription("Ritmo della voce rispetto alle impostazioni Android");page.addView(rate);
         rateLabel.setText("Ritmo: "+(rate.getProgress()+75)+"% delle impostazioni Android");
@@ -53,7 +54,7 @@ public final class VoiceSettingsActivity extends Activity {
         improved.setOnClickListener(v->{play(sample.getText().toString(),engines.get(engine.getSelectedItemPosition()),true,true,rate.getProgress()+75);});
         save.setOnClickListener(v->{
             String selected=engines.get(engine.getSelectedItemPosition());
-            prefs.edit().putString("tts_engine",selected).putBoolean("english_accent",accent.isChecked()).putBoolean("clear_italian",clear.isChecked()).putBoolean("read_aloud",aloud.isChecked()).putBoolean("wake_on_open",wake.isChecked()).putInt("voice_rate_percent",rate.getProgress()+75).apply();
+            prefs.edit().putString("tts_engine",selected).putBoolean("english_accent",accent.isChecked()).putBoolean("clear_italian",clear.isChecked()).putBoolean("read_aloud",aloud.isChecked()).putBoolean("wake_on_open",wake.isChecked()).putInt("voice_rate_percent",rate.getProgress()+75).putBoolean("voice_interrupt",interrupt.isChecked()).apply();
             if(!wake.isChecked())stopService(new Intent(this,VoiceSessionService.class));
             PetService.reloadSpeechPreferences();
             if(aloud.isChecked())play(sample.getText().toString(),selected,accent.isChecked(),clear.isChecked(),rate.getProgress()+75);

@@ -9,13 +9,17 @@ import java.util.Locale;
 /** Inline screen reader using the same installed engine and accent preferences as the overlay. */
 final class DeviceSpeech {
     private static volatile boolean outputBusy;
+    private static volatile DeviceSpeech active;
+    private volatile String speakingText="";
+    static String spokenText(){return outputBusy&&active!=null?active.speakingText:"";}
+    static void interruptAll(){DeviceSpeech current=active;if(current!=null)current.stop();}
     static boolean outputBusy(){return outputBusy;}
     private final Context context;
     private final Handler main=new Handler(Looper.getMainLooper());
     private TextToSpeech tts;
     private int generation;
     DeviceSpeech(Context context){this.context=context.getApplicationContext();}
-    void stop(){generation++;outputBusy=false;if(tts!=null){tts.stop();tts.shutdown();tts=null;}}
+    void stop(){generation++;if(active==this){active=null;outputBusy=false;}speakingText="";if(tts!=null){tts.stop();tts.shutdown();tts=null;}}
     void speak(String text){
         android.content.SharedPreferences prefs=context.getSharedPreferences("pet",0);
         if(!prefs.getBoolean("read_aloud",true)){stop();return;}
@@ -23,7 +27,7 @@ final class DeviceSpeech {
                 prefs.getBoolean("clear_italian",true),prefs.getInt("voice_rate_percent",100),null);
     }
     void speak(String text,String engine,boolean requestedEnglish,boolean clear,int ratePercent,java.util.function.Consumer<String> feedback){
-        stop();
+        interruptAll();stop();active=this;speakingText=text==null?"":text;
         outputBusy=true;
         int request=generation;
         tts=new TextToSpeech(context,status->main.post(()->{

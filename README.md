@@ -1,10 +1,10 @@
-> **1.0.0-beta.1 — in revisione / under review.** Italiano naturale, chiusura esplicita e icona Home. [Note e verifiche](docs/releases/v1.0.0-beta.1.md). Non ancora una release stabile o degli store.
+> **1.1.0-beta.1 — experimental development candidate.** Say “Basta Solphivia” to interrupt reading, or use “Ferma la voce”. Synthetic tests passed; live speech over the phone speaker still needs validation. [Notes and limits](docs/releases/v1.1.0-beta.1.md). The 1.0 review remains separate.
 
 <p align="center"><img src="docs/media/solphivia-cover.svg" alt="Solphivia: animated AI companion for Android, with chat, voice and portable memory" width="100%" /></p>
 
 # Meet Solphivia
 
-**New in 1.0 beta 1 — natural Italian and clear controls.** Choose the installed Italian voice, close avatar and microphone from the menu, and add a Home icon on request. Voice interruption during TTS is planned for 1.1. [Review notes and limits](docs/releases/v1.0.0-beta.1.md).
+**New in 1.1 beta 1 — experimental voice interruption.** Natural Italian, clear shutdown controls and a Home icon remain available. While reading, local recognition can listen for “Basta Solphivia” or “Fermati Solphivia”. [Test status and limits](docs/releases/v1.1.0-beta.1.md).
 
 An animated companion on your Android screen. Talk, type, attach a file, and keep your assistant's personal memory under your control.
 

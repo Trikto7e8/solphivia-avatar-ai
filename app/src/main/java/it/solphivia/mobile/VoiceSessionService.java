@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 /** Local wake listening; Android speech recognition runs only for a requested command. */
 public final class VoiceSessionService extends Service implements RecognitionListener {
+    static final String INTERRUPT="it.solphivia.voice.INTERRUPT";
     static final String START="it.solphivia.voice.START", WAKE="it.solphivia.voice.WAKE", PAUSE="it.solphivia.voice.PAUSE", OFF="it.solphivia.voice.OFF";
     private static VoiceSessionService instance;
     private static String statusText="Microfono spento.";
@@ -33,6 +34,10 @@ public final class VoiceSessionService extends Service implements RecognitionLis
     }
     @Override public void onCreate(){super.onCreate();instance=this;}
     @Override public int onStartCommand(Intent intent,int flags,int id){
+        if(intent!=null&&INTERRUPT.equals(intent.getAction())){
+            if(foregroundReady){interruptReading();return START_STICKY;}
+            PetService.stopReading();stopSelf();return START_NOT_STICKY;
+        }
         boolean recovery=intent==null;
         if((recovery&&!getSharedPreferences("pet",0).getBoolean("voice_requested",false)) || (intent!=null&&OFF.equals(intent.getAction()))){stopSelf();return START_NOT_STICKY;}
         if(backgroundRestricted(this)){statusText="Ascolto interrotto: Android limita Solphivia in background. Consenti l’uso in background nelle impostazioni batteria dell’app.";stopSelf();return START_NOT_STICKY;}
@@ -53,6 +58,15 @@ public final class VoiceSessionService extends Service implements RecognitionLis
             if(!getSharedPreferences("pet",0).getBoolean("overlay_off",false))startForegroundService(new Intent(this,PetService.class));
         }
         return START_STICKY;
+    }
+    static void interruptReading(){
+        PetService.stopReading();
+        VoiceSessionService service=instance;
+        if(service!=null&&!service.stopped){
+            service.closeWake();service.followUp.rest();service.session.paused=false;
+            service.nextListen=SystemClock.elapsedRealtime()+750;
+            service.voiceStatus.idle();service.notifyState("Lettura fermata · attendi il segnale, poi parla");
+        }
     }
     private void closeWake(){wakeGeneration++;if(localWake!=null){localWake.close();localWake=null;}}
     private void deliver(String text){followUp.replyStarted();if(!MainActivity.acceptVoiceMessage(text))startForegroundService(new Intent(this,PetService.class).putExtra(PetService.EXTRA_SEND_MESSAGE,text).putExtra("voice_message",true));}
@@ -86,8 +100,17 @@ public final class VoiceSessionService extends Service implements RecognitionLis
     private void startWake(){
         long generation=++wakeGeneration;
         localWake=new LocalWakeDetector(this,new LocalWakeDetector.Listener(){
-            public void wake(){main.post(()->{if(stopped || !session.paused || wakeGeneration!=generation)return;closeWake();session.paused=false;nextListen=SystemClock.elapsedRealtime()+1000;notifyState("Saluto riconosciuto · ascolto il comando dopo la risposta");deliver("Hola Solphivia");});}
+            public void wake(){main.post(()->{if(stopped || wakeGeneration!=generation)return;if(!session.paused||PetService.voiceOutputBusy()){closeWake();return;}closeWake();session.paused=false;nextListen=SystemClock.elapsedRealtime()+1000;notifyState("Saluto riconosciuto · ascolto il comando dopo la risposta");deliver("Hola Solphivia");});}
             public void failed(String reason){main.post(()->{if(!stopped&&wakeGeneration==generation){statusText="Richiamo locale non disponibile: "+reason;stopSelf();}});}
+            public void interrupted(){main.post(()->{
+                if(stopped||wakeGeneration!=generation)return;
+                closeWake();
+                if(!getSharedPreferences("pet",0).getBoolean("voice_interrupt",true)||!PetService.speechOutputActive())return;
+                android.content.SharedPreferences health=getSharedPreferences("voice_health",0);
+                health.edit().putInt("speech_interruptions",health.getInt("speech_interruptions",0)+1).apply();
+                interruptReading();
+            });}
+            public void echo(boolean available,boolean enabled){getSharedPreferences("voice_health",0).edit().putBoolean("aec_available",available).putBoolean("aec_enabled",enabled).apply();}
             public void samples(long count){getSharedPreferences("voice_health",0).edit().putLong("local_samples",count).putInt("command_starts",commandStarts).apply();}
         });localWake.start();
     }
@@ -96,14 +119,17 @@ public final class VoiceSessionService extends Service implements RecognitionLis
         long now=SystemClock.elapsedRealtime();
         if((!session.paused && followUp.expired(now)) || (listening && now-recognitionStarted>60000L)){restForWake();}
         if(PetService.voiceOutputBusy()){
-            if(localWake!=null)localWake.suspend(true);
             if(listening){listening=false;recognitionGeneration++;recognizer.cancel();cancelTranscript();PetService.voiceListening(false);}
+            if(getSharedPreferences("pet",0).getBoolean("voice_interrupt",true)&&PetService.speechOutputActive()){
+                if(localWake==null)startWake();
+                localWake.interruptDuring(PetService.currentSpokenText());
+            }else if(localWake!=null)localWake.suspend(true);
             // The next five seconds start only after output has ended and capture is ready.
             if(!session.paused && !followUp.awaitingReply())followUp.replyStarted();
             nextListen=now+650;
         }else if(now>=nextListen){
             if(followUp.awaitingReply()){followUp.replyFinished();session.paused=false;}
-            if(session.paused){if(!listening && localWake==null){notifyState("In ascolto locale · Hola Solphivia");startWake();}else if(localWake!=null)localWake.suspend(false);}
+            if(session.paused){if(!listening && localWake==null){notifyState("In ascolto locale · Hola Solphivia");startWake();}else if(localWake!=null)localWake.waitForWake();}
             else if(!listening){
                 closeWake();listening=true;notifyState(VoiceStatusState.CAPTURE_STARTING_LABEL);recognitionStarted=now;commandStarts++;
                 getSharedPreferences("voice_health",0).edit().putInt("command_starts",commandStarts).apply();
@@ -119,9 +145,11 @@ public final class VoiceSessionService extends Service implements RecognitionLis
         manager.createNotificationChannel(new NotificationChannel("voice_session","Microfono Solphivia",NotificationManager.IMPORTANCE_LOW));
         PendingIntent open=PendingIntent.getActivity(this,20,new Intent(this,VoiceSessionActivity.class),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         PendingIntent pause=PendingIntent.getService(this,21,new Intent(this,VoiceSessionService.class).setAction(PAUSE),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent interrupt=PendingIntent.getService(this,23,new Intent(this,VoiceSessionService.class).setAction(INTERRUPT),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         PendingIntent off=PendingIntent.getService(this,22,new Intent(this,VoiceSessionService.class).setAction(OFF),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
         Notification note=new Notification.Builder(this,"voice_session").setSmallIcon(android.R.drawable.ic_btn_speak_now)
                 .setContentTitle("Microfono Solphivia attivo").setContentText(state).setContentIntent(open).setOngoing(true)
+                .addAction(new Notification.Action.Builder(null,"Ferma la voce",interrupt).build())
                 .addAction(new Notification.Action.Builder(null,"Stop dialogo",pause).build())
                 .addAction(new Notification.Action.Builder(null,"Spegni microfono",off).build()).build();
         if(Build.VERSION.SDK_INT>=29)startForeground(8,note,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);else startForeground(8,note);
@@ -186,5 +214,5 @@ public final class VoiceSessionService extends Service implements RecognitionLis
     }
     @Override public void onEvent(int type,Bundle params){}
     @Override public IBinder onBind(Intent intent){return null;}
-    @Override public void onDestroy(){cancelTranscript();getSharedPreferences("pet",0).edit().putBoolean("voice_requested",false).commit();stopped=true;listening=false;closeWake();main.removeCallbacksAndMessages(null);if(recognizer!=null){recognizer.cancel();recognizer.destroy();recognizer=null;}if(instance==this)instance=null;if(!statusText.startsWith("Ascolto interrotto") && !statusText.startsWith("Richiamo locale non disponibile"))statusText="Microfono spento.";PetService.voiceListening(false);stopForeground(true);super.onDestroy();}
+    @Override public void onDestroy(){cancelTranscript();getSharedPreferences("pet",0).edit().putBoolean("voice_requested",false).commit();stopped=true;listening=false;closeWake();LocalWakeDetector.releaseSessionModel();main.removeCallbacksAndMessages(null);if(recognizer!=null){recognizer.cancel();recognizer.destroy();recognizer=null;}if(instance==this)instance=null;if(!statusText.startsWith("Ascolto interrotto") && !statusText.startsWith("Richiamo locale non disponibile"))statusText="Microfono spento.";PetService.voiceListening(false);stopForeground(true);super.onDestroy();}
 }

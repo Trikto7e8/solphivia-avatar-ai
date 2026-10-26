@@ -1,4 +1,8 @@
-# Versione corrente in revisione / Current review candidate
+# Versione corrente di sviluppo / Current development candidate
+
+**Solphivia Mobile 1.1.0-beta.1 — codice 47.** Interruzione sperimentale con «Basta Solphivia» / «Fermati Solphivia» e controllo **Ferma la voce**. Installata per la prova; verifica acustica dell'utente ancora da svolgere. [Note e limiti 1.1](releases/v1.1.0-beta.1.md).
+
+Pacchetto principale invariato: `it.solphivia.mobile`. La variante isolata 1.1 usa `it.solphivia.mobile.v11.verification`. Il riferimento seguente descrive la revisione 1.0 separata, non la versione del ramo 1.1.
 
 **Solphivia Mobile 1.0.0-beta.1 — codice 46.** Candidata alla revisione, 25 ottobre 2026; non ancora pubblicata come release stabile. Il passaggio da alpha a beta descrive la fase del progetto e non certifica l’idoneità agli store.
 

@@ -104,6 +104,12 @@ public class PetService extends Service {
     static boolean voiceOutputBusy() {
         return MainActivity.voiceBusy() || (activeInstance!=null && (activeInstance.busy || activeInstance.typingTask!=null || activeInstance.ttsPending));
     }
+    static boolean speechOutputActive(){return DeviceSpeech.outputBusy()||(activeInstance!=null&&activeInstance.ttsPending);}
+    static String currentSpokenText(){return DeviceSpeech.outputBusy()?DeviceSpeech.spokenText():activeInstance!=null?activeInstance.speechTarget:"";}
+    static void stopReading(){
+        DeviceSpeech.interruptAll();MainActivity.stopReading();
+        if(activeInstance!=null){activeInstance.currentUtteranceSerial++;activeInstance.pendingMotion="stay";activeInstance.setSpeech(activeInstance.speechTarget);}
+    }
     static EditText voiceComposer(){return activeInstance!=null && !internalChatVisible && !activeInstance.destroyed && !activeInstance.busy ? activeInstance.composer : null;}
     static void voiceListening(boolean listening) {
         if(activeInstance==null || voiceOutputBusy())return;
