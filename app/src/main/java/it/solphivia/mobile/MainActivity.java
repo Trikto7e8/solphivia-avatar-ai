@@ -89,6 +89,7 @@ public class MainActivity extends Activity {
     }
     static boolean voiceBusy(){return DeviceSpeech.outputBusy() || (visibleChat!=null && (visibleChat.busy || visibleChat.inputPending || visibleChat.typingTask!=null));}
     static EditText voiceComposer(){return visibleChat!=null && !visibleChat.activityPaused && !visibleChat.busy ? visibleChat.composer : null;}
+    static boolean resumeReading(String text){if(visibleChat==null||visibleChat.activityPaused)return false;visibleChat.speak(text,"talk","stay",false);return true;}
     static void stopReading(){
         MainActivity activity=visibleChat;if(activity==null)return;
         if(activity.inlineVoice!=null)activity.inlineVoice.stop();
@@ -131,6 +132,7 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        AppControls.refreshHomeIcons(this);
         VoicePreferences.initialize(this);
         inlineVoice=new DeviceSpeech(this);
         getWindow().setStatusBarColor(Color.rgb(250, 247, 252));
@@ -189,7 +191,7 @@ public class MainActivity extends Activity {
         Button voiceButton = new Button(this); voiceButton.setText("Voce");
         voiceButton.setOnClickListener(v -> startActivity(new Intent(this, VoiceSettingsActivity.class)));
         settingsRow.addView(voiceButton, new LinearLayout.LayoutParams(0, -2, 1));
-        Button controls=new Button(this);controls.setText("Menu · Ferma voce / Chiudi");
+        Button controls=new Button(this);controls.setText("Menu · impostazioni");
         controls.setOnClickListener(v->startActivity(new Intent(this,CompanionInputActivity.class).setAction(CompanionInputActivity.ACTION_SETTINGS)));
         settingsRow.addView(controls,new LinearLayout.LayoutParams(0,-2,1));
         page.addView(settingsRow);
@@ -233,6 +235,7 @@ public class MainActivity extends Activity {
         stageParams.bottomMargin = dp(5);
         page.addView(stage, stageParams);
 
+        PowerButton power=new PowerButton(this);LinearLayout.LayoutParams powerParams=new LinearLayout.LayoutParams(dp(48),dp(48));powerParams.gravity=Gravity.RIGHT;powerParams.bottomMargin=dp(6);page.addView(power,powerParams);
         LinearLayout composerRow = new LinearLayout(this);
         composerRow.setGravity(Gravity.CENTER_VERTICAL);
         filesButton = new Button(this); filesButton.setText("+"); filesButton.setContentDescription("Aggiungi file dal telefono");
@@ -449,16 +452,19 @@ public class MainActivity extends Activity {
         if (text.isEmpty() && pendingFiles.isEmpty()) return;
         if (text.isEmpty()) text="Puoi esaminare questi allegati e aiutarmi?";
         if (!voice && !pendingFiles.isEmpty()) { sendInlineFiles(text); return; }
+        if(voice)SentVoiceTranscript.hold(composer,text);
+        if(VoiceSessionService.handleReadingCommand(text))return;
+        ReadingContinuation.clear();
         String appReply=LocalAppCommands.handle(this,text);
-        if(appReply!=null){composer.setText("");speak(appReply,"nod","stay",false);return;}
+        if(appReply!=null){if(!voice)composer.setText("");speak(appReply,"nod","stay",false);return;}
         String memoryReply=MemoryCommands.handle(this,text);
-        if(memoryReply!=null){composer.setText("");speak(memoryReply,"idle","stay",false);return;}
-        if(text.equalsIgnoreCase("memoria")){composer.setText("");startActivity(new Intent(this,MemoryActivity.class));return;}
-        if(text.equalsIgnoreCase("impostazioni voce")){composer.setText("");startActivity(new Intent(this,VoiceSettingsActivity.class));return;}
-        if(VoicePhrases.greeting(text)){composer.setText("");speak("Cosa posso fare per te?","wave","stay",false);return;}
+        if(memoryReply!=null){if(!voice)composer.setText("");speak(memoryReply,"idle","stay",false);return;}
+        if(text.equalsIgnoreCase("memoria")){if(!voice)composer.setText("");startActivity(new Intent(this,MemoryActivity.class));return;}
+        if(text.equalsIgnoreCase("impostazioni voce")){if(!voice)composer.setText("");startActivity(new Intent(this,VoiceSettingsActivity.class));return;}
+        if(VoicePhrases.greeting(text)){if(!voice)composer.setText("");speak("Cosa posso fare per te?","wave","stay",false);return;}
         if (text.equalsIgnoreCase("nuova chat")) {
             getSharedPreferences("chat", 0).edit().remove("history").apply();
-            composer.setText(""); setSpeech("Nuova chat pronta.", false); return;
+            if(!voice)composer.setText(""); setSpeech("Nuova chat pronta.", false); return;
         }
         if (PetService.isShutdownCommand(text)) {AppControls.close(this);return;}
 
@@ -471,7 +477,7 @@ public class MainActivity extends Activity {
         }
         if (!OpenAiChatClient.isConnected(this)) { sendAfterConnect=true; connectChatGPT(); return; }
         cancelIdleTimers();
-        composer.setText("");
+        if(!voice)composer.setText("");
         ((InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
         busy = true; sendButton.setEnabled(false); composer.setEnabled(false);
         status.setText("Solphivia sta pensando…");
@@ -497,7 +503,7 @@ public class MainActivity extends Activity {
                     if (isFinishing() || isDestroyed()) return;
                     refreshConnectionState();
                     busy = false; sendButton.setEnabled(true); composer.setEnabled(true);
-                    composer.setText(requestText);
+                    SentVoiceTranscript.release(composer);composer.setText(requestText);
                     status.setText(message); setAnimation("concerned"); setSpeech("C’è stato un problema. Quando vuoi, riprova.", false);
                     resetIdleTimers();
                     if(message.contains("subscription_sharing_usage_limit_exceeded") || message.contains("subscription_sharing_usage_unavailable")) {

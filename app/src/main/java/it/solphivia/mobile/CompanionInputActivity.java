@@ -56,11 +56,10 @@ public class CompanionInputActivity extends Activity {
         if(ACTION_HOME_ICON.equals(action)){Toast.makeText(this,AppControls.addHomeIcon(this),Toast.LENGTH_LONG).show();finish();return;}
         if (ACTION_SETTINGS.equals(action)) {
             new AlertDialog.Builder(this).setTitle("Solphivia")
-                    .setItems(new String[]{"Memoria e Memory Vault", "Voce italiana e pronuncia", "Prova animazioni", "Microfono e sessione", "Aggiungi icona sulla Home", "Come chiudere Solphivia", "Ferma la voce", "Chiudi Solphivia"}, (d,w) -> {
-                        if(w==7){AppControls.close(this);return;}
-                        if(w==6){VoiceSessionService.interruptReading();finish();return;}
+                    .setItems(new String[]{"Memoria e Memory Vault", "Voce italiana e pronuncia", "Prova animazioni", "Microfono e sessione", "Aggiungi icona sulla Home", "Ferma la voce", "Riprendi la voce"}, (d,w) -> {
+                        if(w==6){PetService.resumeReading();finish();return;}
+                        if(w==5){VoiceSessionService.interruptReading();finish();return;}
                         if(w==4){Toast.makeText(this,AppControls.addHomeIcon(this),Toast.LENGTH_LONG).show();finish();return;}
-                        if(w==5){new AlertDialog.Builder(this).setTitle("Chiudere Solphivia").setMessage(SessionCommands.CLOSE_HELP).setPositiveButton("Ho capito",(dialog,which)->finish()).setOnCancelListener(dialog->finish()).show();return;}
                         startActivity(new Intent(this,w==0?MemoryActivity.class:w==1?VoiceSettingsActivity.class:w==2?AnimationPreviewActivity.class:VoiceSessionActivity.class)); finish();
                     }).setOnCancelListener(d -> finish()).show();
         }

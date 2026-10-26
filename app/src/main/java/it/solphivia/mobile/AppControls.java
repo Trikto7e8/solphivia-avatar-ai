@@ -8,6 +8,7 @@ import android.graphics.drawable.Icon;
 /** Explicit close and launcher actions. No process killing, data deletion or silent pinning. */
 final class AppControls {
     static void close(Context context){
+        ReadingContinuation.clear();
         context.getSharedPreferences("pet",0).edit().putBoolean("overlay_off",true).putBoolean("voice_requested",false).commit();
         context.stopService(new Intent(context,VoiceSessionService.class));
         context.stopService(new Intent(context,PetService.class));
@@ -15,17 +16,30 @@ final class AppControls {
         ActivityManager manager=context.getSystemService(ActivityManager.class);
         if(manager!=null)for(ActivityManager.AppTask task:manager.getAppTasks())task.finishAndRemoveTask();
     }
+    static void refreshHomeIcons(Context context){
+        ShortcutManager manager=context.getSystemService(ShortcutManager.class);if(manager==null)return;
+        try{
+            java.util.List<ShortcutInfo> updates=new java.util.ArrayList<>();
+            for(ShortcutInfo pinned:manager.getPinnedShortcuts()){
+                Intent target=pinned.getIntent();
+                if(pinned.isEnabled()&&target!=null&&target.getComponent()!=null&&target.getComponent().getClassName().equals(MainActivity.class.getName()))
+                    updates.add(new ShortcutInfo.Builder(context,pinned.getId()).setShortLabel("Solphivia IA").setLongLabel("Apri Solphivia IA").setIcon(Icon.createWithResource(context,R.mipmap.ic_launcher)).setIntent(target).build());
+            }
+            if(!updates.isEmpty())manager.updateShortcuts(updates);
+        }catch(RuntimeException ignored){}
+    }
     static String addHomeIcon(Context context){
+        refreshHomeIcons(context);
         ShortcutManager manager=context.getSystemService(ShortcutManager.class);
-        if(manager==null||!manager.isRequestPinShortcutSupported())return "Apri l’elenco delle app, tieni premuta Solphivia Avatar AI e trascinala sulla Home.";
+        if(manager==null||!manager.isRequestPinShortcutSupported())return "Apri l’elenco delle app, tieni premuta Solphivia IA e trascinala sulla Home.";
         try{
             for(ShortcutInfo pinned:manager.getPinnedShortcuts()){
                 Intent target=pinned.getIntent();
                 if(pinned.isEnabled()&&target!=null&&target.getComponent()!=null&&target.getComponent().getClassName().equals(MainActivity.class.getName()))return "Il collegamento è già aggiunto: controlla le pagine e le cartelle della Home. L’app è anche nell’elenco delle applicazioni.";
             }
             Intent open=new Intent(context,MainActivity.class).setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
-            ShortcutInfo shortcut=new ShortcutInfo.Builder(context,"solphivia-home").setShortLabel("Solphivia").setLongLabel("Apri Solphivia").setIcon(Icon.createWithResource(context,R.mipmap.ic_launcher)).setIntent(open).build();
+            ShortcutInfo shortcut=new ShortcutInfo.Builder(context,"solphivia-home").setShortLabel("Solphivia IA").setLongLabel("Apri Solphivia IA").setIcon(Icon.createWithResource(context,R.mipmap.ic_launcher)).setIntent(open).build();
             return manager.requestPinShortcut(shortcut,null)?"Conferma Aggiungi nella richiesta Android per mettere Solphivia sulla Home.":"Il launcher non ha accettato la richiesta. Puoi trascinare l’icona dall’elenco delle app alla Home.";
-        }catch(RuntimeException error){return "Non riesco ad aggiungere l’icona da qui. Tieni premuta Solphivia Avatar AI nell’elenco delle app e trascinala sulla Home.";}
+        }catch(RuntimeException error){return "Non riesco ad aggiungere l’icona da qui. Tieni premuta Solphivia IA nell’elenco delle app e trascinala sulla Home.";}
     }
 }

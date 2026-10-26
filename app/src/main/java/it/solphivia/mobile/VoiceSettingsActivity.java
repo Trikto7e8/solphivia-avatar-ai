@@ -26,7 +26,7 @@ public final class VoiceSettingsActivity extends Activity {
         Switch clear=new Switch(this);clear.setText("Correzione della voce inglese · sperimentale");clear.setChecked(prefs.getBoolean("clear_italian",true));page.addView(clear);
         Switch aloud=new Switch(this);aloud.setText("Leggi le risposte ad alta voce");aloud.setChecked(prefs.getBoolean("read_aloud",true));page.addView(aloud);
         Switch wake=new Switch(this);wake.setText("Richiamo automatico all’apertura");wake.setChecked(prefs.getBoolean("wake_on_open",true));page.addView(wake);
-        Switch interrupt=new Switch(this);interrupt.setText("Interrompi con Basta Solphivia · sperimentale");interrupt.setChecked(prefs.getBoolean("voice_interrupt",true));page.addView(interrupt);
+        Switch interrupt=new Switch(this);interrupt.setText("Interrompi con Stop, Alt o Basta Solphivia · sperimentale");interrupt.setChecked(prefs.getBoolean("voice_interrupt",true));page.addView(interrupt);
         TextView rateLabel=new TextView(this);page.addView(rateLabel);
         SeekBar rate=new SeekBar(this);rate.setMax(40);rate.setProgress(SpeechText.boundedRate(prefs.getInt("voice_rate_percent",100))-75);rate.setContentDescription("Ritmo della voce rispetto alle impostazioni Android");page.addView(rate);
         rateLabel.setText("Ritmo: "+(rate.getProgress()+75)+"% delle impostazioni Android");

@@ -107,8 +107,15 @@ public class PetService extends Service {
     static boolean speechOutputActive(){return DeviceSpeech.outputBusy()||(activeInstance!=null&&activeInstance.ttsPending);}
     static String currentSpokenText(){return DeviceSpeech.outputBusy()?DeviceSpeech.spokenText():activeInstance!=null?activeInstance.speechTarget:"";}
     static void stopReading(){
+        if(speechOutputActive())ReadingContinuation.pause();
         DeviceSpeech.interruptAll();MainActivity.stopReading();
         if(activeInstance!=null){activeInstance.currentUtteranceSerial++;activeInstance.pendingMotion="stay";activeInstance.setSpeech(activeInstance.speechTarget);}
+    }
+    static boolean resumeReading(){
+        String text=ReadingContinuation.take();if(text.isEmpty())return false;
+        if(MainActivity.resumeReading(text))return true;
+        if(activeInstance!=null&&!activeInstance.destroyed){activeInstance.typeSpeech(text);return true;}
+        ReadingContinuation.begin(text);ReadingContinuation.pause();return false;
     }
     static EditText voiceComposer(){return activeInstance!=null && !internalChatVisible && !activeInstance.destroyed && !activeInstance.busy ? activeInstance.composer : null;}
     static void voiceListening(boolean listening) {
@@ -228,7 +235,8 @@ public class PetService extends Service {
             configureTtsVoice();
             if (!ttsReady) { ttsPending = false; pendingUtterance = null; finishSpokenLine(); return; }
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override public void onStart(String id) { }
+                @Override public void onStart(String id) { onRangeStart(id,0,0,0); }
+                @Override public void onRangeStart(String id,int start,int end,int frame){main.post(()->{Integer base=readingOffsets.get(id);if(base!=null)ReadingContinuation.progress(readingToken,base+start);});}
                 @Override public void onDone(String id) { finishTtsUtterance(id); }
                 @Override public void onError(String id) {
                     if(id!=null && (id.equals("solphivia-"+currentUtteranceSerial) || id.startsWith("solphivia-"+currentUtteranceSerial+"-part-")))
@@ -357,22 +365,10 @@ public class PetService extends Service {
         if (getSharedPreferences("pet", 0).getBoolean("costume_override", false)) pet.setClassicCyborgSuit(true);
         pet.setOnTouchListener(this::onPetTouch);
 
-        weatherBadge = createComposerAction("🌦 Meteo", "Attiva o aggiorna Solphivia Meteorina");
-        weatherBadge.setTextSize(12);
-        FrameLayout.LayoutParams weatherLp = new FrameLayout.LayoutParams(dp(82), dp(34), Gravity.TOP | Gravity.LEFT);
-        weatherLp.leftMargin = dp(7); weatherLp.topMargin = dp(88);
-        panel.addView(weatherBadge, weatherLp);
-        weatherBadge.setOnClickListener(v -> openInputActivity(CompanionInputActivity.ACTION_WEATHER_SETUP));
-        radarBadge = createComposerAction("Radar —", "Stato radar SRI della Protezione Civile");
-        radarBadge.setTextSize(10);
-        FrameLayout.LayoutParams radarLp = new FrameLayout.LayoutParams(dp(93), dp(34), Gravity.TOP | Gravity.LEFT);
-        radarLp.leftMargin=dp(93); radarLp.topMargin=dp(88); panel.addView(radarBadge,radarLp);
-        radarBadge.setOnClickListener(v -> {
-            String detail = getSharedPreferences("weather",0).getString("radar_status", "Attiva Meteorina per consultare il radar.");
-            setSpeech(detail + " Fonte: Radar-DPC, CC BY-SA. Rilevamento sperimentale, non allerta ufficiale.");
-            refreshWeather(false);
-        });
-        TextView memoryAction=createComposerAction("☰", "Apri menu: voce, icona Home e Chiudi Solphivia");
+        PowerButton power=new PowerButton(this);
+        FrameLayout.LayoutParams powerLp=new FrameLayout.LayoutParams(dp(40),dp(40),Gravity.TOP|Gravity.LEFT);
+        powerLp.leftMargin=dp(194);powerLp.topMargin=dp(88);panel.addView(power,powerLp);
+        TextView memoryAction=createComposerAction("☰", "Apri menu: memoria, voce e icona Home");
         FrameLayout.LayoutParams menuLp=new FrameLayout.LayoutParams(dp(36),dp(34),Gravity.TOP|Gravity.LEFT);
         menuLp.leftMargin=dp(251);menuLp.topMargin=dp(88); panel.addView(memoryAction,menuLp);
         memoryAction.setOnClickListener(v -> openInputActivity(CompanionInputActivity.ACTION_SETTINGS));
@@ -565,30 +561,33 @@ public class PetService extends Service {
 
     private void submitMessage(String text, ArrayList<String> attachmentUris, boolean voice) {
         if (destroyed) return;
+        if(voice)SentVoiceTranscript.hold(composer,text);
+        if(attachmentUris.isEmpty()&&VoiceSessionService.handleReadingCommand(text))return;
+        ReadingContinuation.clear();
         if(attachmentUris.isEmpty()) {
             String appReply=LocalAppCommands.handle(this,text);
-            if(appReply!=null){composer.setText("");typeSpeech(appReply);return;}
+            if(appReply!=null){if(!voice)composer.setText("");typeSpeech(appReply);return;}
             String memoryReply=MemoryCommands.handle(this,text);
-            if(memoryReply!=null){composer.setText("");typeSpeech(memoryReply);return;}
+            if(memoryReply!=null){if(!voice)composer.setText("");typeSpeech(memoryReply);return;}
         }
         if (attachmentUris.isEmpty() && normalizeCommand(text).equals("memoria")) {
-            composer.setText("");
+            if(!voice)composer.setText("");
             startActivity(new Intent(this, MemoryActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             return;
         }
         if (attachmentUris.isEmpty() && normalizeCommand(text).equals("impostazioni voce")) {
-            composer.setText("");
+            if(!voice)composer.setText("");
             startActivity(new Intent(this, VoiceSettingsActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             return;
         }
         if (attachmentUris.isEmpty() && normalizeCommand(text).equals("nuova chat")) {
             getSharedPreferences("chat", 0).edit().remove("history").apply();
-            composer.setText(""); setSpeech("Nuova chat pronta."); return;
+            if(!voice)composer.setText(""); setSpeech("Nuova chat pronta."); return;
         }
         String normalized = Normalizer.normalize(text.toLowerCase(Locale.ROOT), Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         boolean disableWeather = normalized.equals("disattiva meteo") || normalized.equals("spegni meteorina");
         if (!disableWeather && ReviewRules.weatherSetup(text, !attachmentUris.isEmpty())) {
-            composer.setText("");
+            if(!voice)composer.setText("");
             ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
             openInputActivity(CompanionInputActivity.ACTION_WEATHER_SETUP);
             return;
@@ -602,12 +601,12 @@ public class PetService extends Service {
             if (weatherBadge != null) weatherBadge.setText("🌦 Meteo");
             if (radarBadge != null) radarBadge.setText("Radar —");
             getSharedPreferences("weather",0).edit().putString("radar_status","Meteorina disattivata.").apply();
-            composer.setText("");
+            if(!voice)composer.setText("");
             setSpeech("Va bene, metto in pausa la Meteorina.");
             return;
         }
-        if (attachmentUris.isEmpty() && handleGreetingCommand(text)) return;
-        if (attachmentUris.isEmpty() && handleVoiceModeCommand(text)) return;
+        if (attachmentUris.isEmpty() && handleGreetingCommand(text)) {if(voice)SentVoiceTranscript.hold(composer,text);return;}
+        if (attachmentUris.isEmpty() && handleVoiceModeCommand(text)) {if(voice)SentVoiceTranscript.hold(composer,text);return;}
         if (attachmentUris.isEmpty() && isShutdownCommand(text)) {AppControls.close(this);return;}
 
         applyCostumeCommand(text);
@@ -616,7 +615,7 @@ public class PetService extends Service {
             return;
         }
         cancelIdleTimers();
-        composer.setText("");
+        if(!voice)composer.setText("");
         ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
         composer.clearFocus();
         busy = true; composer.setEnabled(false); sendButton.setEnabled(false);
@@ -901,7 +900,7 @@ public class PetService extends Service {
                 main.post(() -> {
                     if (destroyed) return;
                     busy = false; composer.setEnabled(true); sendButton.setEnabled(true);
-                    composer.setText(text);
+                    SentVoiceTranscript.release(composer);composer.setText(text);
                     setAnimation("concerned"); setSpeech(message);
                     resetIdleTimers();
                 });
@@ -996,6 +995,8 @@ public class PetService extends Service {
         return true;
     }
 
+    private long readingToken;
+    private final java.util.Map<String,Integer> readingOffsets=new java.util.HashMap<>();
     private void startTtsUtterance(String text, long serial) {
         if (!getSharedPreferences("pet", 0).getBoolean("read_aloud", true)) { ttsPending = false; finishSpokenLine(); return; }
         if (tts == null || !ttsReady || text == null) { ttsPending = false; finishSpokenLine(); return; }
@@ -1003,7 +1004,9 @@ public class PetService extends Service {
         String id = "solphivia-" + serial;
         String spokenText = SpeechText.prepare(text,englishAccentActive,getSharedPreferences("pet",0).getBoolean("clear_italian",true));
         java.util.List<String> chunks=SpeechText.chunks(spokenText,Math.max(100,TextToSpeech.getMaxSpeechInputLength()-1));
+        readingToken=ReadingContinuation.begin(spokenText);readingOffsets.clear();int offset=0;
         for(int i=0;i<chunks.size();i++) {
+            String chunkId=i==chunks.size()-1?id:id+"-part-"+i;readingOffsets.put(chunkId,offset);offset+=chunks.get(i).length();
             int result=tts.speak(chunks.get(i),i==0?TextToSpeech.QUEUE_FLUSH:TextToSpeech.QUEUE_ADD,null,i==chunks.size()-1?id:id+"-part-"+i);
             if(result==TextToSpeech.ERROR) {tts.stop();ttsPending=false;finishSpokenLine();break;}
         }
@@ -1069,6 +1072,7 @@ public class PetService extends Service {
             if (destroyed) return;
             if (id == null || !id.equals("solphivia-" + currentUtteranceSerial)) return;
             ttsPending = false;
+            ReadingContinuation.complete(readingToken);
             finishSpokenLine();
         });
     }

@@ -42,17 +42,21 @@ final class DeviceSpeech {
             else if(english){english=false;result=tts.setLanguage(Locale.ITALIAN);}
             if(result<0){outputBusy=false;if(feedback!=null)feedback.accept("Voce non disponibile: controlla i dati vocali Android.");return;}
             if(feedback!=null)feedback.accept(english?"Prova con la voce inglese del motore selezionato.":(requestedEnglish?"Voce inglese offline non disponibile: questa prova usa la voce italiana.":"Prova con la voce italiana selezionata."));
-            tts.setOnUtteranceProgressListener(new android.speech.tts.UtteranceProgressListener(){
-                public void onStart(String id){}
-                public void onDone(String id){if("inline-final".equals(id) && request==generation)outputBusy=false;}
-                public void onError(String id){if(request==generation)outputBusy=false;}
-            });
             int rate=android.provider.Settings.Secure.getInt(context.getContentResolver(),android.provider.Settings.Secure.TTS_DEFAULT_RATE,100);
             int pitch=android.provider.Settings.Secure.getInt(context.getContentResolver(),android.provider.Settings.Secure.TTS_DEFAULT_PITCH,100);
             tts.setSpeechRate(SpeechText.rate(rate,ratePercent));tts.setPitch(Math.max(0.1f,pitch/100f));
             String spoken=SpeechText.prepare(text,english,clear);
             java.util.List<String> chunks=SpeechText.chunks(spoken,Math.max(100,TextToSpeech.getMaxSpeechInputLength()-1));
             if(chunks.isEmpty()){outputBusy=false;return;}
+            long token=ReadingContinuation.begin(spoken);
+            java.util.Map<String,Integer> offsets=new java.util.HashMap<>();int offset=0;
+            for(int i=0;i<chunks.size();i++){offsets.put(i==chunks.size()-1?"inline-final":"inline-"+i,offset);offset+=chunks.get(i).length();}
+            tts.setOnUtteranceProgressListener(new android.speech.tts.UtteranceProgressListener(){
+                public void onStart(String id){onRangeStart(id,0,0,0);}
+                public void onRangeStart(String id,int start,int end,int frame){if(request==generation){Integer base=offsets.get(id);if(base!=null)ReadingContinuation.progress(token,base+start);}}
+                public void onDone(String id){if("inline-final".equals(id)&&request==generation){outputBusy=false;ReadingContinuation.complete(token);}}
+                public void onError(String id){if(request==generation){outputBusy=false;ReadingContinuation.complete(token);}}
+            });
             for(int i=0;i<chunks.size();i++){
                 if(tts.speak(chunks.get(i),i==0?TextToSpeech.QUEUE_FLUSH:TextToSpeech.QUEUE_ADD,null,i==chunks.size()-1?"inline-final":"inline-"+i)==TextToSpeech.ERROR){outputBusy=false;break;}
             }

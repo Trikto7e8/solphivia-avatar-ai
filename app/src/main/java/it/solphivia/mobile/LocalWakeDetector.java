@@ -13,7 +13,7 @@ final class LocalWakeDetector implements AutoCloseable {
     private static final java.util.concurrent.ExecutorService CAPTURE=java.util.concurrent.Executors.newSingleThreadExecutor(r->new Thread(r,"solphivia-local-wake"));
     private static Model sessionModel;
     static void releaseSessionModel(){CAPTURE.execute(()->{if(sessionModel!=null){sessionModel.close();sessionModel=null;}});}
-    interface Listener {void wake();void failed(String reason);void samples(long count);default void interrupted(){} default void echo(boolean available,boolean enabled){}}
+    interface Listener {void wake();void failed(String reason);void samples(long count);default void interrupted(String text){} default void resumed(String text){} default void echo(boolean available,boolean enabled){}}
     private final Context context;
     private final Listener listener;
     private volatile boolean running;
@@ -50,6 +50,7 @@ final class LocalWakeDetector implements AutoCloseable {
         for(String phrase:new String[]{"o la sol fibbia","o la sul fibbia","o la sua figlia",
                 "o la sofia","ciao silvia","ho scattato un selfie","[unk]"})phrases.put(phrase);
         if(learned!=null)for(String phrase:learned.split("\n"))if(!phrase.isEmpty())phrases.put(phrase);
+        if(ReadingContinuation.available())for(String phrase:new String[]{"prosegui","riprendi","continua","dimmi","ti ascolto","dai","vai"}){phrases.put(phrase);phrases.put(phrase+" sol fibbia");phrases.put(phrase+" sul fibbia");}
         return new Recognizer(model,rate,phrases.toString());
     }
     static String partial(String json){try{return new JSONObject(json).optString("partial","");}catch(Exception ignored){return "";}}
@@ -66,17 +67,22 @@ final class LocalWakeDetector implements AutoCloseable {
     void interruptDuring(String text){spoken=text==null?"":text;interruptMode=true;suspended=false;}
     void waitForWake(){interruptMode=false;suspended=false;}
     static Recognizer interruptRecognizer(Model model,float rate)throws IOException{
-        return new Recognizer(model,rate,"[\"basta sol fibbia\",\"basta sul fibbia\",\"fermati sol fibbia\",\"fermati sul fibbia\",\"basta sofia\",\"fermati silvia\",\"basta cosi\",\"[unk]\"]");
+        org.json.JSONArray phrases=new org.json.JSONArray();
+        for(String verb:new String[]{"basta","fermati","stop","alt"}){phrases.put(verb);phrases.put(verb+" sol fibbia");phrases.put(verb+" sul fibbia");}
+        for(String phrase:new String[]{"basta sofia","fermati silvia","basta cosi","[unk]"})phrases.put(phrase);
+        return new Recognizer(model,rate,phrases.toString());
     }
+    private static boolean canonicalNamed(String text){return SpeechInterruptPolicy.canonical(text).endsWith(" solphivia");}
     private void capture(){
-        Model model=null;Recognizer decoder=null;AudioRecord input=null;
-        boolean detected=false,interrupted=false;String failure=null;
+        Model model=null;Recognizer decoder=null,verifier=null;AudioRecord input=null;
+        boolean detected=false,interrupted=false,resumed=false;String failure=null,controlText="";
         android.media.audiofx.AcousticEchoCanceler echo=null;
         try{
             if(!running)return;
             String learned=context.getSharedPreferences("pet",0).getString("wake_italian_phrases","");
             if(sessionModel==null)sessionModel=model(context);model=sessionModel;
             boolean mode=interruptMode;decoder=mode?interruptRecognizer(model,16000):recognizer(model,16000,learned);
+            if(mode||ReadingContinuation.available())verifier=new Recognizer(model,16000);String verifiedFinal="";
             if(context.checkSelfPermission("android.permission.RECORD_AUDIO")!=android.content.pm.PackageManager.PERMISSION_GRANTED)throw new SecurityException("Microfono non autorizzato");
             int size=Math.max(6400,AudioRecord.getMinBufferSize(16000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT));
             input=new AudioRecord(context.getSharedPreferences("pet",0).getBoolean("voice_interrupt",true)?MediaRecorder.AudioSource.VOICE_COMMUNICATION:MediaRecorder.AudioSource.VOICE_RECOGNITION,16000,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT,size);
@@ -91,17 +97,26 @@ final class LocalWakeDetector implements AutoCloseable {
                 total+=n;utterance+=n;
                 if(total%32000<n)listener.samples(total);
                 boolean nextMode=interruptMode;
-                if(nextMode!=mode){Recognizer previous=decoder;decoder=null;previous.close();mode=nextMode;decoder=mode?interruptRecognizer(model,16000):recognizer(model,16000,learned);interruptPolicy.reset();utterance=0;}
+                if(nextMode!=mode){Recognizer previous=decoder;decoder=null;previous.close();if(verifier!=null){verifier.close();verifier=null;}verifiedFinal="";mode=nextMode;if(mode||ReadingContinuation.available())verifier=new Recognizer(model,16000);decoder=mode?interruptRecognizer(model,16000):recognizer(model,16000,learned);interruptPolicy.reset();utterance=0;}
                 boolean paused=suspended;
-                if(paused!=wasSuspended){decoder.reset();utterance=0;wasSuspended=paused;}
+                if(paused!=wasSuspended){decoder.reset();if(verifier!=null)verifier.reset();verifiedFinal="";utterance=0;wasSuspended=paused;}
                 if(paused){utterance=0;continue;}
+                if(verifier!=null&&verifier.acceptWaveForm(pcm,n))verifiedFinal=(verifiedFinal+" "+text(verifier.getResult())).trim();
                 boolean finalResult=decoder.acceptWaveForm(pcm,n);
                 if(mode){
                     String phrase=finalResult?text(decoder.getResult()):partial(decoder.getPartialResult());
-                    if(interruptPolicy.accept(phrase,finalResult,android.os.SystemClock.elapsedRealtime(),spoken,interruptMode)){interrupted=true;break;}
-                }else if(finalResult&&matches(text(decoder.getResult()),learned)){detected=true;break;}
+                    String verified=finalResult&&verifier!=null?(verifiedFinal+" "+text(verifier.getFinalResult())).trim():"";
+                    boolean allowed=canonicalNamed(phrase)||finalResult&&SpeechInterruptPolicy.sameShortCommand(phrase,verified);
+                    if(finalResult&&verifier!=null){verifier.reset();verifiedFinal="";}
+                    if(allowed&&interruptPolicy.accept(phrase,finalResult,android.os.SystemClock.elapsedRealtime(),spoken,interruptMode)){interrupted=true;controlText=phrase;break;}
+                }else if(finalResult){String phrase=text(decoder.getResult());
+                    String verified=verifier!=null?(verifiedFinal+" "+text(verifier.getFinalResult())).trim():"";
+                    if(verifier!=null){verifier.reset();verifiedFinal="";}
+                    if(ReadingContinuation.available()&&SpeechInterruptPolicy.resumeCommand(phrase)&&SpeechInterruptPolicy.canonical(phrase).equals(SpeechInterruptPolicy.canonical(verified))){resumed=true;controlText=phrase;break;}
+                    if(matches(phrase,learned)){detected=true;break;}
+                }
                 if(finalResult)utterance=0;
-                if(utterance>320000){decoder.reset();utterance=0;}
+                if(utterance>320000){decoder.reset();if(verifier!=null)verifier.reset();verifiedFinal="";utterance=0;}
             }
         }catch(Throwable error){if(running)failure=error.getClass().getSimpleName();}
         finally{
@@ -109,8 +124,9 @@ final class LocalWakeDetector implements AutoCloseable {
             if(input!=null){try{input.stop();}catch(RuntimeException ignored){}input.release();}
             if(echo!=null)echo.release();
             if(decoder!=null)decoder.close();
+            if(verifier!=null)verifier.close();
         }
-        if(running){if(interrupted)listener.interrupted();else if(detected)listener.wake();else if(failure!=null)listener.failed(failure);}
+        if(running){if(resumed)listener.resumed(controlText);else if(interrupted)listener.interrupted(controlText);else if(detected)listener.wake();else if(failure!=null)listener.failed(failure);}
         running=false;
     }
     public void close(){running=false;AudioRecord input=recorder;if(input!=null)try{input.stop();}catch(RuntimeException ignored){}}
