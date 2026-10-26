@@ -1,10 +1,9 @@
-# Stato corrente
+# Solphivia IA 1.1 beta 3
 
-**0.9.2-alpha11 (44), 24 ottobre 2026.** La PR #16 (architettura provider Stage A) è integrata. Alpha11 la unisce ai comandi locali app/Maps/composizione numero, alla finestra di ascolto successiva e alla trascrizione nel campo di scrittura.
+Versione 1.1.0-beta.3, codice 49, pacchetto it.solphivia.mobile. [APK e sorgenti](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.3).
 
-- Automatici: 38 test JVM superati; build app e test riuscite; Android Lint con 0 errori e 118 avvisi. Quattro suite instrumentation isolate superate su Moto g35 5G (Android 16).
-- Manuali: il manutentore conferma trascrizione visibile e continuazione della conversazione sull’alpha11 finale installata. È un riscontro dell’utente, distinto dalle prove automatiche.
-- App principale aggiornata senza disinstallazione; memoria cifrata e preferenze del collegamento ChatGPT preservate.
-- Restano da verificare sessioni prolungate in background/a schermo bloccato, interruzioni di rete e altri dispositivi. Alpha comunitaria con firma debug, non versione degli store.
+Italiano naturale, arresto/ripresa della lettura, trascrizione persistente, saluto con comandi e pulsanti a sinistra. Sul dispositivo verificati icona con un solo personaggio e apertura dalla Home. La precedente copia di prova è stata disattivata senza eliminarne i dati.
 
-[Scarica alpha11](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11) · [Note di rilascio](docs/releases/v0.9.2-alpha11.md) · [Collaborazione](COLLABORATE.md)
+Build e Lint beta 3 riusciti. I 65 test JVM e le prove sintetiche dei comandi appartengono alla logica beta 2, come riportato nelle note. Ulteriori prove di durata, rumore, cuffie, batteria e altri telefoni restano aperte.
+
+[Versione corrente](docs/CURRENT_RELEASE.md) · [Note](docs/releases/v1.1.0-beta.3.md) · [Preparazione Google Play](docs/google-play/README.md) · [Vecchi file e riferimenti](old/README.md).

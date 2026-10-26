@@ -1,6 +1,6 @@
 # Animazioni e abiti contestuali — decisioni del 14 ottobre 2026
 
-**Stato corrente: alpha11 (44).** Le decisioni datate qui sotto documentano l’origine delle funzioni contestuali mantenute. Per versione, download e prove attuali usa [la pagina corrente](CURRENT_RELEASE.md).
+**Stato corrente: 1.0 beta 1 (44).** Le decisioni datate qui sotto documentano l’origine delle funzioni contestuali mantenute. Per versione, download e prove attuali usa [la pagina corrente](../../docs/CURRENT_RELEASE.md).
 
 L'utente chiede di conservare e verificare seduta, sonno e gli altri stati esistenti, e di aggiungere anche nuove animazioni. Solphivia deve scegliere gesti e abiti dal contesto, rispettando le scelte esplicite dell'utente.
 

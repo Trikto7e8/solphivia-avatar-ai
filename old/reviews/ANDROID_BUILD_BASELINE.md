@@ -1,10 +1,11 @@
 # Android Debug Build Baseline
 
+**Aggiornamento 1.0 beta 1:** la candidata corrente è descritta in [CURRENT_RELEASE](../../docs/CURRENT_RELEASE.md). I riferimenti alpha11/alpha2 e le relative misure qui sotto sono snapshot storici, non esiti attribuiti alla beta. Ogni nuova implementazione deve partire dalla candidata corrente.
 Related issue: #3
 
 **Historical contributor baseline:** the measurements below apply only to commit `71409324733826d5a5e03bc992ab1e06b075bc15` (alpha2). They are contributor-reported observations, not a fresh reproduction by the maintainer on that Mac. APK size/hash, version and task counts are not expected to match alpha11.
 
-**Current maintainer baseline, 24 October 2026:** alpha11 (44) is the current release. Its 38 JVM tests, four isolated Android suites, build/lint results and user-reported transcript/conversation checks are documented in [the alpha11 release notes](releases/v0.9.2-alpha11.md). compileSdk/targetSdk remain 35; running on Android 16 does not establish targetSdk 36 compatibility. The original Mac observations below remain historical evidence, not alpha11 measurements.
+**Current maintainer baseline, 24 October 2026:** alpha11 (44) is the current release. Its 38 JVM tests, four isolated Android suites, build/lint results and user-reported transcript/conversation checks are documented in [the alpha11 release notes](../releases/v0.9.2-alpha11.md). compileSdk/targetSdk remain 35; running on Android 16 does not establish targetSdk 36 compatibility. The original Mac observations below remain historical evidence, not alpha11 measurements.
 
 ## Historical verified environment
 

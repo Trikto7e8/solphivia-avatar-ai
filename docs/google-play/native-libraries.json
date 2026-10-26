@@ -1,0 +1,46 @@
+{
+  "artifact": "SolphiviaIA-1.1.0-beta.3.apk",
+  "sha256": "9d04912e69a2e25102f138a2664dc3a424e8ec46128c54e05dfe2d008f988ed1",
+  "inspection": "ELF segment alignment only; not 16 KB runtime validation",
+  "libraries": [
+    {
+      "library": "lib/arm64-v8a/libjnidispatch.so",
+      "load_segment_alignment_bytes": [
+        16384,
+        16384
+      ],
+      "elf_16k_alignment_pass": true
+    },
+    {
+      "library": "lib/arm64-v8a/libvosk.so",
+      "load_segment_alignment_bytes": [
+        16384,
+        16384,
+        16384,
+        16384
+      ],
+      "elf_16k_alignment_pass": true
+    },
+    {
+      "library": "lib/armeabi-v7a/libjnidispatch.so",
+      "load_segment_alignment_bytes": [
+        16384,
+        16384
+      ],
+      "elf_16k_alignment_pass": true
+    },
+    {
+      "library": "lib/armeabi-v7a/libvosk.so",
+      "load_segment_alignment_bytes": [
+        4096,
+        4096,
+        4096,
+        4096
+      ],
+      "elf_16k_alignment_pass": false
+    }
+  ],
+  "all_elf_16k_aligned": false,
+  "arm64_elf_16k_alignment_pass": true,
+  "note": "The Play 16 KB requirement concerns 64-bit devices; ARMv7 4 KB segments are reported separately, not treated as an ARM64 failure."
+}

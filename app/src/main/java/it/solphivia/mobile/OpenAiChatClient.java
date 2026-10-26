@@ -208,7 +208,7 @@ final class OpenAiChatClient {
                 .appendQueryParameter("nonce",nonce)
                 .appendQueryParameter("code_challenge_method","S256")
                 .appendQueryParameter("code_challenge",challenge);
-        if(firstRegistration) builder.appendQueryParameter("agent_name_hint","Solphivia Avatar AI");
+        if(firstRegistration) builder.appendQueryParameter("agent_name_hint","Solphivia IA");
         else {
             String hint=secret(context,"id_token");
             if(!hint.isEmpty()) builder.appendQueryParameter("id_token_hint",hint);
@@ -719,7 +719,7 @@ final class OpenAiChatClient {
             String[] kv=pair.split("=",2); params.put(java.net.URLDecoder.decode(kv[0],"UTF-8"),kv.length==2?java.net.URLDecoder.decode(kv[1],"UTF-8"):"");
         }
         BufferedWriter out=new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(),StandardCharsets.UTF_8));
-        String page="<!doctype html><meta charset=utf-8><title>Solphivia</title><meta name='viewport' content='width=device-width,initial-scale=1'><body style='font:18px sans-serif;text-align:center;padding:48px;background:#faf7fc;color:#362542'><p>Richiesta ricevuta. Torna nell’app per verificare il collegamento e proseguire con la chat.</p><p><a style='display:inline-block;padding:14px 22px;background:#765b80;color:white;border-radius:12px;text-decoration:none' href='intent://oauth-callback#Intent;scheme=solphivia;package=it.solphivia.mobile;end'>Torna a Solphivia Mobile</a></p></body>";
+        String page="<!doctype html><meta charset=utf-8><title>Solphivia</title><meta name='viewport' content='width=device-width,initial-scale=1'><body style='font:18px sans-serif;text-align:center;padding:48px;background:#faf7fc;color:#362542'><p>Richiesta ricevuta. Torna nell’app per verificare il collegamento e proseguire con la chat.</p><p><a style='display:inline-block;padding:14px 22px;background:#765b80;color:white;border-radius:12px;text-decoration:none' href='intent://oauth-callback#Intent;scheme=solphivia;package=it.solphivia.mobile;end'>Torna a Solphivia IA</a></p></body>";
         out.write("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\nContent-Length: "+page.getBytes(StandardCharsets.UTF_8).length+"\r\n\r\n"+page);out.flush();
         return new Callback(params);
     }

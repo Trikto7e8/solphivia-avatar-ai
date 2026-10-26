@@ -1,21 +1,17 @@
-# Current release / Versione corrente
+# Solphivia IA — versione corrente
 
-**Solphivia Mobile 0.9.2-alpha11 — versionCode 44.** Published 24 October 2026 as an Android community alpha/debug prerelease.
+**1.1.0-beta.3 · codice 49 · beta Android comunitaria.**
 
-- [Download APK and sources / Scarica APK e sorgenti](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11)
-- [Release notes / Note di rilascio](releases/v0.9.2-alpha11.md)
-- [Setup / Guida rapida](../AVVIO-RAPIDO-IT.md)
-- [Voice conversation / Conversazione vocale](VOICE-SESSION.md)
-- [Build and isolated tests / Build e test isolati](../BUILD-E-GITHUB-IT.md)
-- [Current status EN](../STATUS.md) · [Stato IT](../STATO-IT.md)
-- [Historical release and inspection archive / Archivio storico](RELEASE_HISTORY.md)
+[Scarica APK e sorgenti](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.3) · [Note e verifiche](releases/v1.1.0-beta.3.md) · [Guida](../AVVIO-RAPIDO-IT.md) · [Conversazione vocale](VOICE-SESSION.md).
 
-Release tag: `v0.9.2-alpha11`. Published source commit: `f9f65419a9c08459ac7bad95ef8d6bf8f6e03723`. Later documentation corrections on `main` do not change the released APK, tag or original source archive.
+Voce italiana, arresto e ripresa della lettura, trascrizione visibile, saluto con comandi e controlli a sinistra. L’utente ha confermato il dialogo successivo al saluto, arresto/ripresa e chiusura. Verificati sul telefono icona normale con un solo personaggio e apertura dalla Home.
 
-Standard package: `it.solphivia.mobile`. Isolated synthetic test package: `it.solphivia.mobile.alpha11.verification`, visibly labelled PROVA. minSdk 26; compileSdk/targetSdk 35; JDK 17, Gradle 8.11.1, AGP 8.9.1 and Kotlin 2.4.20.
+65 test JVM superati, build APK/test Android e Lint riusciti nell’ultima verifica dei sorgenti. Le prove acustiche sintetiche restano distinte: 13/13 frasi positive e 0/15 attivazioni nei casi negativi. Non certificano ogni ambiente o durata.
 
-Automated: 38 JVM tests, four isolated Android suites, successful APK builds, 0 lint errors / 118 warnings. Manual: maintainer-reported transcription and continued conversation on the installed final alpha11. Long-running/background, network interruption and other devices remain to test. See the release notes for scope; this is not a store-readiness certificate.
+Pacchetto principale it.solphivia.mobile; variante isolata it.solphivia.mobile.v11.verification. minSdk26, compileSdk/targetSdk35, Java17. L’APK pubblico mantiene la firma debug già usata nelle prove, con checksum nelle note. Nessuna versione Play è stata caricata.
 
-APK SHA-256: `fdea90c115a1750ab9cbb9ec752a4b652ec2fccb3c21fb3feb64eefe5f18b4f6`.
+Il richiamo resta disponibile finché il microfono non viene spento esplicitamente. Dopo cinque secondi senza iniziare il comando successivo si torna all’attesa locale di Hola Solphivia. Stop/Alt interrompono la lettura; ⏻ chiude avatar, voce e microfono conservando i dati.
 
-In italiano: alpha11 è la versione corrente. Le sigle più vecchie restano soltanto per provenienza, rapporti datati e cronologia; non indicano il download consigliato né nuovi risultati di collaudo.
+Per la Home usa l’icona normale dall’elenco app. Il menu mostra istruzioni e non crea altre scorciatoie con badge duplicato.
+
+[Preparazione Google Play](google-play/README.md) · [Tutti i vecchi file e riferimenti](../old/README.md).

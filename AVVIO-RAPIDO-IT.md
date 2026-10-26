@@ -1,8 +1,8 @@
-# Solphivia alpha11: guida rapida Android
+# Solphivia IA 1.1 beta 3: guida rapida Android
 
 ## Installare o aggiornare
 
-Scarica l’APK dalla [release alpha11](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v0.9.2-alpha11). È una build debug alpha per le prove, non una versione Google Play. Richiede Android 8 o successivo e ARM64/ARMv7.
+Scarica l’APK dalla [release 1.1 beta 3](docs/CURRENT_RELEASE.md). È una build debug beta per le prove, non una versione Google Play. Richiede Android 8 o successivo e ARM64/ARMv7.
 
 Se aggiorni un’installazione con lo stesso certificato, installa sopra quella esistente: non disinstallare e non cancellare i dati per aggiornare. I dati cifrati dipendono anche dal Keystore dell’installazione. In caso di firma diversa, fermati e conserva l’app originale prima di decidere come trasferire i dati.
 
@@ -40,4 +40,8 @@ La chat di Solphivia è separata da quella di ChatGPT: non importa chat o memori
 - Se il browser non torna all’app, lascia Solphivia aperta in background, completa il consenso e usa il collegamento di ritorno. Non condividere token o codici temporanei.
 - Per problemi di account o limiti, controlla il messaggio e le impostazioni del fornitore.
 
-[Note di rilascio, prove e limiti](docs/releases/v0.9.2-alpha11.md). Blocco schermo, sessioni prolungate, recupero rete e altri dispositivi richiedono ancora collaudo.
+[Note di rilascio, prove e limiti](old/releases/v1.0.0-beta.1.md). Blocco schermo, sessioni prolungate, recupero rete e altri dispositivi richiedono ancora collaudo.
+
+## Chiudere e ritrovare Solphivia
+
+Il pulsante tondo **⏻** sotto l’avatar ferma avatar e microfono e chiude le schermate, conservando i dati. Puoi chiederle **Come faccio a chiuderti?** e, dopo il richiamo, pronunciare **Chiudi Solphivia**. **Spegni microfono** ferma solo l’ascolto. **Aggiungi icona sulla Home** nel menu spiega come trascinare Solphivia IA dall’elenco delle app sulla Home. È l’icona normale, senza il badge delle scorciatoie. Il vecchio collegamento può essere rimosso dalla Home.

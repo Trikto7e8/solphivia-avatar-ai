@@ -10,7 +10,7 @@ public final class FollowUpInstrumentation extends Instrumentation {
     @Override public void onStart(){
         Bundle result=new Bundle();
         try{
-            check(getTargetContext().getPackageName().equals("it.solphivia.mobile.alpha11.verification"));
+            check(getTargetContext().getPackageName().equals("it.solphivia.mobile.v11.verification"));
             VoiceFollowUpWindow w=new VoiceFollowUpWindow();
             w.replyStarted();w.captureReady(100);check(!w.expired(90000));
             w.replyFinished();w.captureReady(100000);check(!w.expired(104999));check(w.expired(105000));

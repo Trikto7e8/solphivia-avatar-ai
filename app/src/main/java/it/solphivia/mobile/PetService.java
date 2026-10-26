@@ -72,6 +72,15 @@ public class PetService extends Service {
         if (activeInstance != null) activeInstance.updateOverlayVisibility();
     }
 
+    static void reloadSpeechPreferences(){if(activeInstance!=null)activeInstance.initializeTts();}
+
+    static boolean prepareSpeechPreview() {
+        if(activeInstance==null)return true;
+        if(activeInstance.busy)return false;
+        activeInstance.setSpeech(activeInstance.speechTarget);
+        return true;
+    }
+
     private void updateOverlayVisibility() {
         if (panel == null || destroyed) return;
         if (internalChatVisible && overlayAttached) {
@@ -95,6 +104,19 @@ public class PetService extends Service {
     static boolean voiceOutputBusy() {
         return MainActivity.voiceBusy() || (activeInstance!=null && (activeInstance.busy || activeInstance.typingTask!=null || activeInstance.ttsPending));
     }
+    static boolean speechOutputActive(){return DeviceSpeech.outputBusy()||(activeInstance!=null&&activeInstance.ttsPending);}
+    static String currentSpokenText(){return DeviceSpeech.outputBusy()?DeviceSpeech.spokenText():activeInstance!=null?activeInstance.speechTarget:"";}
+    static void stopReading(){
+        if(speechOutputActive())ReadingContinuation.pause();
+        DeviceSpeech.interruptAll();MainActivity.stopReading();
+        if(activeInstance!=null){activeInstance.currentUtteranceSerial++;activeInstance.pendingMotion="stay";activeInstance.setSpeech(activeInstance.speechTarget);}
+    }
+    static boolean resumeReading(){
+        String text=ReadingContinuation.take();if(text.isEmpty())return false;
+        if(MainActivity.resumeReading(text))return true;
+        if(activeInstance!=null&&!activeInstance.destroyed){activeInstance.typeSpeech(text);return true;}
+        ReadingContinuation.begin(text);ReadingContinuation.pause();return false;
+    }
     static EditText voiceComposer(){return activeInstance!=null && !internalChatVisible && !activeInstance.destroyed && !activeInstance.busy ? activeInstance.composer : null;}
     static void voiceListening(boolean listening) {
         if(activeInstance==null || voiceOutputBusy())return;
@@ -104,7 +126,7 @@ public class PetService extends Service {
     private void greetOnOpen() {
         if (internalChatVisible) { greetWhenVisible=true;return; }
         greetWhenVisible=false;
-        if (!busy && GreetingPolicy.claim()) { speechEndMood="wave";typeSpeech("Hola! Sono Solphivia. Per iniziare, di’ Hola Solphivia."); }
+        if (!busy && GreetingPolicy.claim()) { speechEndMood="wave";typeSpeech(GreetingPolicy.OPENING); }
     }
     public static final String ACTION_INPUT_DONE = "it.solphivia.mobile.action.INPUT_DONE";
     public static final String ACTION_WEATHER_LOCATION = "it.solphivia.mobile.action.WEATHER_LOCATION";
@@ -213,7 +235,8 @@ public class PetService extends Service {
             configureTtsVoice();
             if (!ttsReady) { ttsPending = false; pendingUtterance = null; finishSpokenLine(); return; }
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-                @Override public void onStart(String id) { }
+                @Override public void onStart(String id) { onRangeStart(id,0,0,0); }
+                @Override public void onRangeStart(String id,int start,int end,int frame){main.post(()->{Integer base=readingOffsets.get(id);if(base!=null)ReadingContinuation.progress(readingToken,base+start);});}
                 @Override public void onDone(String id) { finishTtsUtterance(id); }
                 @Override public void onError(String id) {
                     if(id!=null && (id.equals("solphivia-"+currentUtteranceSerial) || id.startsWith("solphivia-"+currentUtteranceSerial+"-part-")))
@@ -229,9 +252,7 @@ public class PetService extends Service {
 
     @Override public int onStartCommand(Intent intent, int flags, int id) {
         if (intent != null && ACTION_STOP.equals(intent.getAction())) {
-            stopService(new Intent(this,VoiceSessionService.class));
-            getSharedPreferences("pet", 0).edit().putBoolean("overlay_off", true).apply();
-            stopSelf();
+            AppControls.close(this);
             return START_NOT_STICKY;
         }
         if (!Settings.canDrawOverlays(this)) { stopSelf(); return START_NOT_STICKY; }
@@ -288,7 +309,7 @@ public class PetService extends Service {
                 .setContentTitle("Solphivia è sullo schermo")
                 .setContentText("Tocca per aprire le impostazioni")
                 .setContentIntent(open).setOngoing(true)
-                .addAction(new Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, "Ferma", stop).build())
+                .addAction(new Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, "Chiudi Solphivia", stop).build())
                 .build();
         if (Build.VERSION.SDK_INT >= 34) startForeground(1, note, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
         else startForeground(1, note);
@@ -344,24 +365,12 @@ public class PetService extends Service {
         if (getSharedPreferences("pet", 0).getBoolean("costume_override", false)) pet.setClassicCyborgSuit(true);
         pet.setOnTouchListener(this::onPetTouch);
 
-        weatherBadge = createComposerAction("🌦 Meteo", "Attiva o aggiorna Solphivia Meteorina");
-        weatherBadge.setTextSize(12);
-        FrameLayout.LayoutParams weatherLp = new FrameLayout.LayoutParams(dp(82), dp(34), Gravity.TOP | Gravity.LEFT);
-        weatherLp.leftMargin = dp(7); weatherLp.topMargin = dp(88);
-        panel.addView(weatherBadge, weatherLp);
-        weatherBadge.setOnClickListener(v -> openInputActivity(CompanionInputActivity.ACTION_WEATHER_SETUP));
-        radarBadge = createComposerAction("Radar —", "Stato radar SRI della Protezione Civile");
-        radarBadge.setTextSize(10);
-        FrameLayout.LayoutParams radarLp = new FrameLayout.LayoutParams(dp(93), dp(34), Gravity.TOP | Gravity.LEFT);
-        radarLp.leftMargin=dp(93); radarLp.topMargin=dp(88); panel.addView(radarBadge,radarLp);
-        radarBadge.setOnClickListener(v -> {
-            String detail = getSharedPreferences("weather",0).getString("radar_status", "Attiva Meteorina per consultare il radar.");
-            setSpeech(detail + " Fonte: Radar-DPC, CC BY-SA. Rilevamento sperimentale, non allerta ufficiale.");
-            refreshWeather(false);
-        });
-        TextView memoryAction=createComposerAction("☰", "Apri memoria e impostazioni voce");
+        PowerButton power=new PowerButton(this);
+        FrameLayout.LayoutParams powerLp=new FrameLayout.LayoutParams(dp(40),dp(40),Gravity.TOP|Gravity.LEFT);
+        powerLp.leftMargin=dp(7);powerLp.topMargin=dp(88);panel.addView(power,powerLp);
+        TextView memoryAction=createComposerAction("☰", "Apri menu: memoria, voce e icona Home");
         FrameLayout.LayoutParams menuLp=new FrameLayout.LayoutParams(dp(36),dp(34),Gravity.TOP|Gravity.LEFT);
-        menuLp.leftMargin=dp(251);menuLp.topMargin=dp(88); panel.addView(memoryAction,menuLp);
+        menuLp.leftMargin=dp(57);menuLp.topMargin=dp(88); panel.addView(memoryAction,menuLp);
         memoryAction.setOnClickListener(v -> openInputActivity(CompanionInputActivity.ACTION_SETTINGS));
 
         FrameLayout composerRow = new FrameLayout(this);
@@ -523,7 +532,7 @@ public class PetService extends Service {
             catch(RuntimeException error){setSpeech("Non riesco ad aprire la sessione vocale.");}
             return;
         }
-        if (destroyed || busy) return;
+        if (destroyed || (busy && !CompanionInputActivity.ACTION_SETTINGS.equals(action))) return;
         if (ACTION_PICK_VOICE.equals(action)) { setSpeech(VoiceStatusState.CAPTURE_STARTING_LABEL); cancelIdleTimers(); setAnimation("listen"); }
         try { startActivity(new Intent(this, CompanionInputActivity.class).setAction(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
         catch (RuntimeException error) { setSpeech("Non riesco ad aprire questa funzione sul telefono."); }
@@ -552,30 +561,33 @@ public class PetService extends Service {
 
     private void submitMessage(String text, ArrayList<String> attachmentUris, boolean voice) {
         if (destroyed) return;
+        if(voice)SentVoiceTranscript.hold(composer,text);
+        if(attachmentUris.isEmpty()&&VoiceSessionService.handleReadingCommand(text))return;
+        ReadingContinuation.clear();
         if(attachmentUris.isEmpty()) {
             String appReply=LocalAppCommands.handle(this,text);
-            if(appReply!=null){composer.setText("");typeSpeech(appReply);return;}
+            if(appReply!=null){if(!voice)composer.setText("");typeSpeech(appReply);return;}
             String memoryReply=MemoryCommands.handle(this,text);
-            if(memoryReply!=null){composer.setText("");typeSpeech(memoryReply);return;}
+            if(memoryReply!=null){if(!voice)composer.setText("");typeSpeech(memoryReply);return;}
         }
         if (attachmentUris.isEmpty() && normalizeCommand(text).equals("memoria")) {
-            composer.setText("");
+            if(!voice)composer.setText("");
             startActivity(new Intent(this, MemoryActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             return;
         }
         if (attachmentUris.isEmpty() && normalizeCommand(text).equals("impostazioni voce")) {
-            composer.setText("");
+            if(!voice)composer.setText("");
             startActivity(new Intent(this, VoiceSettingsActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             return;
         }
         if (attachmentUris.isEmpty() && normalizeCommand(text).equals("nuova chat")) {
             getSharedPreferences("chat", 0).edit().remove("history").apply();
-            composer.setText(""); setSpeech("Nuova chat pronta."); return;
+            if(!voice)composer.setText(""); setSpeech("Nuova chat pronta."); return;
         }
         String normalized = Normalizer.normalize(text.toLowerCase(Locale.ROOT), Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         boolean disableWeather = normalized.equals("disattiva meteo") || normalized.equals("spegni meteorina");
         if (!disableWeather && ReviewRules.weatherSetup(text, !attachmentUris.isEmpty())) {
-            composer.setText("");
+            if(!voice)composer.setText("");
             ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
             openInputActivity(CompanionInputActivity.ACTION_WEATHER_SETUP);
             return;
@@ -589,27 +601,21 @@ public class PetService extends Service {
             if (weatherBadge != null) weatherBadge.setText("🌦 Meteo");
             if (radarBadge != null) radarBadge.setText("Radar —");
             getSharedPreferences("weather",0).edit().putString("radar_status","Meteorina disattivata.").apply();
-            composer.setText("");
+            if(!voice)composer.setText("");
             setSpeech("Va bene, metto in pausa la Meteorina.");
             return;
         }
-        if (attachmentUris.isEmpty() && handleGreetingCommand(text)) return;
-        if (attachmentUris.isEmpty() && handleVoiceModeCommand(text)) return;
-        if (attachmentUris.isEmpty() && isShutdownCommand(text)) {
-            stopService(new Intent(this,VoiceSessionService.class));
-            composer.setText("");
-            ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
-            getSharedPreferences("pet", 0).edit().putBoolean("overlay_off", true).apply();
-            stopSelf();
-            return;
-        }
+        if (attachmentUris.isEmpty() && handleGreetingCommand(text)) {if(voice)SentVoiceTranscript.hold(composer,text);return;}
+        if (attachmentUris.isEmpty() && handleVoiceModeCommand(text)) {if(voice)SentVoiceTranscript.hold(composer,text);return;}
+        if (attachmentUris.isEmpty() && isShutdownCommand(text)) {AppControls.close(this);return;}
+
         applyCostumeCommand(text);
         if (!OpenAiChatClient.isConnected(this)) {
             setSpeech("Per parlare con me, apri l’app Solphivia e collega ChatGPT.");
             return;
         }
         cancelIdleTimers();
-        composer.setText("");
+        if(!voice)composer.setText("");
         ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
         composer.clearFocus();
         busy = true; composer.setEnabled(false); sendButton.setEnabled(false);
@@ -894,7 +900,7 @@ public class PetService extends Service {
                 main.post(() -> {
                     if (destroyed) return;
                     busy = false; composer.setEnabled(true); sendButton.setEnabled(true);
-                    composer.setText(text);
+                    SentVoiceTranscript.release(composer);composer.setText(text);
                     setAnimation("concerned"); setSpeech(message);
                     resetIdleTimers();
                 });
@@ -989,19 +995,20 @@ public class PetService extends Service {
         return true;
     }
 
+    private long readingToken;
+    private final java.util.Map<String,Integer> readingOffsets=new java.util.HashMap<>();
     private void startTtsUtterance(String text, long serial) {
         if (!getSharedPreferences("pet", 0).getBoolean("read_aloud", true)) { ttsPending = false; finishSpokenLine(); return; }
         if (tts == null || !ttsReady || text == null) { ttsPending = false; finishSpokenLine(); return; }
         applySystemTtsSettings();
         String id = "solphivia-" + serial;
-        String spokenText = englishAccentActive ? ItalianEnglishAccent.respell(text) : text;
-        int limit=Math.max(100,TextToSpeech.getMaxSpeechInputLength()-1);
-        for(int start=0;start<spokenText.length();) {
-            int end=Math.min(start+limit,spokenText.length());
-            if(end<spokenText.length() && Character.isLowSurrogate(spokenText.charAt(end)))end--;
-            int result=tts.speak(spokenText.substring(start,end),start==0?TextToSpeech.QUEUE_FLUSH:TextToSpeech.QUEUE_ADD,null,end==spokenText.length()?id:id+"-part-"+start);
+        String spokenText = SpeechText.prepare(text,englishAccentActive,getSharedPreferences("pet",0).getBoolean("clear_italian",true));
+        java.util.List<String> chunks=SpeechText.chunks(spokenText,Math.max(100,TextToSpeech.getMaxSpeechInputLength()-1));
+        readingToken=ReadingContinuation.begin(spokenText);readingOffsets.clear();int offset=0;
+        for(int i=0;i<chunks.size();i++) {
+            String chunkId=i==chunks.size()-1?id:id+"-part-"+i;readingOffsets.put(chunkId,offset);offset+=chunks.get(i).length();
+            int result=tts.speak(chunks.get(i),i==0?TextToSpeech.QUEUE_FLUSH:TextToSpeech.QUEUE_ADD,null,i==chunks.size()-1?id:id+"-part-"+i);
             if(result==TextToSpeech.ERROR) {tts.stop();ttsPending=false;finishSpokenLine();break;}
-            start=end;
         }
         if(spokenText.isEmpty()){ttsPending=false;finishSpokenLine();}
     }
@@ -1010,17 +1017,18 @@ public class PetService extends Service {
         // Respect the user's Motorola/Android speech-rate and pitch sliders for every utterance.
         int rate = Settings.Secure.getInt(getContentResolver(), Settings.Secure.TTS_DEFAULT_RATE, 100);
         int pitch = Settings.Secure.getInt(getContentResolver(), Settings.Secure.TTS_DEFAULT_PITCH, 100);
-        tts.setSpeechRate(Math.max(0.1f, rate / 100f));
+        tts.setSpeechRate(SpeechText.rate(rate,getSharedPreferences("pet",0).getInt("voice_rate_percent",100)));
         tts.setPitch(Math.max(0.1f, pitch / 100f));
     }
 
     private void configureTtsVoice() {
         boolean requestedEnglish = getSharedPreferences("pet", 0).getBoolean("english_accent", false);
         Locale locale = requestedEnglish ? Locale.UK : Locale.ITALIAN;
+        android.speech.tts.Voice preferred=tts.getVoice();
         int language = tts.setLanguage(locale);
         ttsReady = language != TextToSpeech.LANG_MISSING_DATA && language != TextToSpeech.LANG_NOT_SUPPORTED;
         englishAccentActive = requestedEnglish && ttsReady;
-        android.speech.tts.Voice best = ttsReady ? SpeechVoiceSelection.select(tts, locale, requestedEnglish) : null;
+        android.speech.tts.Voice best = ttsReady ? SpeechVoiceSelection.select(tts, locale, requestedEnglish, preferred) : null;
         boolean voiceSelected = best != null && tts.setVoice(best) == TextToSpeech.SUCCESS;
         if (requestedEnglish && !voiceSelected) {
             // Keep the app usable when the phone has no offline English voice installed.
@@ -1064,6 +1072,7 @@ public class PetService extends Service {
             if (destroyed) return;
             if (id == null || !id.equals("solphivia-" + currentUtteranceSerial)) return;
             ttsPending = false;
+            ReadingContinuation.complete(readingToken);
             finishSpokenLine();
         });
     }
@@ -1078,13 +1087,7 @@ public class PetService extends Service {
         }
     }
 
-    public static boolean isShutdownCommand(String text) {
-        String value = normalizeCommand(text).replaceAll("[.!?]+$", "").trim();
-        return value.equals("spegniti") || value.equals("spegni") || value.equals("spegni solphivia") ||
-                value.equals("spegni app") || value.equals("spegni l'app") || value.equals("chiudi app") ||
-                value.equals("chiudi l'app") || value.equals("chiudi applicazione") ||
-                value.equals("chiudi l'applicazione") || value.equals("chiudi solphivia");
-    }
+    public static boolean isShutdownCommand(String text) {return SessionCommands.close(text);}
 
     public static Boolean requestedCyborgSuit(String text) {
         String value = normalizeCommand(text);

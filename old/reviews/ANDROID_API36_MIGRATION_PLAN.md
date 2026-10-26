@@ -1,12 +1,13 @@
 # Android API 36 migration plan
 
+**Aggiornamento 1.0 beta 1:** la candidata corrente è descritta in [CURRENT_RELEASE](../../docs/CURRENT_RELEASE.md). I riferimenti alpha11/alpha2 e le relative misure qui sotto sono snapshot storici, non esiti attribuiti alla beta. Ogni nuova implementazione deve partire dalla candidata corrente.
 Related issue: #3. Original proposal by @sunny-kavixo; refreshed by the maintainer on 24 October 2026 for alpha11.
 
 **Plan only.** This document authorizes a focused migration proposal; no SDK, permission, dependency or application source is changed here. No API 36 build/runtime compatibility or Google Play readiness is claimed.
 
 ## Current baseline
 
-- Alpha11 (44), release source commit `f9f65419a9c08459ac7bad95ef8d6bf8f6e03723`; [current release](CURRENT_RELEASE.md).
+- Alpha11 (44), release source commit `f9f65419a9c08459ac7bad95ef8d6bf8f6e03723`; [current release](../../docs/CURRENT_RELEASE.md).
 - minSdk 26; compileSdk/targetSdk 35; JDK 17; AGP 8.9.1; Gradle 8.11.1.
 - Vosk 0.3.75 and JNA 5.18.1 native dependencies; bundled Italian wake model; ARM64/ARMv7 builds.
 - Build, 38 JVM tests and four isolated Android suites passed; Lint has 0 errors and 118 warnings. The maintainer confirms transcript preview and continued voice conversation on Moto g35 5G / Android 16, **with targetSdk 35**. That is not proof of targetSdk 36 behavior.

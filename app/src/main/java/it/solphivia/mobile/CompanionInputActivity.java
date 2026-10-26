@@ -30,6 +30,7 @@ import org.json.JSONObject;
 /** Small relay activity for Android's speech recognizer and document picker. */
 public class CompanionInputActivity extends Activity {
     static final String ACTION_VOICE = "it.solphivia.mobile.action.VOICE_INPUT";
+    static final String ACTION_HOME_ICON = "it.solphivia.mobile.action.HOME_ICON";
     static final String ACTION_SETTINGS = "it.solphivia.mobile.action.SETTINGS";
     static final String ACTION_FILES = "it.solphivia.mobile.action.PICK_FILES";
     static final String ACTION_ATTACHMENTS = "it.solphivia.mobile.action.ATTACHMENTS";
@@ -52,15 +53,25 @@ public class CompanionInputActivity extends Activity {
         externalRequestPending = state != null && state.getBoolean("external_request_pending", false);
         if (externalRequestPending) return;
         String action = getIntent() == null ? null : getIntent().getAction();
+        if(ACTION_HOME_ICON.equals(action)){showHomeIconHelp();return;}
         if (ACTION_SETTINGS.equals(action)) {
             new AlertDialog.Builder(this).setTitle("Solphivia")
-                    .setItems(new String[]{"Memoria e Memory Vault", "Voce e accento", "Prova animazioni"}, (d,w) -> {
-                        startActivity(new Intent(this,w==0?MemoryActivity.class:w==1?VoiceSettingsActivity.class:AnimationPreviewActivity.class)); finish();
+                    .setItems(new String[]{"Memoria e Memory Vault", "Voce italiana e pronuncia", "Prova animazioni", "Microfono e sessione", "Aggiungi icona sulla Home", "Ferma la voce", "Riprendi la voce"}, (d,w) -> {
+                        if(w==6){PetService.resumeReading();finish();return;}
+                        if(w==5){VoiceSessionService.interruptReading();finish();return;}
+                        if(w==4){showHomeIconHelp();return;}
+                        startActivity(new Intent(this,w==0?MemoryActivity.class:w==1?VoiceSettingsActivity.class:w==2?AnimationPreviewActivity.class:VoiceSessionActivity.class)); finish();
                     }).setOnCancelListener(d -> finish()).show();
         }
         else if (ACTION_WEATHER_SETUP.equals(action)) chooseWeatherLocation();
         else if (ACTION_VOICE.equals(action)) openVoiceInput();
         else openFilePicker();
+    }
+
+    private void showHomeIconHelp(){
+        new AlertDialog.Builder(this).setTitle("Icona unica Solphivia IA").setMessage(AppControls.addHomeIcon(this))
+            .setPositiveButton("Vai alla Home",(d,w)->{startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME));finish();})
+            .setNegativeButton("Chiudi",(d,w)->finish()).setOnCancelListener(d->finish()).show();
     }
 
     private void chooseWeatherLocation() {

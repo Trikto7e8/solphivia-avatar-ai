@@ -12,7 +12,7 @@ public final class TranscriptComposerInstrumentation extends Instrumentation {
     @Override public void onStart(){
         Bundle result=new Bundle();
         try{
-            check(getTargetContext().getPackageName().equals("it.solphivia.mobile.alpha11.verification"));
+            check(getTargetContext().getPackageName().equals("it.solphivia.mobile.v11.verification"));
             check(VoicePhrases.recognitionIntent().getBooleanExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS,false));
             runOnMainSync(()->{
                 EditText field=new EditText(getTargetContext());
@@ -24,8 +24,13 @@ public final class TranscriptComposerInstrumentation extends Instrumentation {
                 field.setText("");p=new VoiceTranscriptComposer(field);p.show("Frase incompleta");p.cancel();check(field.length()==0);
                 field.setText("Bozza scritta");p=new VoiceTranscriptComposer(field);p.show("Voce");check(!p.canSubmit());p.cancel();check(field.getText().toString().equals("Bozza scritta"));
                 field.setText("");p=new VoiceTranscriptComposer(field);p.show("Sì");field.setText("No, preferisco altro");p.show("Sì grazie");check(!p.canSubmit());p.cancel();check(field.getText().toString().equals("No, preferisco altro"));
+                SentVoiceTranscript.hold(field,"Domanda già inviata");
+                p=new VoiceTranscriptComposer(field);check(p.canSubmit());SentVoiceTranscript.clearFinished();check(p.canSubmit());check(field.getText().toString().equals("Domanda già inviata"));p.show("Un'altra domanda");p.cancel();check(field.getText().toString().equals("Domanda già inviata"));check(SentVoiceTranscript.owns(field));
+                p=new VoiceTranscriptComposer(field);p.show("Un'altra domanda");p.finish();check(field.getText().toString().equals("Un'altra domanda"));
+                SentVoiceTranscript.clearFinished();check(field.length()==0);
+                SentVoiceTranscript.hold(field,"Domanda inviata");field.setText("Nuova bozza manuale");SentVoiceTranscript.clearFinished();check(field.getText().toString().equals("Nuova bozza manuale"));
                 VoiceSessionState session=new VoiceSessionState();
-                for(String text:new String[]{"Sì, grazie.","No, preferisco la seconda.","Mi chiamo Marco.","Perché me lo chiedi?"}){
+                for(String text:new String[]{"Sì, grazie.","No, preferisco la seconda.","Questa è una frase di prova.","Perché me lo chiedi?"}){
                     VoiceSessionState.Decision d=session.accept(text);check(d.action==VoiceSessionState.SEND);check(d.text.equals(text));
                 }
                 try{
@@ -42,7 +47,7 @@ public final class TranscriptComposerInstrumentation extends Instrumentation {
             });
             VoiceFollowUpWindow window=new VoiceFollowUpWindow();window.replyStarted();window.replyFinished();window.captureReady(10000);
             check(!window.expired(14999));check(window.expired(15000));
-            result.putString("stream","PASS: partial-results enabled; synthetic EditText partial/final transcript and cursor; actual service partial callback updates field and ignores late results; cancelled preview cleanup; existing draft and manual edits preserved; natural answers forwarded unchanged; five-second window retained. No live ASR/network/account/vault used.\n");
+            result.putString("stream","PASS: sent transcript held until completion; next utterance replaces receipt; cancelled capture restores receipt; cleanup preserves manual edits; partial-results enabled; synthetic EditText partial/final transcript and cursor; actual service partial callback updates field and ignores late results; cancelled preview cleanup; existing draft and manual edits preserved; natural answers forwarded unchanged; five-second window retained. No live ASR/network/account/vault used.\n");
             finish(Activity.RESULT_OK,result);
         }catch(Throwable e){result.putString("stream","FAIL: "+android.util.Log.getStackTraceString(e));finish(Activity.RESULT_CANCELED,result);}
     }

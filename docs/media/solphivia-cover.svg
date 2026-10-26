@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="title desc">
-<title id="title">Solphivia alpha11 — an animated AI companion for Android</title>
+<title id="title">Solphivia 1.0 beta 1 — an animated AI companion for Android</title>
 <desc id="desc">Alpha11. Continued voice conversation, transcript preview and portable memory. Android today; local AI and iOS on the roadmap.</desc>
 <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#12152e"/><stop offset="1" stop-color="#29205b"/></linearGradient><linearGradient id="accent"><stop stop-color="#64e8ff"/><stop offset="1" stop-color="#c6a4ff"/></linearGradient></defs>
 <rect width="1280" height="420" rx="28" fill="url(#bg)"/>

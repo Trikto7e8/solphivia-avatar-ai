@@ -1,4 +1,16 @@
-# Voice conversation in alpha11 / Conversazione vocale
+# Voice conversation in 1.1 beta 3 / Conversazione vocale
+
+## Interruzione sperimentale / Experimental interruption
+
+Con il microfono già attivo, durante la lettura puoi provare **«Basta Solphivia»** o **«Fermati Solphivia»**. Attendi il segnale prima del nuovo comando. **Ferma la voce** è disponibile anche nel menu e nella notifica; non riaccende il microfono spento. Le sezioni successive descrivono il normale percorso dei comandi: nella 1.1 solo il riconoscitore locale delle frasi di interruzione resta attivo durante il parlato, se abilitato. [Stato delle prove e limiti](releases/v1.1.0-beta.3.md).
+
+With the microphone already active, try **“Basta Solphivia”** or **“Fermati Solphivia”** during reading. Wait for the microphone cue before the next command. “Ferma la voce” also provides a manual control. Regular command capture remains suspended during output; only the enabled local interruption recognizer listens. Live acoustic validation is pending.
+
+## Stop, ripresa e trascrizione
+
+Puoi anche dire **Stop**, **Alt**, **Basta** o **Fermati**, come frasi complete. Dopo l’arresto, **Prosegui**, **Riprendi**, **Continua**, **Dimmi**, **Ti ascolto**, **Dai** e **Vai** riprendono la lettura sospesa. Restano attivi solo se il microfono è acceso; le frasi di ripresa hanno questo significato locale solo quando c’è una lettura sospesa. La ripresa usa la posizione comunicata dal motore: senza aggiornamenti precisi può ripetere il blocco in corso.
+
+La trascrizione inviata resta nella barra durante la risposta; si libera al termine della risposta o viene sostituita dalla frase successiva. Una bozza modificata a mano non viene cancellata dalla pulizia automatica. Il pulsante ⏻ chiude tutta la sessione; le voci di chiusura sono state rimosse dal menu.
 
 ## English
 
@@ -28,4 +40,8 @@ Puoi dire «apri Maps», «apri» seguito dal nome completo dell’app, «cerca 
 
 Se Android limita l’ascolto, controlla le impostazioni batteria della sola Solphivia. Non occorre modificare globalmente la gestione batteria. Consumi prolungati, blocco schermo e altri dispositivi richiedono ulteriori prove.
 
-[Release notes and measured limits / Note e limiti](releases/v0.9.2-alpha11.md)
+[Release notes and measured limits / Note e limiti](releases/v1.1.0-beta.3.md)
+
+## Chiudere tutta la sessione
+
+Pulsante tondo ⏻ sotto l’avatar, o il comando Chiudi Solphivia dopo il richiamo. Si fermano avatar, lettura e microfono. Come faccio a chiuderti? spiega i controlli senza chiudere. Stop dialogo lascia il richiamo, Spegni microfono lascia l’avatar. Ferma la voce interrompe solo la lettura.
