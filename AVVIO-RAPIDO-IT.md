@@ -44,4 +44,4 @@ La chat di Solphivia è separata da quella di ChatGPT: non importa chat o memori
 
 ## Chiudere e ritrovare Solphivia
 
-Il pulsante tondo **⏻** sotto l’avatar ferma avatar e microfono e chiude le schermate, conservando i dati. Puoi chiederle **Come faccio a chiuderti?** e, dopo il richiamo, pronunciare **Chiudi Solphivia**. **Spegni microfono** ferma solo l’ascolto. **Aggiungi icona sulla Home** nel menu apre la richiesta Android: conferma Aggiungi. Se l’icona esiste già non viene duplicata.
+Il pulsante tondo **⏻** sotto l’avatar ferma avatar e microfono e chiude le schermate, conservando i dati. Puoi chiederle **Come faccio a chiuderti?** e, dopo il richiamo, pronunciare **Chiudi Solphivia**. **Spegni microfono** ferma solo l’ascolto. **Aggiungi icona sulla Home** nel menu spiega come trascinare Solphivia IA dall’elenco delle app sulla Home. È l’icona normale, senza il badge delle scorciatoie. Il vecchio collegamento può essere rimosso dalla Home.

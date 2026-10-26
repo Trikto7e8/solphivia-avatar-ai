@@ -1,8 +1,8 @@
-# Voice conversation in 1.1 beta 2 / Conversazione vocale
+# Voice conversation in 1.1 beta 3 / Conversazione vocale
 
 ## Interruzione sperimentale / Experimental interruption
 
-Con il microfono già attivo, durante la lettura puoi provare **«Basta Solphivia»** o **«Fermati Solphivia»**. Attendi il segnale prima del nuovo comando. **Ferma la voce** è disponibile anche nel menu e nella notifica; non riaccende il microfono spento. Le sezioni successive descrivono il normale percorso dei comandi: nella 1.1 solo il riconoscitore locale delle frasi di interruzione resta attivo durante il parlato, se abilitato. [Stato delle prove e limiti](releases/v1.1.0-beta.2.md).
+Con il microfono già attivo, durante la lettura puoi provare **«Basta Solphivia»** o **«Fermati Solphivia»**. Attendi il segnale prima del nuovo comando. **Ferma la voce** è disponibile anche nel menu e nella notifica; non riaccende il microfono spento. Le sezioni successive descrivono il normale percorso dei comandi: nella 1.1 solo il riconoscitore locale delle frasi di interruzione resta attivo durante il parlato, se abilitato. [Stato delle prove e limiti](releases/v1.1.0-beta.3.md).
 
 With the microphone already active, try **“Basta Solphivia”** or **“Fermati Solphivia”** during reading. Wait for the microphone cue before the next command. “Ferma la voce” also provides a manual control. Regular command capture remains suspended during output; only the enabled local interruption recognizer listens. Live acoustic validation is pending.
 

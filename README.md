@@ -1,10 +1,10 @@
-> **1.1.0-beta.2 — experimental development candidate.** Say “Basta Solphivia” to interrupt reading, or use “Ferma la voce”. Stop/resume commands and retained transcripts passed synthetic tests; the new commands still need live validation. [Notes and limits](docs/releases/v1.1.0-beta.2.md). The 1.0 review remains separate.
+> **1.1.0-beta.3 — experimental development candidate.** Say “Basta Solphivia” to interrupt reading, or use “Ferma la voce”. Stop/resume commands and retained transcripts passed synthetic tests; the new commands still need live validation. [Notes and limits](docs/releases/v1.1.0-beta.3.md). The 1.0 review remains separate.
 
 <p align="center"><img src="docs/media/solphivia-cover.svg" alt="Solphivia: animated AI companion for Android, with chat, voice and portable memory" width="100%" /></p>
 
 # Meet Solphivia IA
 
-**New in 1.1 beta 2 — experimental voice interruption.** Natural Italian, clear shutdown controls and a Home icon remain available. While reading, local recognition can listen for “Basta Solphivia” or “Fermati Solphivia”. [Test status and limits](docs/releases/v1.1.0-beta.2.md).
+**New in 1.1 beta 3 — experimental voice interruption.** Natural Italian, clear shutdown controls and a Home icon remain available. While reading, local recognition can listen for “Basta Solphivia” or “Fermati Solphivia”. [Test status and limits](docs/releases/v1.1.0-beta.3.md).
 
 An animated companion on your Android screen. Talk, type, attach a file, and keep your assistant's personal memory under your control.
 

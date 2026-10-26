@@ -235,7 +235,7 @@ public class MainActivity extends Activity {
         stageParams.bottomMargin = dp(5);
         page.addView(stage, stageParams);
 
-        PowerButton power=new PowerButton(this);LinearLayout.LayoutParams powerParams=new LinearLayout.LayoutParams(dp(48),dp(48));powerParams.gravity=Gravity.RIGHT;powerParams.bottomMargin=dp(6);page.addView(power,powerParams);
+        PowerButton power=new PowerButton(this);LinearLayout.LayoutParams powerParams=new LinearLayout.LayoutParams(dp(48),dp(48));powerParams.gravity=Gravity.LEFT;powerParams.bottomMargin=dp(6);page.addView(power,powerParams);
         LinearLayout composerRow = new LinearLayout(this);
         composerRow.setGravity(Gravity.CENTER_VERTICAL);
         filesButton = new Button(this); filesButton.setText("+"); filesButton.setContentDescription("Aggiungi file dal telefono");
@@ -773,7 +773,7 @@ public class MainActivity extends Activity {
         homeShortcutPromptPending=false;
         if(!startHomeOverlayIfReady() && !openingGreetingDone && !activityPaused){
             openingGreetingDone=true;
-            if(GreetingPolicy.claim())speak("Hola! Sono Solphivia. Per iniziare, di’ Hola Solphivia.","wave","stay",false);
+            if(GreetingPolicy.claim())speak(GreetingPolicy.OPENING,"wave","stay",false);
         }
     }
 

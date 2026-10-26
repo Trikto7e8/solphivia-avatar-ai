@@ -126,7 +126,7 @@ public class PetService extends Service {
     private void greetOnOpen() {
         if (internalChatVisible) { greetWhenVisible=true;return; }
         greetWhenVisible=false;
-        if (!busy && GreetingPolicy.claim()) { speechEndMood="wave";typeSpeech("Hola! Sono Solphivia. Per iniziare, di’ Hola Solphivia."); }
+        if (!busy && GreetingPolicy.claim()) { speechEndMood="wave";typeSpeech(GreetingPolicy.OPENING); }
     }
     public static final String ACTION_INPUT_DONE = "it.solphivia.mobile.action.INPUT_DONE";
     public static final String ACTION_WEATHER_LOCATION = "it.solphivia.mobile.action.WEATHER_LOCATION";
@@ -367,10 +367,10 @@ public class PetService extends Service {
 
         PowerButton power=new PowerButton(this);
         FrameLayout.LayoutParams powerLp=new FrameLayout.LayoutParams(dp(40),dp(40),Gravity.TOP|Gravity.LEFT);
-        powerLp.leftMargin=dp(194);powerLp.topMargin=dp(88);panel.addView(power,powerLp);
+        powerLp.leftMargin=dp(7);powerLp.topMargin=dp(88);panel.addView(power,powerLp);
         TextView memoryAction=createComposerAction("☰", "Apri menu: memoria, voce e icona Home");
         FrameLayout.LayoutParams menuLp=new FrameLayout.LayoutParams(dp(36),dp(34),Gravity.TOP|Gravity.LEFT);
-        menuLp.leftMargin=dp(251);menuLp.topMargin=dp(88); panel.addView(memoryAction,menuLp);
+        menuLp.leftMargin=dp(57);menuLp.topMargin=dp(88); panel.addView(memoryAction,menuLp);
         memoryAction.setOnClickListener(v -> openInputActivity(CompanionInputActivity.ACTION_SETTINGS));
 
         FrameLayout composerRow = new FrameLayout(this);

@@ -29,17 +29,6 @@ final class AppControls {
         }catch(RuntimeException ignored){}
     }
     static String addHomeIcon(Context context){
-        refreshHomeIcons(context);
-        ShortcutManager manager=context.getSystemService(ShortcutManager.class);
-        if(manager==null||!manager.isRequestPinShortcutSupported())return "Apri l’elenco delle app, tieni premuta Solphivia IA e trascinala sulla Home.";
-        try{
-            for(ShortcutInfo pinned:manager.getPinnedShortcuts()){
-                Intent target=pinned.getIntent();
-                if(pinned.isEnabled()&&target!=null&&target.getComponent()!=null&&target.getComponent().getClassName().equals(MainActivity.class.getName()))return "Il collegamento è già aggiunto: controlla le pagine e le cartelle della Home. L’app è anche nell’elenco delle applicazioni.";
-            }
-            Intent open=new Intent(context,MainActivity.class).setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
-            ShortcutInfo shortcut=new ShortcutInfo.Builder(context,"solphivia-home").setShortLabel("Solphivia IA").setLongLabel("Apri Solphivia IA").setIcon(Icon.createWithResource(context,R.mipmap.ic_launcher)).setIntent(open).build();
-            return manager.requestPinShortcut(shortcut,null)?"Conferma Aggiungi nella richiesta Android per mettere Solphivia sulla Home.":"Il launcher non ha accettato la richiesta. Puoi trascinare l’icona dall’elenco delle app alla Home.";
-        }catch(RuntimeException error){return "Non riesco ad aggiungere l’icona da qui. Tieni premuta Solphivia IA nell’elenco delle app e trascinala sulla Home.";}
+        return "Per avere una sola Solphivia nell’icona, usa l’icona normale dell’app:\n\n1. Dalla Home scorri verso l’alto per aprire l’elenco delle app.\n2. Tieni premuta Solphivia IA e trascinala sulla Home.\n3. Tieni premuto il vecchio collegamento con il piccolo badge e scegli Rimuovi.\n\nLe scorciatoie Android possono mostrare una seconda piccola icona: non ne creiamo altre.";
     }
 }
