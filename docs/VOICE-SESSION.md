@@ -40,7 +40,7 @@ Puoi dire «apri Maps», «apri» seguito dal nome completo dell’app, «cerca 
 
 Se Android limita l’ascolto, controlla le impostazioni batteria della sola Solphivia. Non occorre modificare globalmente la gestione batteria. Consumi prolungati, blocco schermo e altri dispositivi richiedono ulteriori prove.
 
-[Release notes and measured limits / Note e limiti](releases/v1.0.0-beta.1.md)
+[Release notes and measured limits / Note e limiti](releases/v1.1.0-beta.3.md)
 
 ## Chiudere tutta la sessione
 

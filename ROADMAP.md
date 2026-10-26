@@ -11,7 +11,7 @@ These are project goals, not promises about the current release.
 
 ## Model connections
 
-- Extend the Stage A provider interface delivered in 1.0 beta 1 with separately reviewed adapters and capability settings.
+- Extend the Stage A provider interface delivered in 1.1 beta 3 with separately reviewed adapters and capability settings.
 - Keep the documented open-source Sign in with ChatGPT connection as an optional adapter.
 - Add user-configured connections to local LM Studio/Ollama servers.
 - Add cloud provider adapters using each provider's supported authentication and billing model.
@@ -33,6 +33,6 @@ These are project goals, not promises about the current release.
 
 Start with an iOS feasibility study and an in-app avatar prototype, with portable encrypted memory and independent provider adapters. Document platform limitations before committing to feature parity. See [COLLABORATE.md](COLLABORATE.md) for contribution areas.
 
-## 1.1 — interruzione vocale durante la risposta (da implementare)
+## Già nella 1.1 beta
 
-Rilevare una richiesta di interruzione mentre il TTS parla, distinguendo la voce dell’utente dall’audio del telefono. Fermare la lettura e riprendere il comando senza autoattivazioni o loop. Prima dell’inclusione: prove di eco, rumore, cuffie/altoparlante, falsi positivi e controlli Stop/Chiudi. Non dichiarata disponibile nella 1.0 beta.
+Arresto/ripresa vocale della lettura, trascrizione visibile e chiusura completa sono implementati. Restano le misure su rumore, cuffie, falsi interventi e sessioni lunghe. [Preparazione Google Play](docs/google-play/README.md).

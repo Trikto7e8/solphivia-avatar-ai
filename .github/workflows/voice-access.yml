@@ -1,4 +1,4 @@
-name: Android alpha verification
+name: Solphivia IA beta verification
 on:
   push:
     branches: [main]

@@ -1,7 +1,7 @@
 # Android Release Readiness — Initial Review
 
-**Aggiornamento 1.0 beta 1:** la candidata corrente è descritta in [CURRENT_RELEASE](CURRENT_RELEASE.md). I riferimenti alpha11/alpha2 e le relative misure qui sotto sono snapshot storici, non esiti attribuiti alla beta. Ogni nuova implementazione deve partire dalla candidata corrente.
-**Historical initial review.** This inspection describes commit `47be7626601a9c08dbea74c1372a78c879197b59`, not current alpha11. For the current build/device results use [alpha11 notes](releases/v0.9.2-alpha11.md) and [current version](CURRENT_RELEASE.md). Current source also has a microphone foreground service and local command/follow-up/transcript paths. The original unchecked checklist below is preserved as evidence of that inspection; it does not negate later build/device results or establish store readiness.
+**Aggiornamento 1.0 beta 1:** la candidata corrente è descritta in [CURRENT_RELEASE](../../docs/CURRENT_RELEASE.md). I riferimenti alpha11/alpha2 e le relative misure qui sotto sono snapshot storici, non esiti attribuiti alla beta. Ogni nuova implementazione deve partire dalla candidata corrente.
+**Historical initial review.** This inspection describes commit `47be7626601a9c08dbea74c1372a78c879197b59`, not current alpha11. For the current build/device results use [alpha11 notes](../releases/v0.9.2-alpha11.md) and [current version](../../docs/CURRENT_RELEASE.md). Current source also has a microphone foreground service and local command/follow-up/transcript paths. The original unchecked checklist below is preserved as evidence of that inspection; it does not negate later build/device results or establish store readiness.
 
 Related issue: #3
 

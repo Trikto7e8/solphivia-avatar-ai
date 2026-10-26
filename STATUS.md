@@ -1,7 +1,9 @@
-# Solphivia Mobile 1.0 beta 1 — in revisione
+# Solphivia IA 1.1 beta 3
 
-Versione 1.0.0-beta.1, codice 46. Italiano naturale come scelta iniziale; pronuncia inglese facoltativa. L’utente ha confermato l’ascolto della precedente build italiana alpha12. La beta aggiunge controlli di chiusura e richiesta esplicita dell’icona Home, da verificare separatamente.
+Versione 1.1.0-beta.3, codice 49, pacchetto it.solphivia.mobile. [APK e sorgenti](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.3).
 
-La revisione non equivale ad approvazione Google Play, App Store o certificazione di stabilità. L’ultima release pubblicata precedente è archiviata nella cronologia. Nessun nuovo test è attribuito retroattivamente a versioni passate.
+Italiano naturale, arresto/ripresa della lettura, trascrizione persistente, saluto con comandi e pulsanti a sinistra. Sul dispositivo verificati icona con un solo personaggio e apertura dalla Home. La precedente copia di prova è stata disattivata senza eliminarne i dati.
 
-[Stato e istruzioni](docs/CURRENT_RELEASE.md) · [Note della beta](docs/releases/v1.0.0-beta.1.md) · [Prossimi passi](ROADMAP-IT.md).
+Build e Lint beta 3 riusciti. I 65 test JVM e le prove sintetiche dei comandi appartengono alla logica beta 2, come riportato nelle note. Ulteriori prove di durata, rumore, cuffie, batteria e altri telefoni restano aperte.
+
+[Versione corrente](docs/CURRENT_RELEASE.md) · [Note](docs/releases/v1.1.0-beta.3.md) · [Preparazione Google Play](docs/google-play/README.md) · [Vecchi file e riferimenti](old/README.md).

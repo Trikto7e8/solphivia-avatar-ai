@@ -1,8 +1,8 @@
-# Solphivia 1.0 beta 1: guida rapida Android
+# Solphivia IA 1.1 beta 3: guida rapida Android
 
 ## Installare o aggiornare
 
-Scarica l’APK dalla [release 1.0 beta 1](docs/CURRENT_RELEASE.md). È una build debug alpha per le prove, non una versione Google Play. Richiede Android 8 o successivo e ARM64/ARMv7.
+Scarica l’APK dalla [release 1.1 beta 3](docs/CURRENT_RELEASE.md). È una build debug beta per le prove, non una versione Google Play. Richiede Android 8 o successivo e ARM64/ARMv7.
 
 Se aggiorni un’installazione con lo stesso certificato, installa sopra quella esistente: non disinstallare e non cancellare i dati per aggiornare. I dati cifrati dipendono anche dal Keystore dell’installazione. In caso di firma diversa, fermati e conserva l’app originale prima di decidere come trasferire i dati.
 
@@ -40,7 +40,7 @@ La chat di Solphivia è separata da quella di ChatGPT: non importa chat o memori
 - Se il browser non torna all’app, lascia Solphivia aperta in background, completa il consenso e usa il collegamento di ritorno. Non condividere token o codici temporanei.
 - Per problemi di account o limiti, controlla il messaggio e le impostazioni del fornitore.
 
-[Note di rilascio, prove e limiti](docs/releases/v1.0.0-beta.1.md). Blocco schermo, sessioni prolungate, recupero rete e altri dispositivi richiedono ancora collaudo.
+[Note di rilascio, prove e limiti](old/releases/v1.0.0-beta.1.md). Blocco schermo, sessioni prolungate, recupero rete e altri dispositivi richiedono ancora collaudo.
 
 ## Chiudere e ritrovare Solphivia
 

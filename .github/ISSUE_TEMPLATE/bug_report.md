@@ -1,6 +1,6 @@
 ---
 name: Bug report / Segnala un problema
-about: Reproducible alpha behavior, using synthetic data only
+about: Reproducible beta behavior, using synthetic data only
 title: "[Bug] "
 labels: bug
 ---

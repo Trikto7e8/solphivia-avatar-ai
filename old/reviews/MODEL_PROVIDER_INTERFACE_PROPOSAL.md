@@ -1,13 +1,13 @@
 # Model-provider boundary proposal — Issue #5
 
-**Aggiornamento 1.0 beta 1:** la candidata corrente è descritta in [CURRENT_RELEASE](CURRENT_RELEASE.md). I riferimenti alpha11/alpha2 e le relative misure qui sotto sono snapshot storici, non esiti attribuiti alla beta. Ogni nuova implementazione deve partire dalla candidata corrente.
+**Aggiornamento 1.0 beta 1:** la candidata corrente è descritta in [CURRENT_RELEASE](../../docs/CURRENT_RELEASE.md). I riferimenti alpha11/alpha2 e le relative misure qui sotto sono snapshot storici, non esiti attribuiti alla beta. Ogni nuova implementazione deve partire dalla candidata corrente.
 **Status:** historical design proposal; Stage A is now implemented and merged in alpha11. The original source-inspection evidence below remains historical, not a new runtime verification.
 **Scope:** original Android alpha2 source review; API contracts proposed for maintainer review.
 **Provenance:** Prepared by @sunny-kavixo with ChatGPT (GPT-6) assisting source inspection and drafting. Source inspection via GitHub; architectural recommendations are proposals, not verified functionality.
 
 ## Maintainer update — 24 October 2026, alpha11
 
-This proposal is retained for design provenance. Alpha11 is the current runtime baseline: [release notes](releases/v0.9.2-alpha11.md), [implemented Stage A](MODEL_PROVIDER_IMPLEMENTATION_STAGE_A.md), [voice behavior](VOICE-SESSION.md). The original inspection describes the earlier alpha2 request path. Ollama/LM Studio adapters and configurable provider settings remain unimplemented; the completed OpenAI compatibility boundary must not be mistaken for working local-model integration.
+This proposal is retained for design provenance. Alpha11 is the current runtime baseline: [release notes](../releases/v0.9.2-alpha11.md), [implemented Stage A](MODEL_PROVIDER_IMPLEMENTATION_STAGE_A.md), [voice behavior](../../docs/VOICE-SESSION.md). The original inspection describes the earlier alpha2 request path. Ollama/LM Studio adapters and configurable provider settings remain unimplemented; the completed OpenAI compatibility boundary must not be mistaken for working local-model integration.
 
 Voice requests already send automatically with recent text history, **no added vault memory and no attachment payloads or historical file references**. Typed requests retain editable, single-use memory approval. An adapter must preserve both paths without adding a manual memory screen to every voice command. Pending typed attachments stay selected for a separate typed send. Local app commands are handled before provider dispatch and never execute model output.
 
