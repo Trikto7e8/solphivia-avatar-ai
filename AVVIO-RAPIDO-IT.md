@@ -2,7 +2,7 @@
 
 ## Installare o aggiornare
 
-Scarica l’APK dalla [release 1.1 beta 3](docs/CURRENT_RELEASE.md). È una build debug beta per le prove, non una versione Google Play. Richiede Android 8 o successivo e ARM64/ARMv7.
+Scarica l’APK dalla [release 1.1 beta 3](docs/CURRENT_RELEASE.md). È una build debug beta per le prove, non una versione app stores. Richiede Android 8 o successivo e ARM64/ARMv7.
 
 Se aggiorni un’installazione con lo stesso certificato, installa sopra quella esistente: non disinstallare e non cancellare i dati per aggiornare. I dati cifrati dipendono anche dal Keystore dell’installazione. In caso di firma diversa, fermati e conserva l’app originale prima di decidere come trasferire i dati.
 

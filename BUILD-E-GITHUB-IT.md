@@ -21,5 +21,3 @@ La variante PROVA usa it.solphivia.mobile.v11.verification. Le prove che manipol
 ## Pubblicazione
 
 Tag v1.1.0-beta.3, prerelease beta con APK debug firmato e checksum. Sorgenti ottenuti da git archive, senza cartelle private, dati del telefono o chiavi. [Risultati](docs/releases/v1.1.0-beta.3.md).
-
-Per Google Play usare un AAB release firmato con chiave privata esterna al repository. Il pacchetto attuale target API 35 non va inviato come pronto allo store: [preparazione e blocchi](docs/google-play/README.md).

@@ -1,6 +1,6 @@
 # Privacy: cosa fa la versione attuale
 
-**Bozza informativa tecnica per la beta comunitaria, non parere legale né informativa completa per uno store.** Prima di una distribuzione pubblica stabile o su Google Play, il titolare del progetto dovrà completare questa pagina con i propri recapiti, verificare il comportamento della build effettivamente pubblicata e predisporre una pagina privacy raggiungibile sul web.
+**Bozza informativa tecnica per la beta comunitaria, non parere legale né informativa completa per uno store.** Prima di una distribuzione pubblica stabile o su app stores, il titolare del progetto dovrà completare questa pagina con i propri recapiti, verificare il comportamento della build effettivamente pubblicata e predisporre una pagina privacy raggiungibile sul web.
 
 ## Dati e flussi
 

@@ -6,4 +6,4 @@ Aggiornamento di privacy della alpha1: profilo iniziale, saluti e istruzioni del
 
 L’utente ha confermato che eSpeak funziona sul telefono. Il precedente blocco di installazione riportato nella verifica alpha1 descriveva la prova iniziale, non lo stato attuale.
 
-Le funzionalità sono quelle della alpha1. La verifica del nuovo APK comprende compilazione e Android Lint; i test funzionali della alpha1 restano documentati nel rapporto precedente. La distribuzione è una pre-release debug, non Google Play.
+Le funzionalità sono quelle della alpha1. La verifica del nuovo APK comprende compilazione e Android Lint; i test funzionali della alpha1 restano documentati nel rapporto precedente. La distribuzione è una pre-release debug, non app stores.

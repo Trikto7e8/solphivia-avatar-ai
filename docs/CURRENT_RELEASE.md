@@ -12,6 +12,4 @@ Pacchetto principale it.solphivia.mobile; variante isolata it.solphivia.mobile.v
 
 Il richiamo resta disponibile finché il microfono non viene spento esplicitamente. Dopo cinque secondi senza iniziare il comando successivo si torna all’attesa locale di Hola Solphivia. Stop/Alt interrompono la lettura; ⏻ chiude avatar, voce e microfono conservando i dati.
 
-Per la Home usa l’icona normale dall’elenco app. Il menu mostra istruzioni e non crea altre scorciatoie con badge duplicato.
-
-[Preparazione Google Play](google-play/README.md) · [Tutti i vecchi file e riferimenti](../old/README.md).
+Per la Home usa l’icona normale dall’elenco app. Il menu mostra istruzioni e non crea altre scorciatoie con badge duplicato. · [Tutti i vecchi file e riferimenti](../old/README.md).

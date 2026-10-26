@@ -1,12 +1,24 @@
 # Solphivia IA
 
-<p align="center"><img src="docs/media/solphivia-icon.png" width="160" alt="One Solphivia character, the current app icon" /></p>
+<p align="center"><img src="docs/media/solphivia-banner.png" width="1024" alt="Solphivia IA: voce, avatar e memoria personale" /></p>
 
 **1.1.0-beta.3 · Android community beta · Italian voice.**
 
 An animated companion that stays on your Android screen. Talk, type, attach documents and keep personal memory under your control.
 
-**[Download the current APK](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.3)** · [Italian guide](AVVIO-RAPIDO-IT.md) · [Leggi in italiano](README-IT.md) · [Google Play preparation](docs/google-play/README.md)
+**[Download the current APK](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.3)** · [Italian guide](AVVIO-RAPIDO-IT.md) · [Leggi in italiano](README-IT.md)
+
+
+
+## Meet the character
+
+<table><tr>
+<td align="center"><img src="app/src/main/assets/solphivia/idle/frame_00.png" width="155" alt="Solphivia a riposo" /><br/>Everyday companion</td>
+<td align="center"><img src="app/src/main/assets/solphivia/mode_vj/frame_00.png" width="155" alt="Solphivia in abito cyborg" /><br/>Cyborg mode</td>
+<td align="center"><img src="app/src/main/assets/solphivia/listen/frame_00.png" width="155" alt="Solphivia in ascolto" /><br/>Ready to listen</td>
+</tr></table>
+
+Actual animation frames included in the app. The banner is promotional artwork, not a screenshot. The app icon contains one character.
 
 ## Current features
 
@@ -28,8 +40,10 @@ This is a debug-signed test APK, not a store release. Speech recognition/TTS and
 
 Use JDK 17, Android SDK 35, Gradle 8.11.1 and AGP 8.9.1. [Build instructions](BUILD-E-GITHUB-IT.md) · [Contribute](CONTRIBUTING.md) · [Collaboration](COLLABORATE.md).
 
-Google Play preparation is separate: API 36 migration, native-library checks, release signing, privacy/contact completion and in-app AI reporting remain gates before submission. Local LM Studio/Ollama adapters and iOS are roadmap work.
+Local LM Studio/Ollama adapters and iOS remain roadmap work.
 
 [Privacy](PRIVACY-IT.md) · [Roadmap](ROADMAP.md) · [Current status](STATUS.md) · [Old versions and references](old/README.md) · [AI Memory Vault](https://github.com/Trikto7e8/AI-memory-vault)
 
 Code: MIT. Character artwork, animations and promotional assets: [reserved rights](ASSETS-LICENSE.md). Solphivia IA is independent and not affiliated with OpenAI or Google.
+
+**Want to help?** [Test the beta](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6), [contribute](COLLABORATE.md) or [join the community](https://github.com/Trikto7e8/solphivia-avatar-ai/discussions).

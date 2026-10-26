@@ -6,4 +6,4 @@ Italiano naturale, arresto/ripresa della lettura, trascrizione persistente, salu
 
 Build, compilazione dei test Android e Lint beta 3 riusciti; 65 test JVM superati anche nella verifica finale. Le prove acustiche sintetiche dei comandi restano quelle della logica beta 2 conservata, come riportato nelle note. Ulteriori prove di durata, rumore, cuffie, batteria e altri telefoni restano aperte.
 
-[Versione corrente](docs/CURRENT_RELEASE.md) · [Note](docs/releases/v1.1.0-beta.3.md) · [Preparazione Google Play](docs/google-play/README.md) · [Vecchi file e riferimenti](old/README.md).
+[Versione corrente](docs/CURRENT_RELEASE.md) · [Note](docs/releases/v1.1.0-beta.3.md) · [Vecchi file e riferimenti](old/README.md).

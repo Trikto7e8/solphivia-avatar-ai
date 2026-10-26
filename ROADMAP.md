@@ -7,7 +7,6 @@ These are project goals, not promises about the current release.
 - Retest the Home shortcut icon refresh and continuous run animation on multiple Android devices.
 - Add focused Android tests for animation state changes, chat parsing, and provider error handling.
 - Add an in-app report action for problematic AI responses.
-- Prepare privacy disclosures and Play Console foreground-service declarations.
 
 ## Model connections
 
@@ -23,16 +22,10 @@ These are project goals, not promises about the current release.
 - Keep speech recognition, text-to-speech, and model selection as separate components so providers can vary independently.
 - Keep the existing Android Home overlay user-controlled, with a visible stop action.
 
-## Release
-
-- Migrate the Android app to the current Google Play target API and test on-device.
-- Complete the privacy policy, Data safety declaration, content rating, and foreground-service declarations.
-- Prepare a signed Android App Bundle and use internal/closed testing before any production listing.
-
 ## iOS and community collaboration
 
 Start with an iOS feasibility study and an in-app avatar prototype, with portable encrypted memory and independent provider adapters. Document platform limitations before committing to feature parity. See [COLLABORATE.md](COLLABORATE.md) for contribution areas.
 
 ## Già nella 1.1 beta
 
-Arresto/ripresa vocale della lettura, trascrizione visibile e chiusura completa sono implementati. Restano le misure su rumore, cuffie, falsi interventi e sessioni lunghe. [Preparazione Google Play](docs/google-play/README.md).
+Arresto/ripresa vocale della lettura, trascrizione visibile e chiusura completa sono implementati. Restano le misure su rumore, cuffie, falsi interventi e sessioni lunghe.

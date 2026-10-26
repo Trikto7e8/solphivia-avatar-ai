@@ -60,7 +60,7 @@ Non-blocking warnings included an SDK XML parser compatibility warning and depre
 - Foreground service and background restrictions
 - Microphone permissions and voice features
 - Instrumentation and end-to-end tests
-- Signed release AAB and Google Play readiness
+- Signed release AAB and app stores readiness
 
 This report confirms a debug compilation baseline, not release readiness.
 
