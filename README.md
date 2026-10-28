@@ -10,6 +10,16 @@ An animated companion that stays on your Android screen. Talk, type, attach docu
 
 
 
+<!-- solphivia-sei-android -->
+## Solphivia × SEI · laboratorio Android aperto
+
+Una companion che parla e gioca con te, o contro di te: stiamo unendo l’esperienza Android, la voce e gli sprite di Solphivia all’idea dei companion di SEI. È un fork community sperimentale, indipendente dagli autori di SEI e aperto alla collaborazione.
+
+**[Scopri il progetto e le immagini](https://github.com/Trikto7e8/solphivia-sei-android) · [APK di prova](https://github.com/Trikto7e8/solphivia-sei-android/releases/tag/android-v0.3.0-preview) · [Collabora](https://github.com/Trikto7e8/solphivia-sei-android/issues)**
+
+Cerchiamo sviluppatori Android, contributi per giochi e voce, artisti e tester. La preview include chat, avatar animato, tris e voce a turni; le integrazioni con giochi esterni sono ancora un obiettivo di sviluppo.
+
+
 ## Meet the character
 
 <table><tr>
