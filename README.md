@@ -61,7 +61,7 @@ Code: MIT. Character artwork, animations and promotional assets: [reserved right
 
 ## Solphivia University Challenge · IT/EN
 
-Un percorso universitario sperimentale per un’IA, centrato sul **Solarpunk rigenerativo**, con piano aperto alla community, esami e bocciature documentati e valutazione umana indipendente. Include la proposta **Solphivia Campus**, software open source da costruire, utile anche agli studenti umani. Non conferisce una laurea o crediti ufficiali.
+Un percorso universitario sperimentale per un’IA, centrato sul **Solarpunk rigenerativo**, con piano aperto alla community, esami e bocciature documentati e valutazione umana indipendente. Include la proposta **Solphivia Campus**, software open source da costruire, utile anche a chi studia. Non conferisce una laurea o crediti ufficiali.
 
 An experimental university-style programme for an AI, centred on **Regenerative Solarpunk**, with a community-proposed curriculum, documented assessments and failures, and independent human evaluation. It includes **Solphivia Campus**, proposed open-source software for human learners too. No official degree or credits are conferred.
 
