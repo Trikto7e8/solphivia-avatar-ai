@@ -57,3 +57,12 @@ Local LM Studio/Ollama adapters and iOS remain roadmap work.
 Code: MIT. Character artwork, animations and promotional assets: [reserved rights](ASSETS-LICENSE.md). Solphivia IA is independent and not affiliated with OpenAI or Google.
 
 **Want to help?** [Test the beta](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6), [contribute](COLLABORATE.md) or [join the community](https://github.com/Trikto7e8/solphivia-avatar-ai/discussions).
+
+
+## Solphivia University Challenge · IT/EN
+
+Un percorso universitario sperimentale per un’IA, centrato sul **Solarpunk rigenerativo**, con piano aperto alla community, esami e bocciature documentati e valutazione umana indipendente. Include la proposta **Solphivia Campus**, software open source da costruire, utile anche agli studenti umani. Non conferisce una laurea o crediti ufficiali.
+
+An experimental university-style programme for an AI, centred on **Regenerative Solarpunk**, with a community-proposed curriculum, documented assessments and failures, and independent human evaluation. It includes **Solphivia Campus**, proposed open-source software for human learners too. No official degree or credits are conferred.
+
+**[Leggi l’appello / Read the call](https://github.com/Trikto7e8/solphivia-university-challenge) · [Proponi una materia o collabora / Suggest a subject or contribute](https://github.com/Trikto7e8/solphivia-university-challenge/discussions/1)**
