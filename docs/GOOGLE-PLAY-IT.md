@@ -61,6 +61,28 @@ Android dipendono dall'identità dell'app e dalla firma.
 
 ## Limiti della verifica
 
-Il risultato CI va letto prima di dichiarare la build compilata. Questa modifica
+Al 31 ottobre 2026 i workflow sul commit `e0ff501429502f6416c777de3c0649891e5dd2d1` risultano completati con successo: `Google Play release readiness` (run 41109985165) e `Solphivia IA beta verification` (run 41109985245). Sono passati anche lo step test/Lint/bundle release e il controllo ELF. L'artefatto resta UNSIGNED e non è caricabile come release Play. Questa modifica
 prepara la release e controlla un blocco tecnico concreto; non certifica privacy,
 conformità alle policy, target API vigente o accettazione Google Play.
+
+
+## Verifica Console e privacy — 31 ottobre 2026
+
+Accesso in lettura e controllo della scheda autenticata verificati. App visibile: **Solphivia IA**; pagina Norme sulla privacy con URL ancora vuoto. Non è stato salvato un URL provvisorio.
+
+La proposta aggiornata in [PRIVACY-IT.md](../PRIVACY-IT.md) include dati, destinatari, conservazione, cancellazione, controlli locali e diritti. Rimangono esplicitamente da confermare titolare, recapito pubblico e basi/condizioni del trattamento. Non usare automaticamente l'email privata mostrata dalla Console. La pagina definitiva va resa accessibile senza autenticazione e collegata anche dall'app; nel MainActivity esaminato non è presente un collegamento privacy.
+
+Evidenze tecniche sul commit esaminato:
+
+| Fonte | Riscontro |
+| --- | --- |
+| AndroidManifest.xml | Microfono, overlay, posizione fine/coarse, servizi foreground; backup Android disabilitato |
+| OpenAiChatClient.java | OAuth e Responses OpenAI, store:false, token cifrati, contesto e consenso memoria |
+| MainActivity.java | Cronologia limitata a 16 messaggi; comando nuova chat |
+| AssistantMemory.java / MemoryActivity.java | Memoria AES-GCM, modifica e import/export locali |
+| CompanionInputActivity.java / PetService.java | Posizione su richiesta, geocoding e previsioni Open-Meteo; coordinate nelle preferenze locali |
+| RadarClient.java | Servizio DPC e hosting tile AWS |
+| VoiceSessionService.java | Riconoscimento Android e stato microfono; richiamo locale separato |
+| app/build.gradle | Dipendenze JNA e Vosk; nessun SDK pubblicitario o analytics dichiarato |
+
+Fonti delle regole consultate: [Google Play, dati utente e privacy](https://support.google.com/googleplay/android-developer/answer/10144311?hl=it), [GDPR, art. 13](https://eur-lex.europa.eu/eli/reg/2016/679/oj). Non dedurre la conformità dei fornitori dal solo esito CI.

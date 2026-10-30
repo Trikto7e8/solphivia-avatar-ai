@@ -1,6 +1,22 @@
-# Privacy: cosa fa la versione attuale
+# Informativa sulla privacy — Solphivia IA
 
-**Bozza informativa tecnica per la beta comunitaria, non parere legale né informativa completa per uno store.** Prima di una distribuzione pubblica stabile o su app stores, il titolare del progetto dovrà completare questa pagina con i propri recapiti, verificare il comportamento della build effettivamente pubblicata e predisporre una pagina privacy raggiungibile sul web.
+**Proposta per Google Play, aggiornata il 31 ottobre 2026. Non ancora pronta da usare come informativa definitiva:** manca il recapito pubblico approvato; vanno confermati titolare, basi giuridiche e condizioni del collegamento al fornitore AI. Il testo descrive la beta 1.1.0-beta.3 (versionCode 49), pacchetto `it.solphivia.mobile`, esaminata al commit `e0ff501429502f6416c777de3c0649891e5dd2d1`. La pagina definitiva dovrà essere pubblicamente accessibile e collegata anche nell'app.
+
+## Sviluppatore e contatto privacy
+
+Sviluppatore del progetto: account GitHub **Trikto7e8**, repository [solphivia-avatar-ai](https://github.com/Trikto7e8/solphivia-avatar-ai).
+
+Titolare proposto, da confermare prima dell'uso definitivo: **Marco Iacobellis**. Recapito privacy: **[DA COMPLETARE CON UN RECAPITO PUBBLICO APPROVATO]**. Non pubblicare dati personali o richieste di cancellazione nelle issue pubbliche di GitHub.
+
+## Finalità e scelta delle funzioni
+
+Solphivia IA offre un avatar flottante, chat con il fornitore AI collegato, interazione vocale, memoria personale locale e funzioni meteo. Dati e permessi servono alle funzioni attivate dall'utente. Non è obbligatorio concedere microfono, posizione o overlay per il solo fatto di installare l'app; negare o revocare un permesso impedisce la funzione che ne dipende. Senza collegamento al fornitore AI non è possibile usare la conversazione AI.
+
+Nella configurazione esaminata non risultano SDK pubblicitari o analytics nelle dipendenze dell'app. Le richieste di rete dirette sono effettuate dal telefono ai servizi indicati sotto: il codice esaminato non usa un server intermedio del manutentore per ricevere le conversazioni. Questo non significa che tutti i dati restino sul telefono.
+
+## Basi giuridiche proposte — da confermare dal titolare
+
+Per l'erogazione delle funzioni esplicitamente richieste, la base proposta è l'esecuzione del servizio richiesto (art. 6, par. 1, lett. b GDPR); per i trattamenti facoltativi basati sul consenso, incluso l'invio della memoria dopo l'anteprima, è il consenso revocabile (art. 6, par. 1, lett. a). Un permesso Android non sostituisce automaticamente ogni consenso o informativa richiesti. La qualificazione dei ruoli del manutentore e dei fornitori deve essere verificata rispetto al servizio effettivamente distribuito; non vengono qui dichiarati accordi di trattamento o garanzie di trasferimento non verificati.
 
 ## Dati e flussi
 
@@ -33,9 +49,39 @@ Nella 1.1 beta 3 le risposte vocali successive sono ammesse per cinque secondi d
 - La cronologia e i dati locali dell'app si possono eliminare cancellando i dati dell'app o disinstallandola; questo disconnette anche il token locale. Per revocare l'autorizzazione lato account, controlla le impostazioni di account ChatGPT/OpenAI.
 - Evita di inviare dati sensibili o file che non vuoi trasmettere al fornitore AI.
 
-## Prima della pubblicazione
+## Conservazione, cancellazione e sicurezza
 
-Il manutentore deve aggiungere un indirizzo di contatto e un URL privacy pubblici, confermare la retention lato fornitore applicabile al tipo di account e alla configurazione usata, compilare le dichiarazioni Data safety dello store e ricontrollare questa descrizione sulla build finale. Nessun recapito personale è stato inventato o aggiunto a questa bozza.
+- **Cronologia:** al massimo 16 messaggi recenti nel contesto locale salvato. Il comando «nuova chat» rimuove la cronologia locale salvata; non cancella ciò che è già stato trasmesso a terzi.
+- **Account:** token cifrati con Android Keystore; email, scadenza e metadati nelle preferenze private. Restano nei dati dell'app fino alla loro cancellazione o disinstallazione. La rimozione locale non elimina l'account OpenAI e non sostituisce la revoca lato fornitore.
+- **Memoria personale:** conserva il testo scelto dall'utente fino a modifica/sostituzione o cancellazione dei dati dell'app. La memoria è cifrata con AES-GCM e chiave Android Keystore; la cronologia non ha questa cifratura aggiuntiva. Nella schermata Memoria è possibile modificare il testo e salvarlo.
+- **Allegati:** la cronologia contiene riferimenti URI e metadati, non una copia persistente dei byte del file. La cancellazione dei dati dell'app non elimina gli originali nel servizio o nella cartella scelti dall'utente.
+- **Audio:** l'app non conserva registrazioni del richiamo o della conversazione. Il servizio Android di riconoscimento può trattare l'audio secondo la propria informativa; il testo riconosciuto può entrare nella cronologia e nelle richieste AI.
+- **Meteo e impostazioni:** località, coordinate selezionate, posizione dell'avatar e preferenze restano salvate localmente fino a sostituzione o cancellazione dei dati dell'app. Il permesso di posizione può essere revocato nelle impostazioni Android.
+- **Backup:** il backup automatico Android è disabilitato nel manifest. I file esportati volontariamente dall'utente restano nella destinazione scelta anche dopo la disinstallazione: eliminarli separatamente quando non servono più.
+- **Cancellazione completa sul telefono:** Impostazioni Android → App → Solphivia IA → Archiviazione → Cancella dati (i nomi possono variare). Questa operazione rimuove dati e collegamento locali. Conservare prima solo gli eventuali backup desiderati.
+- **Dati già inviati:** per cancellazione, accesso e conservazione presso OpenAI o altri fornitori valgono anche le loro procedure. `store: false` non equivale a zero conservazione o a una garanzia di esclusione da ogni trattamento.
+
+I dati dell'app sono protetti dal sandbox Android. Le comunicazioni verso i servizi elencati usano HTTPS; ciò non elimina i rischi di un telefono compromesso, di un backup esportato o dell'invio volontario di informazioni sensibili. Non viene dichiarata una cifratura end-to-end delle conversazioni AI.
+
+## Destinatari e servizi esterni
+
+- **OpenAI:** autorizzazione dell'account, consultazione dei modelli e generazione delle risposte attraverso `auth.openai.com` e `api.openai.com`. Riceve i dati necessari al collegamento e, per la chat, testo, contesto recente, allegati scelti e memoria quando approvata. Informativa: https://openai.com/policies/privacy-policy/ .
+- **Servizi Android di riconoscimento e sintesi vocale:** il fornitore dipende dal servizio installato e scelto sul telefono. Può elaborare audio o testo anche online; consultare le impostazioni e l'informativa di quel servizio.
+- **Open-Meteo:** la ricerca manuale invia la località a `geocoding-api.open-meteo.com`; le previsioni inviano coordinate a `api.open-meteo.com`, anche se ottenute dal GPS autorizzato. Informativa: https://open-meteo.com/en/terms .
+- **Radar della Protezione Civile e relativo hosting AWS:** richieste ai prodotti radar e alle tile attraverso `radar-api.protezionecivile.it` e il bucket radar AWS; le tile indicano l'area visualizzata. Sito del servizio: https://radar.protezionecivile.it/ .
+- **App esterne aperte su comando:** Android può aprire Maps, altre app o il compositore telefonico; l'eventuale ricerca o destinazione viene passata all'app richiesta, che opera secondo la propria informativa.
+
+I servizi contattati possono ricevere indirizzo IP e metadati tecnici delle richieste. Le condizioni di conservazione e gli eventuali trattamenti fuori dallo Spazio economico europeo dipendono dal fornitore e dall'account usato. Prima del rilascio occorre verificare ruoli, condizioni e garanzie applicabili: non viene promessa una localizzazione esclusiva dei dati nell'UE.
+
+## Diritti e richieste
+
+Per i trattamenti di competenza del titolare, l'utente può chiedere accesso, rettifica, cancellazione, limitazione e portabilità, nonché opporsi nei casi previsti dal GDPR, usando il recapito privacy da completare sopra. Può revocare i consensi per il futuro senza pregiudicare la liceità dei trattamenti precedenti. Restano disponibili i controlli locali descritti in questa pagina e il diritto di presentare reclamo al [Garante per la protezione dei dati personali](https://www.garanteprivacy.it/). Il manutentore non può accedere a distanza ai dati conservati soltanto sul telefono.
+
+Le risposte AI sono generate automaticamente e possono essere errate; il codice esaminato non le usa per assumere decisioni con effetti giuridici o analogamente significativi sull'utente. Evitare l'invio di dati sensibili propri o di terzi. Le limitazioni d'età e il pubblico dichiarato nello Store devono essere coerenti con le condizioni dei servizi collegati.
+
+## Modifiche e completamento prima della pubblicazione
+
+Le modifiche a dati, funzioni o fornitori richiedono l'aggiornamento dell'informativa e delle dichiarazioni Data safety. Prima del rilascio: confermare il titolare e il recapito pubblico; verificare le condizioni del fornitore AI per questo collegamento; pubblicare una pagina web definitiva accessibile senza login; collegarla nell'app; verificare il comportamento della build finale. Questa proposta non attesta la conformità né l'approvazione Google Play.
 
 ## Memoria, voce e meteo in 1.1 beta 3
 
