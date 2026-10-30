@@ -39,8 +39,7 @@ Android dipendono dall'identità dell'app e dalla firma.
 3. Verificare l'esito ELF di Vosk e JNA. Se fallisce, aggiornare o ricompilare
    la dipendenza responsabile; non disattivare il controllo per pubblicare.
 4. Completare privacy pubblica con titolare, recapito approvato e URL accessibile.
-   `PRIVACY-IT.md` è ancora una bozza tecnica. Non usare un recapito personale
-   senza approvazione specifica.
+   `PRIVACY-IT.md` è stata completata con titolare e recapito approvati il 31 ottobre 2026; verificare la pagina e la coerenza con la build finale.
 5. Dichiarazioni Data safety coerenti con codice e provider: chat, allegati,
    trascrizioni, cronologia, memoria, posizione/meteo, servizi Android STT/TTS.
    Non dichiarare genericamente che tutti i dati restano sul dispositivo.
@@ -70,7 +69,7 @@ conformità alle policy, target API vigente o accettazione Google Play.
 
 Accesso in lettura e controllo della scheda autenticata verificati. App visibile: **Solphivia IA**; pagina Norme sulla privacy con URL ancora vuoto. Non è stato salvato un URL provvisorio.
 
-La proposta aggiornata in [PRIVACY-IT.md](../PRIVACY-IT.md) include dati, destinatari, conservazione, cancellazione, controlli locali e diritti. Rimangono esplicitamente da confermare titolare, recapito pubblico e basi/condizioni del trattamento. Non usare automaticamente l'email privata mostrata dalla Console. La pagina definitiva va resa accessibile senza autenticazione e collegata anche dall'app; nel MainActivity esaminato non è presente un collegamento privacy.
+L'informativa in [PRIVACY-IT.md](../PRIVACY-IT.md) include dati, destinatari, conservazione, cancellazione, controlli locali e diritti. Marco ha confermato titolare **Marco Iacobellis** e pubblicazione del recapito **solphivia.privacy@gmail.com**. Il documento è pubblicato sul ramo main. Il menu dell'app include ora «Informativa sulla privacy» con apertura della pagina pubblica e messaggio alternativo se manca un browser. Questo collegamento sarà disponibile solo nelle build che includono la modifica. Non è stata dichiarata la conformità del flusso OAuth né verificata l'operatività della casella email mediante invio di messaggi.
 
 Evidenze tecniche sul commit esaminato:
 
@@ -86,3 +85,6 @@ Evidenze tecniche sul commit esaminato:
 | app/build.gradle | Dipendenze JNA e Vosk; nessun SDK pubblicitario o analytics dichiarato |
 
 Fonti delle regole consultate: [Google Play, dati utente e privacy](https://support.google.com/googleplay/android-developer/answer/10144311?hl=it), [GDPR, art. 13](https://eur-lex.europa.eu/eli/reg/2016/679/oj). Non dedurre la conformità dei fornitori dal solo esito CI.
+
+
+Pagina privacy pubblica: https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/PRIVACY-IT.md . Documento pubblicato separatamente sul ramo main senza modificare il codice della release installata. La Console può registrare il link prima del successivo caricamento della build; il collegamento interno richiede la nuova build. Le verifiche su provider, informative microfono, target API, segnalazione contenuti IA e firma restano necessarie prima dell'invio della release.

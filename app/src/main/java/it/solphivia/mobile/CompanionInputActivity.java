@@ -56,7 +56,18 @@ public class CompanionInputActivity extends Activity {
         if(ACTION_HOME_ICON.equals(action)){showHomeIconHelp();return;}
         if (ACTION_SETTINGS.equals(action)) {
             new AlertDialog.Builder(this).setTitle("Solphivia")
-                    .setItems(new String[]{"Memoria e Memory Vault", "Voce italiana e pronuncia", "Prova animazioni", "Microfono e sessione", "Aggiungi icona sulla Home", "Ferma la voce", "Riprendi la voce"}, (d,w) -> {
+                    .setItems(new String[]{"Memoria e Memory Vault", "Voce italiana e pronuncia", "Prova animazioni", "Microfono e sessione", "Aggiungi icona sulla Home", "Ferma la voce", "Riprendi la voce", "Informativa sulla privacy"}, (d,w) -> {
+                        if(w==7){
+                            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/PRIVACY-IT.md"))); }
+                            catch (android.content.ActivityNotFoundException error) {
+                                new AlertDialog.Builder(this).setTitle("Informativa sulla privacy")
+                                    .setMessage("Apri https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/PRIVACY-IT.md in un browser. Contatto: solphivia.privacy@gmail.com")
+                                    .setPositiveButton("Chiudi",(dialog,which)->finish())
+                                    .setOnCancelListener(dialog->finish()).show();
+                                return;
+                            }
+                            finish();return;
+                        }
                         if(w==6){PetService.resumeReading();finish();return;}
                         if(w==5){VoiceSessionService.interruptReading();finish();return;}
                         if(w==4){showHomeIconHelp();return;}
