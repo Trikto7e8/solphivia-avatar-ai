@@ -2,7 +2,32 @@ plugins {
  id 'com.android.application'
  id 'org.jetbrains.kotlin.android'
 }
+// Optional upload signing. Keep the keystore and passwords outside the repository.
+def uploadSigningNames = ['SOLPHIVIA_UPLOAD_STORE_FILE', 'SOLPHIVIA_UPLOAD_STORE_PASSWORD',
+                          'SOLPHIVIA_UPLOAD_KEY_ALIAS', 'SOLPHIVIA_UPLOAD_KEY_PASSWORD']
+def uploadSigningValues = uploadSigningNames.collect { System.getenv(it) }
+def uploadSigningReady = uploadSigningValues.every { it != null && !it.isEmpty() }
+if (uploadSigningValues.any { it != null && !it.isEmpty() } && !uploadSigningReady) {
+ throw new GradleException('Upload signing configuration is incomplete; supply all four SOLPHIVIA_UPLOAD_* variables.')
+}
 android {
+ signingConfigs {
+  if (uploadSigningReady) {
+   upload {
+    storeFile rootProject.file(uploadSigningValues[0])
+    storePassword uploadSigningValues[1]
+    keyAlias uploadSigningValues[2]
+    keyPassword uploadSigningValues[3]
+   }
+  }
+ }
+ buildTypes {
+  release {
+   debuggable false
+   if (uploadSigningReady) { signingConfig signingConfigs.upload }
+  }
+ }
+
  namespace 'it.solphivia.mobile'
  compileSdk 35
  defaultConfig { applicationId 'it.solphivia.mobile'; minSdk 26; targetSdk 35; versionCode 49; versionName '1.1.0-beta.3'; manifestPlaceholders = [appLabel: 'Solphivia IA'] }
