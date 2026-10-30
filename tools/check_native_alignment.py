@@ -5,7 +5,7 @@ import sys
 import zipfile
 
 def load_alignments(data):
-    if data[:4] != b"\x7fELF" or data[4] not in (1, 2) or data[5] not in (1, 2):
+    if len(data) < 64 or data[:4] != b"\x7fELF" or data[4] not in (1, 2) or data[5] not in (1, 2):
         raise ValueError("unsupported ELF header")
     endian = "<" if data[5] == 1 else ">"
     if data[4] == 2:
