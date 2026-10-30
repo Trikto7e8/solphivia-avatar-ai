@@ -88,3 +88,19 @@ Fonti delle regole consultate: [Google Play, dati utente e privacy](https://supp
 
 
 Pagina privacy pubblica: https://github.com/Trikto7e8/solphivia-avatar-ai/blob/main/PRIVACY-IT.md . Documento pubblicato separatamente sul ramo main senza modificare il codice della release installata. La Console può registrare il link prima del successivo caricamento della build; il collegamento interno richiede la nuova build. Le verifiche su provider, informative microfono, target API, segnalazione contenuti IA e firma restano necessarie prima dell'invio della release.
+
+
+## Stato operativo Console — 31 ottobre 2026
+
+La Dashboard mostra **6 di 11 attività completate**. Salvati, pronti alla futura revisione:
+
+- Norme sulla privacy: URL pubblico del documento su main.
+- Annunci: assenti nella build esaminata.
+- App governative: no.
+- Funzionalità finanziarie: nessuna funzione dedicata.
+- Salute: nessuna funzione dedicata.
+- Categoria/contatti: App, Produttività; recapito pubblico approvato.
+
+Restano Dettagli di accesso (revisore), Classificazione contenuti, Pubblico di destinazione, Sicurezza dei dati e scheda Store. Nessuna modifica è stata inviata per revisione finale e nessuna release è stata caricata o pubblicata. Per la produzione la Console indica 12 tester del test chiuso per almeno 14 giorni; attualmente 0 partecipanti.
+
+Il commit di codice `b5d1b9c4ebda1e2fa28f1844733d68f5ff27b7aa` ha superato entrambi i workflow (41144245414 e 41144245428), inclusi test/Lint/bundle e controllo ELF. Il collegamento privacy non è stato provato sul dispositivo. Le modifiche documentali successive non cambiano il codice verificato.
