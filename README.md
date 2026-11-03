@@ -58,6 +58,8 @@ Code: MIT. Character artwork, animations and promotional assets: [reserved right
 
 **Want to help?** [Test the beta](https://github.com/Trikto7e8/solphivia-avatar-ai/issues/6), [contribute](COLLABORATE.md) or [join the community](https://github.com/Trikto7e8/solphivia-avatar-ai/discussions).
 
+**Good first issue:** Try [Solphivia IA 1.1.0-beta.3](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.3) on your Android device and share a short reproducible report using synthetic text/files. It is a debug-signed community beta, not a Google Play release. See the [current guide](AVVIO-RAPIDO-IT.md).
+
 
 ## Solphivia University Challenge · IT/EN
 
