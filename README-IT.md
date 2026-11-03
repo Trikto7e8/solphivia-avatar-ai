@@ -2,11 +2,11 @@
 
 <p align="center"><img src="docs/media/solphivia-banner.png" width="1024" alt="Solphivia IA: voce, avatar e memoria personale" /></p>
 
-**1.1.0-beta.3 · Beta Android comunitaria · Voce italiana.**
+**1.1.0-beta.4 · Beta Android comunitaria · Voce italiana.**
 
 Una compagna animata sullo schermo Android. Puoi parlarle, scriverle, allegare documenti e gestire una memoria personale portabile.
 
-**[Scarica l’APK attuale](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.3)** · [Guida rapida](AVVIO-RAPIDO-IT.md) · [Read in English](README.md)
+**[Scarica l’APK attuale](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.4)** · [Guida rapida](AVVIO-RAPIDO-IT.md) · [Read in English](README.md)
 
 
 
@@ -19,6 +19,8 @@ Una compagna animata sullo schermo Android. Puoi parlarle, scriverle, allegare d
 </tr></table>
 
 Fotogrammi reali inclusi nell’app. Il banner è una composizione promozionale, non uno screenshot. L’icona dell’app contiene un solo personaggio.
+
+**Novità beta 4:** ripristinato **☰ → Collega ChatGPT**, apertura del browser per l’accesso e ritorno all’avatar flottante anche senza account collegato. Verificati sul Motorola apertura del browser e sprite sulla Home; il completamento del login resta una prova separata.
 
 ## Cosa puoi fare
 
@@ -34,7 +36,7 @@ L’icona normale mostra una sola Solphivia. Se un vecchio collegamento mostra u
 
 ## Verifiche e limiti
 
-65 test JVM superati sui sorgenti finali; prove sintetiche sul telefono: 13/13 frasi positive e 0/15 attivazioni nei casi negativi. Il manutentore ha confermato arresto, ripresa, comando successivo al saluto, trascrizione e spegnimento. Per la beta 3 sono verificati build/Lint, icona Home e pulsanti a sinistra. Rumore, cuffie, consumi, sessioni lunghe, blocco schermo e altri dispositivi richiedono ulteriori prove. [Note complete](docs/releases/v1.1.0-beta.3.md).
+65 test JVM superati sui sorgenti finali; prove sintetiche sul telefono: 13/13 frasi positive e 0/15 attivazioni nei casi negativi. Il manutentore ha confermato arresto, ripresa, comando successivo al saluto, trascrizione e spegnimento. Per la beta 3 sono verificati build/Lint, icona Home e pulsanti a sinistra. Rumore, cuffie, consumi, sessioni lunghe, blocco schermo e altri dispositivi richiedono ulteriori prove. [Note complete](docs/releases/v1.1.0-beta.4.md).
 
 È un APK di prova con firma debug, non una release gli store. ASR/TTS Android e fornitore AI possono usare Internet; richiamo e controllo della lettura sono locali. Non riconosce l’identità di chi parla.
 

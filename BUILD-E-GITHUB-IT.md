@@ -1,4 +1,4 @@
-# Compilare Solphivia IA 1.1 beta 3
+# Compilare Solphivia IA 1.1 beta 4
 
 JDK 17, Android SDK Platform 35 / Build Tools 35.0.0, Gradle 8.11.1 e AGP 8.9.1. Imposta JAVA_HOME e ANDROID_HOME. Non pubblicare local.properties, chiavi o credenziali.
 
@@ -6,7 +6,7 @@ JDK 17, Android SDK Platform 35 / Build Tools 35.0.0, Gradle 8.11.1 e AGP 8.9.1.
 ./gradlew --no-daemon testDebugUnitTest assembleDebug lintDebug
 ```
 
-APK principale: app/build/outputs/apk/debug/app-debug.apk, it.solphivia.mobile, codice 49. Per un aggiornamento che conserva i dati serve la stessa firma; non disinstallare l’app per forzare l’installazione.
+APK principale: app/build/outputs/apk/debug/app-debug.apk, it.solphivia.mobile, codice 50. Per un aggiornamento che conserva i dati serve la stessa firma; non disinstallare l’app per forzare l’installazione.
 
 ## Collaudo isolato
 
@@ -20,4 +20,4 @@ La variante PROVA usa it.solphivia.mobile.v11.verification. Le prove che manipol
 
 ## Pubblicazione
 
-Tag v1.1.0-beta.3, prerelease beta con APK debug firmato e checksum. Sorgenti ottenuti da git archive, senza cartelle private, dati del telefono o chiavi. [Risultati](docs/releases/v1.1.0-beta.3.md).
+Tag v1.1.0-beta.4, prerelease beta con APK debug firmato e checksum. Sorgenti ottenuti da git archive, senza cartelle private, dati del telefono o chiavi. [Risultati](docs/releases/v1.1.0-beta.4.md).

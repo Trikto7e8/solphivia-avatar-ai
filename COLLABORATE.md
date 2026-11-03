@@ -1,6 +1,6 @@
 # Help build Solphivia IA
 
-Solphivia IA 1.1 beta 3 is an animated Android companion with Italian voice, reading Stop/Resume, visible transcripts, attachments and encrypted portable personal memory.
+Solphivia IA 1.1 beta 4 is an animated Android companion with Italian voice, reading Stop/Resume, visible transcripts, attachments and encrypted portable personal memory.
 
 ## Where to help
 
@@ -12,6 +12,6 @@ Solphivia IA 1.1 beta 3 is an animated Android companion with Italian voice, rea
 
 Start with a comment naming the part you want to work on and a small first step. Italian and English are welcome. Community collaboration, not an advertised paid position. No passwords, signing keys, private recordings or real memories are needed.
 
-[Download the beta](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.3) · [Contribution guide](CONTRIBUTING.md) · [Community](https://github.com/Trikto7e8/solphivia-avatar-ai/discussions).
+[Download the beta](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.4) · [Contribution guide](CONTRIBUTING.md) · [Community](https://github.com/Trikto7e8/solphivia-avatar-ai/discussions).
 
 Code MIT; original character, animation and promotional artwork rights reserved.

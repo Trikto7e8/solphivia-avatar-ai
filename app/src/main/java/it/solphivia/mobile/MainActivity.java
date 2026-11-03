@@ -43,6 +43,7 @@ import java.util.concurrent.Executors;
 
 /** Avatar-first Solphivia chat: speech bubble, touch interaction, and one-line composer. */
 public class MainActivity extends Activity {
+    static final String ACTION_CONNECT_CHATGPT = "it.solphivia.mobile.action.CONNECT_CHATGPT";
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
     private FrameLayout stage;
@@ -748,6 +749,7 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume(); activityPaused = false;
+        if (handleConnectionIntent()) return;
         if(!VoiceSessionService.running()&&!voiceWakePermissionPending)voiceWakeAttempted=false;
         if(wakeSettingsOpened){wakeSettingsOpened=false;voiceWakeAttempted=false;}
         authBrowser = OpenAiChatClient.isAuthorizing();
@@ -759,6 +761,7 @@ public class MainActivity extends Activity {
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if (handleConnectionIntent()) return;
         voiceWakeAttempted=false;
         authBrowser = OpenAiChatClient.isAuthorizing();
         if(!authBrowser && prepareOpeningWake())return;
@@ -767,7 +770,7 @@ public class MainActivity extends Activity {
 
     @Override public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (!hasFocus || isFinishing() || OpenAiChatClient.isAuthorizing()) return;
+        if (!hasFocus || isFinishing() || authBrowser || OpenAiChatClient.isAuthorizing()) return;
         if(voiceWakePermissionPending||backgroundNoticePending)return;
         homeShortcutAttempted=true;
         homeShortcutPromptPending=false;
@@ -779,13 +782,14 @@ public class MainActivity extends Activity {
 
     /** Once setup is complete, the launcher returns directly to Home with the floating chat. */
     private boolean startHomeOverlayIfReady() {
+        if(authBrowser || OpenAiChatClient.isAuthorizing())return false;
         if(voiceWakePermissionPending||backgroundNoticePending)return false;
         // Android must grant the microphone foreground service while this activity is visible.
         if(!VoiceSessionService.backgroundRestricted(this)&&getSharedPreferences("pet",0).getBoolean("wake_on_open",true)
                 && checkSelfPermission("android.permission.RECORD_AUDIO")==android.content.pm.PackageManager.PERMISSION_GRANTED
                 && !VoiceSessionService.ready())return false;
         if (isFinishing() || isDestroyed() || busy || inputPending || !pendingFiles.isEmpty() || connectionNoticePending || notificationRequestPending) return false;
-        if (!Settings.canDrawOverlays(this) || !OpenAiChatClient.isConnected(this)) return false;
+        if (!Settings.canDrawOverlays(this)) return false;
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED &&
                 !getSharedPreferences("pet", 0).getBoolean("notification_prompted", false)) {
             notificationRequestPending = true;
@@ -803,6 +807,13 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 26) startForegroundService(service); else startService(service);
         moveTaskToBack(true);
         finish();
+        return true;
+    }
+
+    private boolean handleConnectionIntent() {
+        if (getIntent() == null || !ACTION_CONNECT_CHATGPT.equals(getIntent().getAction())) return false;
+        getIntent().setAction(null);
+        connectChatGPT();
         return true;
     }
 

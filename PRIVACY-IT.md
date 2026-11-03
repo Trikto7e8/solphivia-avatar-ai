@@ -1,12 +1,12 @@
 # Informativa sulla privacy — Solphivia IA
 
-Ultimo aggiornamento: **31 ottobre 2026**. Questa informativa riguarda **Solphivia IA**, pacchetto `it.solphivia.mobile`, beta **1.1.0-beta.3** (versionCode 49), e descrive i dati utilizzati dalle sue funzioni.
+Ultimo aggiornamento: **3 novembre 2026**. Questa informativa riguarda **Solphivia IA**, pacchetto `it.solphivia.mobile`, beta **1.1.0-beta.4** (versionCode 50), e descrive i dati utilizzati dalle sue funzioni.
 
 ## Sviluppatore e contatto privacy
 
 Sviluppatore del progetto: account GitHub **Trikto7e8**, repository [solphivia-avatar-ai](https://github.com/Trikto7e8/solphivia-avatar-ai).
 
-Titolare: **Marco Iacobellis**. Per richieste sulla privacy ed esercizio dei diritti: **[solphivia.privacy@gmail.com](mailto:solphivia.privacy@gmail.com)**. Non pubblicare dati personali o richieste di cancellazione nelle issue pubbliche di GitHub.
+Per richieste sulla privacy ed esercizio dei diritti: **[solphivia.privacy@gmail.com](mailto:solphivia.privacy@gmail.com)**. Non pubblicare dati personali o richieste di cancellazione nelle issue pubbliche di GitHub.
 
 ## Finalità e scelta delle funzioni
 
@@ -34,13 +34,13 @@ Per l'erogazione delle funzioni esplicitamente richieste, la base giuridica è l
 
 ## Controlli dell'utente
 
-### Conversazione vocale 1.1 beta 3
+### Conversazione vocale 1.1 beta 4
 
-Aprire Solphivia avvia l’attesa locale del richiamo se overlay, microfono e richiamo automatico sono abilitati. La notifica indica il microfono attivo. Stop dialogo torna al richiamo, Spegni microfono arresta la cattura. Nessuna identificazione biometrica. Schermo bloccato e consumi prolungati restano da verificare nella 1.1 beta 3.
+Aprire Solphivia avvia l’attesa locale del richiamo se overlay, microfono e richiamo automatico sono abilitati. La notifica indica il microfono attivo. Stop dialogo torna al richiamo, Spegni microfono arresta la cattura. Nessuna identificazione biometrica. Schermo bloccato e consumi prolungati restano da verificare nella 1.1 beta 4.
 
-In 1.1 beta 3 l’attesa del richiamo usa Vosk locale con il modello italiano incluso nell’APK. Non salva registrazioni audio. Dopo il richiamo, il comando viene trascritto dal riconoscitore Android, che può usare Internet: il trattamento dell’audio dipende dal servizio configurato. Le richieste vocali libere vengono inviate automaticamente al fornitore collegato con la cronologia testuale recente, senza aggiungere memoria personale del vault né allegati; la chat scritta mantiene l’anteprima della memoria e il consenso monouso. La dettatura singola esplicitamente modificabile resta una bozza. Il TTS usa il motore Android selezionato e può usare la rete. I comandi locali aprono app, Maps o il compositore telefonico: nessuna lettura o invio di messaggi, nessuna lettura della rubrica e nessuna chiamata senza conferma manuale. ShareBridge resta inattivo in 1.1 beta 3. Stop dialogo torna al richiamo; Spegni microfono arresta la cattura. Il microfono riparte all’apertura se l’opzione automatica è attiva, non al riavvio del telefono. [Dettagli](docs/VOICE-SESSION.md).
+In 1.1 beta 4 l’attesa del richiamo usa Vosk locale con il modello italiano incluso nell’APK. Non salva registrazioni audio. Dopo il richiamo, il comando viene trascritto dal riconoscitore Android, che può usare Internet: il trattamento dell’audio dipende dal servizio configurato. Le richieste vocali libere vengono inviate automaticamente al fornitore collegato con la cronologia testuale recente, senza aggiungere memoria personale del vault né allegati; la chat scritta mantiene l’anteprima della memoria e il consenso monouso. La dettatura singola esplicitamente modificabile resta una bozza. Il TTS usa il motore Android selezionato e può usare la rete. I comandi locali aprono app, Maps o il compositore telefonico: nessuna lettura o invio di messaggi, nessuna lettura della rubrica e nessuna chiamata senza conferma manuale. ShareBridge resta inattivo in 1.1 beta 4. Stop dialogo torna al richiamo; Spegni microfono arresta la cattura. Il microfono riparte all’apertura se l’opzione automatica è attiva, non al riavvio del telefono. [Dettagli](docs/VOICE-SESSION.md).
 
-Nella 1.1 beta 3 le risposte vocali successive sono ammesse per cinque secondi dal microfono pronto dopo ogni risposta; la trascrizione appare nel rigo della chat. Le anteprime vocali non sovrascrivono una bozza scritta o modificata a mano. Il consenso memoria è monouso ed è legato anche al digest SHA-256 dei contenuti materializzati degli allegati.
+Nella 1.1 beta 4 le risposte vocali successive sono ammesse per cinque secondi dal microfono pronto dopo ogni risposta; la trascrizione appare nel rigo della chat. Le anteprime vocali non sovrascrivono una bozza scritta o modificata a mano. Il consenso memoria è monouso ed è legato anche al digest SHA-256 dei contenuti materializzati degli allegati.
 
 ### Controlli generali
 
@@ -84,7 +84,7 @@ Le risposte AI sono generate automaticamente e possono essere errate; il codice 
 
 Le modifiche a dati, funzioni o fornitori sono riportate in questa pagina con la data di aggiornamento. Quando necessario, l'app deve presentare una nuova informativa o richiedere un nuovo consenso prima del trattamento interessato.
 
-## Memoria, voce e meteo in 1.1 beta 3
+## Memoria, voce e meteo in 1.1 beta 4
 
 La memoria personale è cifrata localmente con AES-GCM e Android Keystore, separata dalla cronologia. Prima di ogni richiesta che la include, viene mostrata un’anteprima modificabile: si può confermare, inviare senza memoria o annullare. Il consenso vale per un solo invio e scade dopo cinque minuti. Il modello non salva ricordi autonomamente.
 
@@ -92,7 +92,7 @@ L’importazione dei backup AI Memory Vault viene decifrata sul telefono con la 
 
 La voce inglese viene scelta fra quelle offline disponibili; il ripiego italiano dipende dal motore Android e può usare la rete. La località meteo può essere inserita manualmente o ottenuta dal GPS autorizzato. Le richieste meteo e radar contattano Open-Meteo e Radar-DPC; coordinate e tile richieste indicano ai servizi l’area consultata. Gli avvisi sono sperimentali e funzionano mentre l’overlay è attivo.
 
-## Chiusura nella 1.1 beta 3
+## Chiusura nella 1.1 beta 4
 
 Il pulsante tondo ⏻ o Chiudi Solphivia dalla notifica dell’avatar ferma servizi, lettura e microfono e chiude le attività dell’app; conserva account e dati. Richiamo riattivato solo alla successiva apertura con l’opzione automatica attiva. L’icona normale può essere trascinata dall’elenco app alla Home; non vengono create automaticamente scorciatoie con badge.
 
