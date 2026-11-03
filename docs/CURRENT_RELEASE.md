@@ -1,8 +1,10 @@
 # Solphivia IA — versione corrente
 
-**1.1.0-beta.3 · codice 49 · beta Android comunitaria.**
+**1.1.0-beta.4 · codice 50 · beta Android comunitaria.**
 
-[Scarica APK e sorgenti](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.3) · [Note e verifiche](releases/v1.1.0-beta.3.md) · [Guida](../AVVIO-RAPIDO-IT.md) · [Conversazione vocale](VOICE-SESSION.md).
+[Scarica APK e sorgenti](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.4) · [Note e verifiche](releases/v1.1.0-beta.4.md) · [Guida](../AVVIO-RAPIDO-IT.md) · [Conversazione vocale](VOICE-SESSION.md).
+
+Ripristinati il collegamento ChatGPT dal menu, l’apertura del browser e l’avatar flottante anche senza account collegato. Verificati sul Motorola il browser e lo sprite sulla Home; il login completo resta da confermare.
 
 Voce italiana, arresto e ripresa della lettura, trascrizione visibile, saluto con comandi e controlli a sinistra. L’utente ha confermato il dialogo successivo al saluto, arresto/ripresa e chiusura. Verificati sul telefono icona normale con un solo personaggio e apertura dalla Home.
 

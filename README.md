@@ -2,11 +2,11 @@
 
 <p align="center"><img src="docs/media/solphivia-banner.png" width="1024" alt="Solphivia IA: voce, avatar e memoria personale" /></p>
 
-**1.1.0-beta.3 · Android community beta · Italian voice.**
+**1.1.0-beta.4 · Android community beta · Italian voice.**
 
 An animated companion that stays on your Android screen. Talk, type, attach documents and keep personal memory under your control.
 
-**[Download the current APK](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.3)** · [Italian guide](AVVIO-RAPIDO-IT.md) · [Leggi in italiano](README-IT.md)
+**[Download the current APK](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.4)** · [Italian guide](AVVIO-RAPIDO-IT.md) · [Leggi in italiano](README-IT.md)
 
 
 
@@ -30,6 +30,8 @@ Cerchiamo sviluppatori Android, contributi per giochi e voce, artisti e tester. 
 
 Actual animation frames included in the app. The banner is promotional artwork, not a screenshot. The app icon contains one character.
 
+**Beta 4 update:** restored **☰ → Collega ChatGPT**, browser sign-in entry and the floating avatar even without a connected account. Browser launch and the Home overlay were verified on a Motorola; completed account sign-in remains a separate check.
+
 ## Current features
 
 - Floating avatar, contextual animations and outfits, chat and file attachments.
@@ -44,7 +46,7 @@ This is a debug-signed test APK, not a store release. Speech recognition/TTS and
 
 ## Tests and limits
 
-65 JVM tests passed on the final source; synthetic device trials recognized 13/13 stop/resume phrases with 0/15 activations in negative trials. The maintainer confirmed voice interruption, continued commands, transcript visibility and full shutdown. Beta 3 adds the opening command summary and left-side controls; its build/Lint and Home icon/control placement were verified. These results do not replace long-session, battery, noise, headphone, screen-lock and multi-device tests. See [release notes](docs/releases/v1.1.0-beta.3.md).
+65 JVM tests passed on the final source; synthetic device trials recognized 13/13 stop/resume phrases with 0/15 activations in negative trials. The maintainer confirmed voice interruption, continued commands, transcript visibility and full shutdown. Beta 3 adds the opening command summary and left-side controls; its build/Lint and Home icon/control placement were verified. These results do not replace long-session, battery, noise, headphone, screen-lock and multi-device tests. See [release notes](docs/releases/v1.1.0-beta.4.md).
 
 ## Build and contribute
 

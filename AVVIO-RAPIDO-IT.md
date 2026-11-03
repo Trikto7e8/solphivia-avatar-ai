@@ -1,8 +1,8 @@
-# Solphivia IA 1.1 beta 3: guida rapida Android
+# Solphivia IA 1.1 beta 4: guida rapida Android
 
 ## Installare o aggiornare
 
-Scarica l’APK dalla [release 1.1 beta 3](docs/CURRENT_RELEASE.md). È una build debug beta per le prove, non una versione app stores. Richiede Android 8 o successivo e ARM64/ARMv7.
+Scarica l’APK dalla [release 1.1 beta 4](docs/CURRENT_RELEASE.md). È una build debug beta per le prove, non una versione app stores. Richiede Android 8 o successivo e ARM64/ARMv7.
 
 Se aggiorni un’installazione con lo stesso certificato, installa sopra quella esistente: non disinstallare e non cancellare i dati per aggiornare. I dati cifrati dipendono anche dal Keystore dell’installazione. In caso di firma diversa, fermati e conserva l’app originale prima di decidere come trasferire i dati.
 
@@ -45,3 +45,7 @@ La chat di Solphivia è separata da quella di ChatGPT: non importa chat o memori
 ## Chiudere e ritrovare Solphivia
 
 Il pulsante tondo **⏻** sotto l’avatar ferma avatar e microfono e chiude le schermate, conservando i dati. Puoi chiederle **Come faccio a chiuderti?** e, dopo il richiamo, pronunciare **Chiudi Solphivia**. **Spegni microfono** ferma solo l’ascolto. **Aggiungi icona sulla Home** nel menu spiega come trascinare Solphivia IA dall’elenco delle app sulla Home. È l’icona normale, senza il badge delle scorciatoie. Il vecchio collegamento può essere rimosso dalla Home.
+
+## Collegare ChatGPT
+
+Apri **☰ → Collega ChatGPT** sull’avatar e completa l’accesso nel browser. Il personaggio resta disponibile anche senza account collegato; per le risposte IA occorre completare il collegamento. Non inserire password o chiavi nelle issue pubbliche.

@@ -1,4 +1,4 @@
-# Solphivia IA — 1.1 beta 3
+# Solphivia IA — 1.1 beta 4
 
 Solphivia IA è una compagna animata Android con voce italiana, chat, allegati e memoria personale locale cifrata e portabile. Rimane visibile sopra le altre app, quando autorizzata, e risponde al richiamo Hola Solphivia.
 

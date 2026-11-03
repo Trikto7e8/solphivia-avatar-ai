@@ -611,7 +611,13 @@ public class PetService extends Service {
 
         applyCostumeCommand(text);
         if (!OpenAiChatClient.isConnected(this)) {
-            setSpeech("Per parlare con me, apri l’app Solphivia e collega ChatGPT.");
+            setSpeech("Collega ChatGPT nel browser. Puoi riaprire l’accesso dal menu ☰ → Collega ChatGPT.");
+            try {
+                startActivity(new Intent(this, MainActivity.class).setAction(MainActivity.ACTION_CONNECT_CHATGPT)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            } catch (RuntimeException error) {
+                setSpeech("Per collegare ChatGPT, apri il menu ☰ e scegli Collega ChatGPT.");
+            }
             return;
         }
         cancelIdleTimers();
