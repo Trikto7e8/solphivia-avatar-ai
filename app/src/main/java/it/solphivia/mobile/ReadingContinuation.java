@@ -24,6 +24,7 @@ final class ReadingContinuation {
     }
     static synchronized void pause(){if(!text.isEmpty())paused=true;}
     static synchronized boolean available(){return paused&&!text.isEmpty();}
+    static synchronized String sourceText(String fallback){return text.isEmpty()||paused?fallback:text;}
     static synchronized String take(){if(!available())return "";paused=false;return text.substring(offset);}
     static synchronized void complete(long token){if(token==generation&&!paused){text="";offset=0;}}
     static synchronized void clear(){text="";offset=0;paused=false;generation++;}

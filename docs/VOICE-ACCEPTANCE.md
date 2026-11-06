@@ -50,3 +50,13 @@ Il 6 novembre TalkBack risultava disattivato sul telefono. La compatibilità liv
 - Build principale codice 51 installata come aggiornamento. Verifica ripetuta con la voce dell’utente ancora da completare; il telefono si è bloccato durante i controlli successivi.
 
 La prova non viene pubblicata come nuova release finché il ciclo reale ripetuto non è stato valutato.
+
+## Correzione Stop, prova 2 del 6 novembre
+
+- La prova reale della build 51 ha fallito. I contatori mostravano 6 candidati, 0 conferme e nessuna nuova interruzione rispetto al valore iniziale di 5. Le precedenti prove sintetiche con una sola voce non coprivano questa condizione.
+- Il riconoscitore libero può sentire soltanto la voce del TTS mentre quello dedicato rileva Stop. Ora Stop e Fermati possono superare il controllo quando il testo del secondo riconoscitore corrisponde all'eco conosciuta. Alt e Basta mantengono il controllo più restrittivo.
+- Sono gestiti i comandi preceduti da testo effettivamente letto, i parziali confermati e stabili per almeno 600 ms e la resa sintetica osservata di Fermati come fermare durante la sovrapposizione. I frammenti estranei e le negazioni restano esclusi nei casi provati.
+- Il testo completo della lettura serve a riconoscere l'eco accumulata. La protezione dai comandi pronunciati da Solphivia usa ancora il frammento corrente.
+- 74 test JVM superati. Compilazione e Lint completati senza errori.
+- Prova strumentale isolata superata con 15/15 comandi, 0/20 interruzioni nei casi negativi e di sola voce sintetica, 3/3 comandi con voce sintetica sovrapposta, rispettivamente Stop, Fermati e Stop fermati. Il mix usa voce di sfondo al 18% e comando all'80%, senza simulare la cancellazione acustica del microfono. I file temporanei vengono eliminati.
+- Build 52, 1.1.0-beta.5-test.2, installata nell'app principale. La copia isolata è disabilitata conservandone i dati. Richiesta la verifica reale di Stop, Riprendi, Stop. Tale verifica e la compatibilità con TalkBack rimangono da completare.

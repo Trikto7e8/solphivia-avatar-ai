@@ -18,4 +18,43 @@ public class SpeechInterruptPolicyTest {
   assertFalse(SpeechInterruptPolicy.command("stop e apri Maps"));
   assertFalse(SpeechInterruptPolicy.sameShortCommand("stop", "stop alla stazione"));
  }
+ @Test public void speechPrefixDoesNotHideAnInterrupt() {
+  assertTrue(SpeechInterruptPolicy.corroborates("stop", "oggi possiamo parlare", "Oggi possiamo parlare di idee."));
+  assertFalse(SpeechInterruptPolicy.corroborates("alt", "oggi possiamo parlare", "Oggi possiamo parlare di idee."));
+  assertFalse(SpeechInterruptPolicy.corroborates("stop", "altre parole", "Oggi possiamo parlare di idee."));
+  assertTrue(SpeechInterruptPolicy.corroborates("fermati", "oggi possiamo fermare di idee", "Oggi possiamo parlare di idee."));
+  assertFalse(SpeechInterruptPolicy.corroborates("fermati", "non devi fermare di idee", "Oggi possiamo parlare di idee."));
+  assertTrue(SpeechInterruptPolicy.corroborates("stop", "una storia tranquilla stop", "Oggi racconto una storia tranquilla."));
+  assertFalse(SpeechInterruptPolicy.corroborates("basta", "non basta", "Una storia tranquilla."));
+  assertFalse(SpeechInterruptPolicy.corroborates("basta", "non basta", "Oggi non c'è vento."));
+  assertFalse(SpeechInterruptPolicy.corroborates("stop", "stop alla violenza", "Una storia tranquilla."));
+  assertFalse(SpeechInterruptPolicy.corroborates("stop", "apri maps stop", "Una storia tranquilla."));
+ }
+ @Test public void corroboratedShortPartialCanInterruptContinuousSpeech() {
+  SpeechInterruptPolicy policy = new SpeechInterruptPolicy();
+  assertFalse(policy.acceptRecognition("stop", "storia stop", false, 1000, "Una storia tranquilla."));
+  assertFalse(policy.acceptRecognition("stop", "storia stop", false, 1300, "Una storia tranquilla."));
+  assertTrue(policy.acceptRecognition("stop", "storia stop", false, 1600, "Una storia tranquilla."));
+ }
+ @Test public void changedVerificationResetsStabilityAndEchoStillCannotStop() {
+  SpeechInterruptPolicy policy = new SpeechInterruptPolicy();
+  policy.acceptRecognition("stop", "stop", false, 1000, "Una storia.");
+  assertFalse(policy.acceptRecognition("stop", "stop alla stazione", false, 1300, "Una storia."));
+  assertFalse(policy.acceptRecognition("stop", "stop", false, 1700, "Una storia."));
+  assertFalse(policy.acceptRecognition("stop", "stop", true, 2000, "Puoi dire stop."));
+ }
+ @Test public void repeatedInterruptionCyclesUseFreshRecognition() {
+  SpeechInterruptPolicy policy = new SpeechInterruptPolicy();
+  for (long now = 1000; now <= 7000; now += 2000) {
+   assertTrue(policy.acceptRecognition("stop fermati", "storia stop fermati", true, now, "Una storia tranquilla."));
+   policy.reset();
+  }
+ }
+ @Test public void echoVerificationCanIncludeEarlierSpeechWithoutBlockingCurrentStop() {
+  SpeechInterruptPolicy policy = new SpeechInterruptPolicy();
+  assertTrue(policy.acceptRecognition("stop", "una storia tranquilla", true, 1000,
+    "Ora il vento soffia.", "Una storia tranquilla. Ora il vento soffia."));
+  assertFalse(policy.acceptRecognition("stop", "una storia tranquilla", true, 3000,
+    "Puoi dire stop.", "Una storia tranquilla. Puoi dire stop."));
+ }
 }

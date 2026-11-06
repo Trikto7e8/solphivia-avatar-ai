@@ -130,11 +130,12 @@ final class LocalWakeDetector implements AutoCloseable {
                     }
                 }else if(mode==Mode.INTERRUPT){
                     String phrase=finalResult?text(decoder.getResult()):partial(decoder.getPartialResult());
-                    String verified=finalResult&&verifier!=null?(verifiedFinal+" "+text(verifier.getFinalResult())).trim():"";
-                    boolean allowed=canonicalNamed(phrase)||finalResult&&SpeechInterruptPolicy.sameShortCommand(phrase,verified);
+                    String verified=verifier==null?"":(verifiedFinal+" "+(finalResult?text(verifier.getFinalResult()):partial(verifier.getPartialResult()))).trim();
+                    String source=ReadingContinuation.sourceText(spoken);
+                    boolean allowed=canonicalNamed(phrase)||SpeechInterruptPolicy.corroborates(phrase,verified,source);
                     if(finalResult)listener.controlResult(SpeechInterruptPolicy.command(phrase),allowed);
                     if(finalResult&&verifier!=null){verifier.reset();verifiedFinal="";}
-                    if(allowed&&interruptPolicy.accept(phrase,finalResult,android.os.SystemClock.elapsedRealtime(),spoken,true)){interrupted=true;controlText=phrase;break;}
+                    if(interruptPolicy.acceptRecognition(phrase,verified,finalResult,android.os.SystemClock.elapsedRealtime(),spoken,source)){if(!finalResult)listener.controlResult(true,true);interrupted=true;controlText=phrase;break;}
                 }else if(finalResult){String phrase=text(decoder.getResult());
                     String verified=verifier!=null?(verifiedFinal+" "+text(verifier.getFinalResult())).trim():"";
                     if(verifier!=null){verifier.reset();verifiedFinal="";}
