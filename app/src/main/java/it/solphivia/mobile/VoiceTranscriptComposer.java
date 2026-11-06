@@ -17,7 +17,7 @@ final class VoiceTranscriptComposer {
     boolean canSubmit(){return active && composer.getText().toString().equals(rendered);}
     void show(String text){
         if(!canSubmit()){active=false;SentVoiceTranscript.captureFinished(composer);return;}
-        if(text==null || text.isEmpty())return;
+        if(text==null || text.isEmpty() || text.equals(rendered))return;
         SentVoiceTranscript.release(composer);rendered=text;composer.setText(text);composer.setSelection(text.length());
     }
     void cancel(){

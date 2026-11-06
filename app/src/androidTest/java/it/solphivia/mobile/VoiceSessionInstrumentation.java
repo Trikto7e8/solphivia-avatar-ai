@@ -23,7 +23,7 @@ public final class VoiceSessionInstrumentation extends Instrumentation {
             RevisionChecks.check(session.accept("Questa frase non va inviata").action==VoiceSessionState.IGNORE,"paused speech not sent");
             VoiceSessionState.Decision wake=session.accept("Hola Solphivia, scrivi x = 3 + 2.");
             RevisionChecks.check(wake.action==VoiceSessionState.SEND && !session.paused && wake.text.equals("scrivi x = 3 + 2."),"wake resumes and preserves punctuation");
-            RevisionChecks.check(session.accept("stop").action==VoiceSessionState.PAUSE,"spoken stop pauses");
+            RevisionChecks.check(session.accept("stop").action==VoiceSessionState.SEND && !session.paused,"stop only interrupts reading and keeps dialogue active");
             RevisionChecks.check(session.accept("o la sua figlia").text.equals("Hola Solphivia"),"homophone wakes paused session");
             RevisionChecks.check(session.accept("spegni microfono").action==VoiceSessionState.OFF,"microphone off is local");
             RevisionChecks.check(session.accept(" ").action==VoiceSessionState.IGNORE,"empty results ignored");

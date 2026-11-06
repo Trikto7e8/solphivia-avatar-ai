@@ -34,7 +34,7 @@ public final class InterruptAcousticInstrumentation extends Instrumentation {
    if(tts[0].setLanguage(Locale.ITALIAN)<0)throw new AssertionError("Italian voice unavailable");
    Voice voice=SpeechVoiceSelection.select(tts[0],Locale.ITALIAN,true);if(voice==null||tts[0].setVoice(voice)!=TextToSpeech.SUCCESS)throw new AssertionError("Offline Italian voice required");
    model=LocalWakeDetector.model(getTargetContext());
-   String[] positiveStops={"Basta Solphivia","Fermati Solphivia","Stop","Alt","Basta","Fermati"};
+   String[] positiveStops={"Basta Solphivia","Fermati Solphivia","Stop","Alt","Basta","Fermati","Stop fermati","Fermati fermati"};
    String[] negativeStops={"Basta Solphivia","Stop","Cosa posso fare per te?","Oggi possiamo parlare di idee e progetti.","Basta così.","Basta Sofia.","Fermati Silvia.","Sono qui per aiutarti, continua pure.","Puoi aprire Maps e cercare una farmacia.","Stop alla violenza.","Altro esempio da leggere."};
    String[] positiveResumes={"prosegui","riprendi","continua","dimmi","ti ascolto","dai","vai"};
    String[] negativeResumes={"vai su Maps","dimmi il meteo","dai un esempio","Oggi leggiamo insieme una storia."};
@@ -53,8 +53,8 @@ public final class InterruptAcousticInstrumentation extends Instrumentation {
      if(expected&&hit)positive++;if(!expected&&hit)negative++;
     }
    }
-   if(positive!=13||negative!=0)throw new AssertionError("Acoustic counts: positives="+positive+"/13, negatives="+negative);
-   result.putString("stream","PASS: 13/13 synthetic Italian stop/resume phrases, 0/15 negative/echo-text trials; no microphone/user audio. Not a live echo-cancellation test.\n");finish(Activity.RESULT_OK,result);
+   if(positive!=15||negative!=0)throw new AssertionError("Acoustic counts: positives="+positive+"/15, negatives="+negative);
+   result.putString("stream","PASS: 15/15 synthetic Italian stop/resume phrases, 0/15 negative/echo-text trials; no microphone/user audio. Not a live echo-cancellation test.\n");finish(Activity.RESULT_OK,result);
   }catch(Throwable error){result.putString("stream","FAIL: "+android.util.Log.getStackTraceString(error));finish(Activity.RESULT_CANCELED,result);}
   finally{ReadingContinuation.clear();if(tts[0]!=null)tts[0].shutdown();if(model!=null)model.close();for(File f:fixtures)f.delete();}
  }

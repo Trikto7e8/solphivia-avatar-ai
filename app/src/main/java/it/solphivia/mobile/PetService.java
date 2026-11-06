@@ -105,7 +105,7 @@ public class PetService extends Service {
         return MainActivity.voiceBusy() || (activeInstance!=null && (activeInstance.busy || activeInstance.typingTask!=null || activeInstance.ttsPending));
     }
     static boolean speechOutputActive(){return DeviceSpeech.outputBusy()||(activeInstance!=null&&activeInstance.ttsPending);}
-    static String currentSpokenText(){return DeviceSpeech.outputBusy()?DeviceSpeech.spokenText():activeInstance!=null?activeInstance.speechTarget:"";}
+    static String currentSpokenText(){return ReadingContinuation.echoContext(DeviceSpeech.outputBusy()?DeviceSpeech.spokenText():activeInstance!=null?activeInstance.speechTarget:"");}
     static void stopReading(){
         if(speechOutputActive())ReadingContinuation.pause();
         DeviceSpeech.interruptAll();MainActivity.stopReading();
@@ -236,7 +236,7 @@ public class PetService extends Service {
             if (!ttsReady) { ttsPending = false; pendingUtterance = null; finishSpokenLine(); return; }
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override public void onStart(String id) { onRangeStart(id,0,0,0); }
-                @Override public void onRangeStart(String id,int start,int end,int frame){main.post(()->{Integer base=readingOffsets.get(id);if(base!=null)ReadingContinuation.progress(readingToken,base+start);});}
+                @Override public void onRangeStart(String id,int start,int end,int frame){main.post(()->{Integer base=readingOffsets.get(id);if(base!=null)ReadingContinuation.progress(readingToken,base+start,base+end);});}
                 @Override public void onDone(String id) { finishTtsUtterance(id); }
                 @Override public void onError(String id) {
                     if(id!=null && (id.equals("solphivia-"+currentUtteranceSerial) || id.startsWith("solphivia-"+currentUtteranceSerial+"-part-")))

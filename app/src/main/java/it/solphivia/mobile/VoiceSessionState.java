@@ -12,7 +12,7 @@ final class VoiceSessionState {
         String value=VoicePhrases.normalized(text);
         if(value.isEmpty())return new Decision(IGNORE,"");
         if(value.equals("spegni microfono")||value.equals("disattiva microfono"))return new Decision(OFF,"");
-        if(value.equals("stop")||value.equals("stop dialogo")||value.equals("pausa dialogo")){paused=true;return new Decision(PAUSE,"");}
+        if(value.equals("stop dialogo")||value.equals("pausa dialogo")){paused=true;return new Decision(PAUSE,"");}
         String request=VoicePhrases.wakeRequest(text);
         if(paused && request==null)return new Decision(IGNORE,"");
         if(request!=null){paused=false;return new Decision(SEND,request.isEmpty()?"Hola Solphivia":request);}

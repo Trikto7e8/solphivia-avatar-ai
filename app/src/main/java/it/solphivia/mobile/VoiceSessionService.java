@@ -21,8 +21,10 @@ public final class VoiceSessionService extends Service implements RecognitionLis
     private long wakeGeneration;
     private int commandStarts;
     private boolean listening,stopped,foregroundReady;
+    private boolean localConversation;
     private final VoiceSessionState session=new VoiceSessionState();
     private long nextListen;
+    private long nextWakeAttempt;
     private long recognitionStarted;
     private long recognitionGeneration;
     private VoiceTranscriptComposer transcript;
@@ -44,10 +46,12 @@ public final class VoiceSessionService extends Service implements RecognitionLis
         if(checkSelfPermission("android.permission.RECORD_AUDIO")!=android.content.pm.PackageManager.PERMISSION_GRANTED){stopSelf();return START_NOT_STICKY;}
         if(!SpeechRecognizer.isRecognitionAvailable(this)){notifyState("Riconoscimento vocale non disponibile");stopSelf();return START_NOT_STICKY;}
         session.paused=recovery||PAUSE.equals(intent.getAction()) || WAKE.equals(intent.getAction());
+        localConversation=false;
         followUp.rest();
         recognitionGeneration++;cancelTranscript();
         getSharedPreferences("pet",0).edit().putBoolean("voice_requested",true).apply();
-        if(listening&&session.paused){listening=false;recognitionGeneration++;recognizer.cancel();PetService.voiceListening(false);}
+        if(listening){listening=false;if(recognizer!=null)recognizer.cancel();PetService.voiceListening(false);}
+        closeWake();
         try{notifyState(session.paused?"Richiamo attivo: Hola Solphivia":"Sessione vocale attiva");}
         catch(RuntimeException error){statusText="Ascolto interrotto: riapri Solphivia per autorizzare il microfono.";getSharedPreferences("pet",0).edit().putBoolean("voice_requested",false).commit();stopSelf();return START_NOT_STICKY;}
         main.removeCallbacks(tick);main.post(tick);
@@ -64,6 +68,7 @@ public final class VoiceSessionService extends Service implements RecognitionLis
         VoiceSessionService service=instance;
         if(service!=null&&!service.stopped){
             service.closeWake();service.followUp.rest();service.session.paused=false;
+            service.localConversation=false;
             service.nextListen=SystemClock.elapsedRealtime()+750;
             service.voiceStatus.idle();service.notifyState("Lettura fermata · attendi il segnale, poi parla");
         }
@@ -78,13 +83,33 @@ public final class VoiceSessionService extends Service implements RecognitionLis
         return false;
     }
     private void closeWake(){wakeGeneration++;if(localWake!=null){localWake.close();localWake=null;}}
-    private void deliver(String text){followUp.replyStarted();if(!MainActivity.acceptVoiceMessage(text))startForegroundService(new Intent(this,PetService.class).putExtra(PetService.EXTRA_SEND_MESSAGE,text).putExtra("voice_message",true));}
+    private void deliver(String text){localConversation=false;followUp.replyStarted();if(!MainActivity.acceptVoiceMessage(text))startForegroundService(new Intent(this,PetService.class).putExtra(PetService.EXTRA_SEND_MESSAGE,text).putExtra("voice_message",true));}
     private void restForWake(){
         cancelTranscript();
-        listening=false;recognitionGeneration++;followUp.rest();session.paused=true;voiceStatus.idle();
+        listening=false;localConversation=false;recognitionGeneration++;followUp.rest();session.paused=true;voiceStatus.idle();
         if(recognizer!=null)recognizer.cancel();
         PetService.voiceListening(false);nextListen=SystemClock.elapsedRealtime()+250;
         notifyState("A riposo · di’ Hola Solphivia per riprendere");
+    }
+    private void listenLocally() {
+        listening=false;
+        recognitionGeneration++;
+        if(recognizer!=null)recognizer.cancel();
+        cancelTranscript();
+        closeWake();
+        followUp.rest();
+        session.paused=false;
+        localConversation=true;
+        nextListen=SystemClock.elapsedRealtime()+300;
+        notifyState("Dialogo in ascolto locale · parla oppure di’ Stop dialogo");
+    }
+    private void showLocalCommand(String text) {
+        if(transcript==null){
+            android.widget.EditText field=MainActivity.voiceComposer();
+            if(field==null)field=PetService.voiceComposer();
+            if(field!=null)transcript=new VoiceTranscriptComposer(field);
+        }
+        if(transcript!=null)transcript.show(text);
     }
     private void startCapture(){
         cancelTranscript();
@@ -107,10 +132,35 @@ public final class VoiceSessionService extends Service implements RecognitionLis
         recognizer.startListening(VoicePhrases.recognitionIntent());
     }
     private void startWake(){
+        if(SystemClock.elapsedRealtime()<nextWakeAttempt)return;
         long generation=++wakeGeneration;
         localWake=new LocalWakeDetector(this,new LocalWakeDetector.Listener(){
             public void wake(){main.post(()->{if(stopped || wakeGeneration!=generation)return;if(!session.paused||PetService.voiceOutputBusy()){closeWake();return;}closeWake();session.paused=false;nextListen=SystemClock.elapsedRealtime()+1000;notifyState("Saluto riconosciuto · ascolto il comando dopo la risposta");deliver("Hola Solphivia");});}
-            public void failed(String reason){main.post(()->{if(!stopped&&wakeGeneration==generation){statusText="Richiamo locale non disponibile: "+reason;stopSelf();}});}
+            public void failed(String reason){main.post(()->{
+                if(stopped||wakeGeneration!=generation)return;
+                closeWake();
+                getSharedPreferences("voice_health",0).edit().putString("local_capture_error",reason).apply();
+                if("SecurityException".equals(reason)){stopSelf();return;}
+                nextWakeAttempt=SystemClock.elapsedRealtime()+1500;
+                nextListen=nextWakeAttempt;
+                notifyState("Ripristino del microfono locale in corso");
+            });}
+            public void partialCommand(String text){main.post(()->{
+                if(!stopped&&wakeGeneration==generation&&localConversation&&!session.paused&&!PetService.voiceOutputBusy())showLocalCommand(text);
+            });}
+            public void command(String text){main.post(()->{
+                if(stopped||wakeGeneration!=generation||!localConversation||session.paused||PetService.voiceOutputBusy())return;
+                closeWake();showLocalCommand(text);localConversation=false;listening=true;
+                Bundle result=new Bundle();
+                result.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION,new ArrayList<>(java.util.Collections.singletonList(text)));
+                onResults(result);
+            });}
+            public void controlResult(boolean candidate,boolean verified){
+                android.content.SharedPreferences health=getSharedPreferences("voice_health",0);
+                health.edit().putInt("interrupt_segments",health.getInt("interrupt_segments",0)+1)
+                    .putInt("interrupt_candidates",health.getInt("interrupt_candidates",0)+(candidate?1:0))
+                    .putInt("interrupt_verified",health.getInt("interrupt_verified",0)+(verified?1:0)).apply();
+            }
             public void resumed(String text){main.post(()->{
                 if(stopped||wakeGeneration!=generation)return;
                 closeWake();if(!ReadingContinuation.available())return;showControlTranscript(text);session.paused=false;followUp.replyStarted();PetService.resumeReading();
@@ -130,25 +180,28 @@ public final class VoiceSessionService extends Service implements RecognitionLis
     private final Runnable tick=new Runnable(){public void run(){
         if(stopped)return;
         long now=SystemClock.elapsedRealtime();
-        if(!listening&&transcript==null&&!PetService.voiceOutputBusy()&&!ReadingContinuation.available()&&!followUp.awaitingReply())SentVoiceTranscript.clearFinished();
-        if((!session.paused && followUp.expired(now)) || (listening && now-recognitionStarted>60000L)){restForWake();}
+        if((!session.paused && !localConversation && followUp.expired(now)) || (listening && now-recognitionStarted>60000L)){listenLocally();}
         if(PetService.voiceOutputBusy()){
             if(listening){listening=false;recognitionGeneration++;recognizer.cancel();cancelTranscript();PetService.voiceListening(false);}
             if(getSharedPreferences("pet",0).getBoolean("voice_interrupt",true)&&PetService.speechOutputActive()){
                 if(localWake==null)startWake();
-                localWake.interruptDuring(PetService.currentSpokenText());
+                if(localWake!=null)localWake.interruptDuring(PetService.currentSpokenText());
             }else if(localWake!=null)localWake.suspend(true);
             // The next five seconds start only after output has ended and capture is ready.
             if(!session.paused && !followUp.awaitingReply())followUp.replyStarted();
             nextListen=now+650;
         }else if(now>=nextListen){
-            if(followUp.awaitingReply()){if(!ReadingContinuation.available())SentVoiceTranscript.clearFinished();followUp.replyFinished();session.paused=false;}
+            if(followUp.awaitingReply()){followUp.replyFinished();session.paused=false;}
             if(session.paused){if(!listening && localWake==null){notifyState("In ascolto locale · Hola Solphivia");startWake();}else if(localWake!=null)localWake.waitForWake();}
+            else if(localConversation){
+                if(localWake==null){startWake();notifyState("Dialogo in ascolto locale · parla oppure di’ Stop dialogo");}
+                if(localWake!=null)localWake.waitForCommand();
+            }
             else if(!listening){
                 closeWake();listening=true;notifyState(VoiceStatusState.CAPTURE_STARTING_LABEL);recognitionStarted=now;commandStarts++;
                 getSharedPreferences("voice_health",0).edit().putInt("command_starts",commandStarts).apply();
                 try{startCapture();}
-                catch(RuntimeException error){restForWake();notifyState("Comando non disponibile · di’ Hola Solphivia per riprovare");}
+                catch(RuntimeException error){listenLocally();}
             }
         }
         main.postDelayed(this,250);
@@ -208,7 +261,7 @@ public final class VoiceSessionService extends Service implements RecognitionLis
                 && followUp.canRetry(SystemClock.elapsedRealtime())){
             nextListen=SystemClock.elapsedRealtime()+150;
             notifyState(VoiceStatusState.CAPTURE_STARTING_LABEL);
-        }else restForWake();
+        }else listenLocally();
     }
 
     @Override public void onReadyForSpeech(Bundle params){
@@ -217,7 +270,10 @@ public final class VoiceSessionService extends Service implements RecognitionLis
     }
     @Override public void onBeginningOfSpeech(){
         if(stopped || !listening)return;
-        if(!followUp.speechStarted(SystemClock.elapsedRealtime()))restForWake();
+        long now=SystemClock.elapsedRealtime();
+        if(!followUp.speechStarted(now)){
+            followUp.rest();followUp.captureReady(now);followUp.speechStarted(now);
+        }
     }
     @Override public void onRmsChanged(float rms){}
     @Override public void onBufferReceived(byte[] bytes){}

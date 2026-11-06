@@ -11,4 +11,11 @@ public class SpeechInterruptPolicyTest {
  @Test public void shortStopNeedsFinalAndCannotEcho(){SpeechInterruptPolicy p=new SpeechInterruptPolicy();assertFalse(p.accept("stop",false,1000,"una prova",true));assertFalse(p.accept("stop",false,1400,"una prova",true));assertFalse(p.accept("stop",true,1500,"Il cartello indica stop.",true));assertTrue(p.accept("alt",true,1600,"Il cartello indica stop.",true));}
  @Test public void onlyExactResumeCommands(){for(String text:new String[]{"prosegui","riprendi","dimmi","ti ascolto","dai","vai","continua Solphivia"})assertTrue(SpeechInterruptPolicy.resumeCommand(text));for(String text:new String[]{"vai su maps","non riprendi","dimmi il meteo","dai un esempio"})assertFalse(SpeechInterruptPolicy.resumeCommand(text));}
  @Test public void shortCommandsNeedFullUnrestrictedMatch(){assertTrue(SpeechInterruptPolicy.sameShortCommand("stop","Stop!"));assertFalse(SpeechInterruptPolicy.sameShortCommand("stop","stop alla violenza"));assertFalse(SpeechInterruptPolicy.sameShortCommand("alt","altro esempio"));assertFalse(SpeechInterruptPolicy.sameShortCommand("basta","non basta"));}
+ @Test public void repeatedStopWordsAreStillOneStopRequest(){
+  assertTrue(SpeechInterruptPolicy.command("Stop, fermati!"));
+  assertTrue(SpeechInterruptPolicy.command("fermati fermati"));
+  assertTrue(SpeechInterruptPolicy.sameShortCommand("stop", "stop fermati"));
+  assertFalse(SpeechInterruptPolicy.command("stop e apri Maps"));
+  assertFalse(SpeechInterruptPolicy.sameShortCommand("stop", "stop alla stazione"));
+ }
 }
