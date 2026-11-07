@@ -17,7 +17,7 @@ jobs:
           java-version: '17'
       - uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          packages: 'platform-tools platforms;android-36 build-tools;35.0.0'
           log-accepted-android-sdk-licenses: false
       - name: Run JVM tests, build isolated app and instrumentation APKs
         run: bash gradlew --no-daemon -PverificationBuild testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug
@@ -30,3 +30,12 @@ jobs:
             app/build/outputs/apk/androidTest/debug/*.apk
             app/build/reports/lint-results-debug.*
             app/build/test-results/testDebugUnitTest/*.xml
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Test invitation limits and Responses gateway without real credentials
+        run: python -m unittest discover -s demo-server -v

@@ -12,7 +12,17 @@ Per richieste sulla privacy ed esercizio dei diritti: **[solphivia.privacy@gmail
 
 Solphivia IA offre un avatar flottante, chat con il fornitore AI collegato, interazione vocale, memoria personale locale e funzioni meteo. Dati e permessi servono alle funzioni attivate dall'utente. Non è obbligatorio concedere microfono, posizione o overlay per il solo fatto di installare l'app; negare o revocare un permesso impedisce la funzione che ne dipende. Senza collegamento al fornitore AI non è possibile usare la conversazione AI.
 
-Nella configurazione esaminata non risultano SDK pubblicitari o analytics nelle dipendenze dell'app. Le richieste di rete dirette sono effettuate dal telefono ai servizi indicati sotto: il codice esaminato non usa un server intermedio del manutentore per ricevere le conversazioni. Questo non significa che tutti i dati restino sul telefono.
+Nella configurazione esaminata non risultano SDK pubblicitari o analytics nelle dipendenze dell'app. Nella modalità account le richieste di rete partono dal telefono verso i servizi indicati sotto. La candidata 1.1.0-beta.6, quando la demo è configurata e scelta dall’utente, usa anche il servizio HTTPS del progetto descritto nella sezione seguente.
+
+## Prova senza account nella candidata 1.1.0-beta.6
+
+Questa modalità viene attivata con un codice d’invito. Il messaggio di testo corrente passa dal telefono al servizio HTTPS del progetto e poi a OpenAI, usando la chiave del progetto API conservata sul server. La schermata di attivazione spiega il percorso prima dell’invio. Cronologia precedente, memoria personale e allegati restano sul telefono per questa modalità. La demo iniziale accetta la chat di testo.
+
+Il codice d’invito è cifrato sul telefono con Android Keystore. Disattivare la demo rimuove il codice locale. Il server conserva hash degli inviti, pseudonimo del tester, scadenze, revoche, identificativi delle richieste e contatori di consumo per applicare i limiti. Il servizio fornito elabora messaggi e risposte in memoria e conserva soltanto questi metadati nel database della campagna. Gli access log HTTP sono disattivati nella configurazione fornita. Il gestore dell’hosting può trattare indirizzo IP e metadati tecnici secondo le proprie condizioni.
+
+Le richieste alla Responses API usano `store: false`. Restano applicabili le condizioni e la conservazione dei dati del fornitore descritte sotto. I contatori sul server restano validi anche dopo la reinstallazione del telefono o il riavvio del servizio. Gli inviti sono revocabili e soggetti a scadenza. Il gestore può revocare gli inviti e gestire la cancellazione dei metadati della campagna tramite il recapito privacy del progetto.
+
+Il collegamento ChatGPT resta una scelta separata. L’invio demo richiede l’indirizzo HTTPS configurato nella build e viene rifiutato se il codice o il budget del tester non sono validi. La guida della candidata è in [Prova senza account](docs/DEMO-INTERNA-IT.md).
 
 ## Finalità e basi giuridiche
 

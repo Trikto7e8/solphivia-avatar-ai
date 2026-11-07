@@ -19,3 +19,7 @@ local.properties
 /releases/
 
 .kotlin/
+__pycache__/
+*.sqlite3
+*.sqlite3-*
+demo-server/.env*

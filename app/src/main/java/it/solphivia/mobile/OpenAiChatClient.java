@@ -113,6 +113,7 @@ final class OpenAiChatClient {
     private OpenAiChatClient() {}
 
     static void cancelRequests(ExecutorService worker) {
+        DemoChatClient.cancel(worker);
         synchronized (REQUEST_LOCK) {
             for (Map.Entry<String, ExecutorService> entry : REQUEST_OWNERS.entrySet()) {
                 if (entry.getValue() == worker) cancelRequest(entry.getKey());
@@ -274,6 +275,10 @@ final class OpenAiChatClient {
     static void respond(Context context, ExecutorService worker, JSONArray history,
                         JSONArray attachments, boolean voice, ChatCallback callback) {
         if (worker.isShutdown()) return;
+        if (DemoAccess.enabled(context)) {
+            DemoChatClient.respond(context, worker, history, attachments, voice, callback);
+            return;
+        }
         String requestId = UUID.randomUUID().toString();
         REQUEST_OWNERS.put(requestId, worker);
         ACTIVE_REQUESTS.put(requestId, new RequestLifecycle(NO_OP_LISTENER));

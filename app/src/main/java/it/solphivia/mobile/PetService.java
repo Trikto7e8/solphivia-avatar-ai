@@ -610,13 +610,17 @@ public class PetService extends Service {
         if (attachmentUris.isEmpty() && isShutdownCommand(text)) {AppControls.close(this);return;}
 
         applyCostumeCommand(text);
-        if (!OpenAiChatClient.isConnected(this)) {
-            setSpeech("Collega ChatGPT nel browser. Puoi riaprire l’accesso dal menu ☰ → Collega ChatGPT.");
+        if (DemoAccess.enabled(this) && !attachmentUris.isEmpty()) {
+            setSpeech("La demo accetta solo testo. Rimuovi gli allegati prima di inviare.");
+            return;
+        }
+        if (!OpenAiChatClient.isConnected(this) && !DemoAccess.enabled(this)) {
+            setSpeech("Scegli Prova senza account oppure Collega ChatGPT. Il messaggio resta nel fumetto.");
             try {
-                startActivity(new Intent(this, MainActivity.class).setAction(MainActivity.ACTION_CONNECT_CHATGPT)
+                startActivity(new Intent(this, DemoEntryActivity.class)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             } catch (RuntimeException error) {
-                setSpeech("Per collegare ChatGPT, apri il menu ☰ e scegli Collega ChatGPT.");
+                setSpeech("Apri il menu ☰ e scegli Prova senza account oppure Collega ChatGPT.");
             }
             return;
         }

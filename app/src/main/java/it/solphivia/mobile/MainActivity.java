@@ -52,6 +52,9 @@ public class MainActivity extends Activity {
     private EditText composer;
     private Button sendButton;
     private Button connectButton;
+    private Button demoButton;
+    private Button overlayPermissionButton;
+    private boolean overlayPermissionRequested;
     private TextView status;
     private PetView inlinePet;
     private BubbleTail speechTail;
@@ -179,6 +182,19 @@ public class MainActivity extends Activity {
         connectButton.setOnClickListener(v -> connectChatGPT());
         header.addView(connectButton, new LinearLayout.LayoutParams(-2, dp(40)));
         page.addView(header, new LinearLayout.LayoutParams(-1, dp(42)));
+        demoButton = new Button(this);
+        demoButton.setText("Prova senza account");
+        demoButton.setMinHeight(dp(48));
+        demoButton.setOnClickListener(v -> startActivity(new Intent(this, DemoActivity.class)));
+        page.addView(demoButton);
+        overlayPermissionButton = new Button(this);
+        overlayPermissionButton.setText("Attiva avatar flottante · Mostra sopra altre app");
+        overlayPermissionButton.setMinHeight(dp(48));
+        overlayPermissionButton.setOnClickListener(v -> {
+            overlayPermissionRequested = true;
+            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
+        });
+        page.addView(overlayPermissionButton);
 
         status = new TextView(this);
         status.setTextSize(12); status.setTextColor(Color.rgb(112, 96, 120));
@@ -405,6 +421,7 @@ public class MainActivity extends Activity {
     }
 
     private void connectChatGPT() {
+        DemoAccess.disable(this);
         if (authBrowser || OpenAiChatClient.isAuthorizing()) {
             authBrowser = true;
             status.setText("Completa l’autorizzazione ChatGPT già aperta e poi torna qui.");
@@ -451,6 +468,10 @@ public class MainActivity extends Activity {
         if (authBrowser || OpenAiChatClient.isAuthorizing() || busy) return;
         String text = composer.getText().toString().trim();
         if (text.isEmpty() && pendingFiles.isEmpty()) return;
+        if (DemoAccess.enabled(this) && !pendingFiles.isEmpty()) {
+            status.setText("La demo accetta solo testo. Rimuovi gli allegati prima di inviare.");
+            return;
+        }
         if (text.isEmpty()) text="Puoi esaminare questi allegati e aiutarmi?";
         if (!voice && !pendingFiles.isEmpty()) { sendInlineFiles(text); return; }
         if(voice)SentVoiceTranscript.hold(composer,text);
@@ -476,7 +497,10 @@ public class MainActivity extends Activity {
             inlinePet.setClassicCyborgSuit(cyborg);
             getSharedPreferences("pet", 0).edit().putBoolean("cyborg_suit", cyborg).apply();
         }
-        if (!OpenAiChatClient.isConnected(this)) { sendAfterConnect=true; connectChatGPT(); return; }
+        if (!OpenAiChatClient.isConnected(this) && !DemoAccess.enabled(this)) {
+            startActivity(new Intent(this, DemoEntryActivity.class));
+            return;
+        }
         cancelIdleTimers();
         if(!voice)composer.setText("");
         ((InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(composer.getWindowToken(), 0);
@@ -493,7 +517,7 @@ public class MainActivity extends Activity {
                     if (isFinishing() || isDestroyed()) return;
                     getSharedPreferences("chat",0).edit().putString("history",history.toString()).apply();
                     busy = false; sendButton.setEnabled(true); composer.setEnabled(true);
-                    status.setText("Chat privata · collegata a ChatGPT");
+                    status.setText(DemoAccess.enabled(MainActivity.this) ? "Demo di testo · senza account" : "Chat privata · collegata a ChatGPT");
                     PetService.applyContextualMode(MainActivity.this, mode, inlinePet);
                     speak(reply, animation, preserveRunIntent(motion), true);
                     composer.requestFocus();
@@ -698,12 +722,17 @@ public class MainActivity extends Activity {
 
     private void refreshConnectionState() {
         boolean connected = OpenAiChatClient.isConnected(this);
+        boolean demo = DemoAccess.enabled(this);
+        demoButton.setText(demo ? "Demo attiva · gestisci invito" : "Prova senza account");
+        demoButton.setEnabled(!busy && !authBrowser);
+        overlayPermissionButton.setVisibility(Settings.canDrawOverlays(this) ? View.GONE : View.VISIBLE);
         connectButton.setText(connected ? "ChatGPT ✓" : "Collega ChatGPT");
         boolean authPending = authBrowser || OpenAiChatClient.isAuthorizing();
         connectButton.setEnabled(!authPending);
         composer.setEnabled(!busy && !authPending); sendButton.setEnabled(!busy && !authPending);
         status.setText(connected ? (Settings.canDrawOverlays(this) ? "Chat privata · collegata a ChatGPT" : "Chat collegata · tocca per attivare l’avatar flottante") :
                 (Settings.canDrawOverlays(this) ? "Scrivi per iniziare la chat" : "Chat pronta · avatar flottante disattivato"));
+        if (demo) status.setText("Demo di testo · senza account");
         status.setOnClickListener(v -> {
             if (!Settings.canDrawOverlays(this)) startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
         });
@@ -749,12 +778,16 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume(); activityPaused = false;
+        if (overlayPermissionRequested && Settings.canDrawOverlays(this)) {
+            overlayPermissionRequested = false;
+            homeShortcutAttempted = true;
+        }
         if (handleConnectionIntent()) return;
         if(!VoiceSessionService.running()&&!voiceWakePermissionPending)voiceWakeAttempted=false;
         if(wakeSettingsOpened){wakeSettingsOpened=false;voiceWakeAttempted=false;}
         authBrowser = OpenAiChatClient.isAuthorizing();
         if(!authBrowser && prepareOpeningWake())return;
-        if (!authBrowser && homeShortcutAttempted && !homeShortcutPromptPending && startHomeOverlayIfReady()) return;
+        if (!authBrowser && !homeShortcutPromptPending && startHomeOverlayIfReady()) return;
         if (status != null) refreshConnectionState();
     }
 
@@ -765,7 +798,7 @@ public class MainActivity extends Activity {
         voiceWakeAttempted=false;
         authBrowser = OpenAiChatClient.isAuthorizing();
         if(!authBrowser && prepareOpeningWake())return;
-        if (!authBrowser && homeShortcutAttempted && !homeShortcutPromptPending) startHomeOverlayIfReady();
+        if (!authBrowser && !homeShortcutPromptPending) startHomeOverlayIfReady();
     }
 
     @Override public void onWindowFocusChanged(boolean hasFocus) {
