@@ -1,14 +1,14 @@
-# Solphivia IA 1.1 beta 4: guida rapida Android
+# Solphivia IA 1.1 beta 5: guida rapida Android
 
 ## Installare o aggiornare
 
-Scarica l’APK dalla [release 1.1 beta 4](docs/CURRENT_RELEASE.md). È una build debug beta per le prove, non una versione app stores. Richiede Android 8 o successivo e ARM64/ARMv7.
+Scarica l’APK dalla [release 1.1 beta 5](docs/CURRENT_RELEASE.md). È una build debug beta per le prove, non una versione app stores. Richiede Android 8 o successivo e ARM64/ARMv7.
 
 Se aggiorni un’installazione con lo stesso certificato, installa sopra quella esistente: non disinstallare e non cancellare i dati per aggiornare. I dati cifrati dipendono anche dal Keystore dell’installazione. In caso di firma diversa, fermati e conserva l’app originale prima di decidere come trasferire i dati.
 
 ## Primo collegamento
 
-1. Apri **Solphivia Avatar AI**. Le installazioni isolate di collaudo hanno il nome **PROVA**: non sono l’app principale.
+1. Apri **Solphivia IA**. Le installazioni isolate di collaudo hanno il nome **PROVA**.
 2. Tocca **Collega ChatGPT** e completa personalmente l’autorizzazione nel browser con l’account desiderato. Solphivia non chiede la password. Disponibilità e limiti dipendono dall’account e dal fornitore.
 3. Attendi il ritorno all’app. Non aprire manualmente l’indirizzo locale temporaneo `127.0.0.1`.
 4. Concedi **Mostra sopra altre app** per il personaggio flottante e il permesso microfono per la voce. La notifica Android indica quando il microfono è attivo.
@@ -18,7 +18,9 @@ Se aggiorni un’installazione con lo stesso certificato, installa sopra quella 
 
 Di’ **«Hola Solphivia»**, attendi **«Cosa posso fare per te?»**, poi pronuncia la domanda o una normale risposta. Le parole riconosciute compaiono nel rigo di scrittura e vengono inviate automaticamente. L’anteprima progressiva dipende dal servizio Android. Una bozza scritta o modificata a mano viene conservata.
 
-Dopo ogni risposta hai **cinque secondi dal microfono pronto** per iniziare a parlare ancora senza richiamo. Se inizi in tempo puoi finire la frase. In silenzio torna al riposo; per riprendere di’ «Hola Solphivia». Il servizio Android può interrompersi per errori: non è una garanzia di ascolto in ogni condizione. «Stop dialogo» torna al richiamo; «Spegni microfono» ferma la cattura.
+Dopo ogni risposta puoi parlare ancora senza ripetere il richiamo. Dopo la finestra iniziale del riconoscitore Android, il dialogo passa al riconoscimento locale continuo. Anche gli errori temporanei del servizio Android possono attivare questo percorso. «Stop dialogo» torna all’attesa di Hola Solphivia; «Spegni microfono» ferma la cattura. La notifica segnala il microfono attivo. L’ascolto del dialogo può riconoscere e inviare anche parole pronunciate da altre persone vicine.
+
+Durante una risposta di’ **«Fermati»**, poi **«Riprendi»** per continuare la lettura. Questo ciclo è stato confermato due volte sul telefono di prova. **«Stop» resta un problema noto**, perché nella stessa verifica non è stato riconosciuto. L’ultima frase trascritta rimane nel rigo fino a una nuova frase o alla modifica manuale; le bozze manuali restano protette.
 
 Puoi sempre scrivere nel rigo e premere Invia. La dettatura singola da modificare resta disponibile nella schermata Voce. [Guida vocale completa](docs/VOICE-SESSION.md).
 
@@ -40,7 +42,7 @@ La chat di Solphivia è separata da quella di ChatGPT: non importa chat o memori
 - Se il browser non torna all’app, lascia Solphivia aperta in background, completa il consenso e usa il collegamento di ritorno. Non condividere token o codici temporanei.
 - Per problemi di account o limiti, controlla il messaggio e le impostazioni del fornitore.
 
-[Note di rilascio, prove e limiti](old/releases/v1.0.0-beta.1.md). Blocco schermo, sessioni prolungate, recupero rete e altri dispositivi richiedono ancora collaudo.
+[Note di rilascio, prove e limiti](docs/releases/v1.1.0-beta.5.md). TalkBack, blocco schermo, sessioni prolungate, recupero rete e altri dispositivi richiedono ancora collaudo.
 
 ## Chiudere e ritrovare Solphivia
 

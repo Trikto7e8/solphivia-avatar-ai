@@ -1,47 +1,41 @@
-# Voice conversation in 1.1 beta 4 / Conversazione vocale
+# Conversazione vocale nella 1.1 beta 5 / Voice conversation
 
-## Interruzione sperimentale / Experimental interruption
+## Parlare e continuare il dialogo
 
-Con il microfono già attivo, durante la lettura puoi provare **«Basta Solphivia»** o **«Fermati Solphivia»**. Attendi il segnale prima del nuovo comando. **Ferma la voce** è disponibile anche nel menu e nella notifica; non riaccende il microfono spento. Le sezioni successive descrivono il normale percorso dei comandi: nella 1.1 solo il riconoscitore locale delle frasi di interruzione resta attivo durante il parlato, se abilitato. [Stato delle prove e limiti](releases/v1.1.0-beta.4.md).
+Apri Solphivia IA, concedi overlay e microfono e attendi il saluto. Di’ **Hola Solphivia**, aspetta **Cosa posso fare per te?**, poi pronuncia una domanda o un comando.
 
-With the microphone already active, try **“Basta Solphivia”** or **“Fermati Solphivia”** during reading. Wait for the microphone cue before the next command. “Ferma la voce” also provides a manual control. Regular command capture remains suspended during output; only the enabled local interruption recognizer listens. Live acoustic validation is pending.
+Dopo la risposta il dialogo resta disponibile. Il servizio Android viene usato nella finestra iniziale di cinque secondi. Se la finestra scade o il servizio incontra errori temporanei, subentra il riconoscimento locale continuo. Per tornare al solo richiamo di’ **Stop dialogo**. **Spegni microfono** arresta la cattura. La notifica indica il microfono attivo.
 
-## Stop, ripresa e trascrizione
+Le frasi riconosciute nel dialogo attivo sono inviate automaticamente al fornitore collegato. Anche altre persone vicine possono essere trascritte. Richiamo, riconoscimento locale di continuità e controlli della lettura sono elaborati sul telefono. Il riconoscitore Android e il motore TTS possono usare la rete. Solphivia non conserva registrazioni audio.
 
-Puoi anche dire **Stop**, **Alt**, **Basta** o **Fermati**, come frasi complete. Dopo l’arresto, **Prosegui**, **Riprendi**, **Continua**, **Dimmi**, **Ti ascolto**, **Dai** e **Vai** riprendono la lettura sospesa. Restano attivi solo se il microfono è acceso; le frasi di ripresa hanno questo significato locale solo quando c’è una lettura sospesa. La ripresa usa la posizione comunicata dal motore: senza aggiornamenti precisi può ripetere il blocco in corso.
+## Fermare e riprendere la lettura
 
-La trascrizione inviata resta nella barra durante la risposta; si libera al termine della risposta o viene sostituita dalla frase successiva. Una bozza modificata a mano non viene cancellata dalla pulizia automatica. Il pulsante ⏻ chiude tutta la sessione; le voci di chiusura sono state rimosse dal menu.
+Durante il parlato di’ **Fermati**, poi **Riprendi** per continuare. Il 7 novembre 2026 l’utente ha confermato **Fermati → Riprendi → Fermati** sul Motorola con la build di prova codice 52. La beta pubblica codice 53 usa lo stesso codice applicativo.
+
+**Stop ha fallito nella stessa prova e rimane un problema aperto.** Alt, Basta e i comandi con il nome Solphivia sono implementati e richiedono ulteriori prove reali. I test sintetici favorevoli non garantiscono il comportamento con voce, eco e ambiente reali.
+
+Quando esiste una lettura sospesa sono implementati anche Prosegui, Continua, Dimmi, Ti ascolto, Dai e Vai. La prova reale di questa revisione ha confermato Riprendi. La posizione di ripresa dipende dagli aggiornamenti del motore TTS e può ripetere il frammento corrente.
+
+Durante il parlato il riconoscitore locale dei controlli resta disponibile, mentre l’invio dei normali comandi è sospeso. I controlli richiedono il microfono attivo. Il pulsante tondo **⏻** chiude avatar, voce e microfono conservando i dati.
+
+## Trascrizione e bozze
+
+L’ultima frase riconosciuta rimane nel rigo durante e dopo la risposta, fino alla frase successiva o alla modifica manuale. Anteprime identiche non aggiornano ripetutamente il campo. Una bozza scritta o modificata a mano resta protetta.
+
+La voce invia la cronologia testuale recente senza aggiungere ricordi del vault o allegati. La chat scritta mantiene la conferma modificabile della memoria e il consenso monouso. La dettatura singola modificabile resta disponibile separatamente.
+
+## Accessibilità e limiti
+
+TalkBack è il lettore schermo Android che pronuncia pulsanti e contenuti. L’arresto vocale di Solphivia è una funzione distinta. La convivenza con TalkBack, compresa la possibilità che la sua voce attivi comandi, richiede ancora una prova dedicata. È un criterio di accettazione per l’uso con disabilità visiva e a mani libere.
+
+Sono aperte le prove di rumore, cuffie, consumo, sessioni prolungate, blocco schermo e altri dispositivi. Il riconoscimento non autentica chi parla.
 
 ## English
 
-Open Solphivia, grant overlay and microphone permissions, and finish the opening greeting. Say **“Hola Solphivia”**, wait for **“Cosa posso fare per te?”**, then speak a question, an app command or an ordinary conversational reply.
+Open Solphivia, grant overlay and microphone permissions, wait for the greeting and say **Hola Solphivia**. After **Cosa posso fare per te?**, speak your request. Active dialogue switches to local continuous recognition after the initial Android window or temporary recognizer errors. **Stop dialogo** returns to wake waiting. **Spegni microfono** stops capture.
 
-After every response finishes, Android command recognition reopens. You have **five seconds from microphone readiness** to start speaking without another wake phrase. Speech started in time may finish after the window. Silence returns to local wake waiting. Recognition retries do not extend the same window; microphone/service errors can interrupt it. The timer is checked every 250 ms. While generation or speech output is busy, command capture is suspended.
+During speech use **Fermati**, then **Riprendi**. The device user confirmed two interruptions with a resume between them. **Stop failed in that live trial** and remains a known issue. The last transcript stays until replaced by new speech or manual editing. Manually edited drafts remain protected. Nearby speech can also be recognized and submitted during active dialogue.
 
-Recognized words appear in the same input used for typing, then the final result is sent automatically. Progressive preview depends on the Android recognition service providing partial results. The final preview is briefly shown even when partial results are unavailable. A pre-existing typed draft or a manually edited preview is preserved instead of being overwritten or automatically submitted by voice.
+TalkBack coexistence and broader device/environment testing remain outstanding. Local wake and interruption detection do not identify the speaker. Android recognition, TTS and the connected AI provider may use the network.
 
-Wake waiting uses the bundled Italian Vosk model. Android command recognition and the selected TTS engine may use the network. Solphivia does not save wake audio recordings. Voice requests include recent text history, without adding vault memories or attachments. Typed requests retain editable memory preview and single-use consent. Single-phrase editable dictation remains a separate option.
-
-Local commands include opening an installed app by its exact name, Maps searches/directions, camera/phone opening and preparing a number in the dialer. The call still needs manual confirmation; there is no contact lookup or direct call permission. Only explicit user commands are executed, never model output. ShareBridge remains inactive; configurable Ollama/LM Studio adapters remain future work.
-
-**“Stop dialogo”** returns to wake waiting. **“Spegni microfono”** stops capture. Opening the app can restart it if automatic wake is enabled; there is no microphone start at phone boot. The notification shows microphone use. This is not voice authentication.
-
-## Italiano
-
-Apri Solphivia, concedi overlay e microfono e attendi la fine del saluto iniziale. Di’ **«Hola Solphivia»**, aspetta **«Cosa posso fare per te?»**, poi pronuncia una domanda, un comando o una normale risposta a una sua domanda.
-
-Dopo ogni risposta il microfono si riapre: hai **cinque secondi da quando è pronto** per iniziare a parlare senza ripetere il richiamo. Se inizi in tempo puoi finire la frase. In silenzio torna al riposo fino a «Hola Solphivia». Gli errori del servizio Android possono interrompere l’acquisizione. Durante generazione e riproduzione della risposta l’ascolto del comando è sospeso.
-
-Le parole riconosciute compaiono nel rigo dove puoi scrivere a mano; il risultato finale viene inviato automaticamente. L’anteprima progressiva dipende dal riconoscitore Android. Se esiste una bozza scritta o modifichi a mano il testo, la bozza viene conservata e non sovrascritta o inviata dal percorso vocale.
-
-L’attesa del richiamo usa Vosk locale; riconoscimento dei comandi e TTS Android possono usare Internet. La voce invia la cronologia testuale recente senza aggiungere ricordi del vault o allegati. La chat scritta conserva la conferma modificabile della memoria. La dettatura singola da modificare resta separata.
-
-Puoi dire «apri Maps», «apri» seguito dal nome completo dell’app, «cerca una farmacia su Maps», «portami a Roma», «chiama» seguito da un numero. Per chiamare confermi nel telefono; la rubrica non è supportata. «Comandi» mostra un riepilogo. «Stop dialogo» torna al richiamo; «Spegni microfono» ferma la cattura.
-
-Se Android limita l’ascolto, controlla le impostazioni batteria della sola Solphivia. Non occorre modificare globalmente la gestione batteria. Consumi prolungati, blocco schermo e altri dispositivi richiedono ulteriori prove.
-
-[Release notes and measured limits / Note e limiti](releases/v1.1.0-beta.4.md)
-
-## Chiudere tutta la sessione
-
-Pulsante tondo ⏻ sotto l’avatar, o il comando Chiudi Solphivia dopo il richiamo. Si fermano avatar, lettura e microfono. Come faccio a chiuderti? spiega i controlli senza chiudere. Stop dialogo lascia il richiamo, Spegni microfono lascia l’avatar. Ferma la voce interrompe solo la lettura.
+[Release notes / Note e verifiche](releases/v1.1.0-beta.5.md) · [Privacy](../PRIVACY-IT.md) · [Guida](../AVVIO-RAPIDO-IT.md).

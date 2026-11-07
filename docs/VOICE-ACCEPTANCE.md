@@ -60,3 +60,7 @@ La prova non viene pubblicata come nuova release finché il ciclo reale ripetuto
 - 74 test JVM superati. Compilazione e Lint completati senza errori.
 - Prova strumentale isolata superata con 15/15 comandi, 0/20 interruzioni nei casi negativi e di sola voce sintetica, 3/3 comandi con voce sintetica sovrapposta, rispettivamente Stop, Fermati e Stop fermati. Il mix usa voce di sfondo al 18% e comando all'80%, senza simulare la cancellazione acustica del microfono. I file temporanei vengono eliminati.
 - Build 52, 1.1.0-beta.5-test.2, installata nell'app principale. La copia isolata è disabilitata conservandone i dati. Richiesta la verifica reale di Stop, Riprendi, Stop. Tale verifica e la compatibilità con TalkBack rimangono da completare.
+
+## Riscontro reale del 7 novembre 2026
+
+L’utente conferma Fermati, Riprendi e un secondo Fermati riusciti nella build 52. Stop ha fallito e rimane un problema noto. La verifica TalkBack resta da eseguire. Autorizzata la pubblicazione della beta 5, codice 53, con gli stessi sorgenti applicativi e metadati aggiornati, distinguendo i risultati reali da quelli sintetici.

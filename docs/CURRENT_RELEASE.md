@@ -1,17 +1,15 @@
 # Solphivia IA — versione corrente
 
-**1.1.0-beta.4 · codice 50 · beta Android comunitaria.**
+**1.1.0-beta.5 · codice 53 · beta Android comunitaria · 7 novembre 2026.**
 
-[Scarica APK e sorgenti](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.4) · [Note e verifiche](releases/v1.1.0-beta.4.md) · [Guida](../AVVIO-RAPIDO-IT.md) · [Conversazione vocale](VOICE-SESSION.md).
+[APK e sorgenti](https://github.com/Trikto7e8/solphivia-avatar-ai/releases/tag/v1.1.0-beta.5) · [Note e verifiche](releases/v1.1.0-beta.5.md) · [Guida](../AVVIO-RAPIDO-IT.md) · [Conversazione vocale](VOICE-SESSION.md).
 
-Ripristinati il collegamento ChatGPT dal menu, l’apertura del browser e l’avatar flottante anche senza account collegato. Verificati sul Motorola il browser e lo sprite sulla Home; il login completo resta da confermare.
+L’utente ha confermato sul Motorola il ciclo **Fermati → Riprendi → Fermati** nella build funzionale di prova, codice 52. La beta pubblica 53 usa lo stesso codice applicativo con numero e nome di versione aggiornati. **Stop ha fallito nella stessa prova**. Per interrompere la lettura usare Fermati.
 
-Voce italiana, arresto e ripresa della lettura, trascrizione visibile, saluto con comandi e controlli a sinistra. L’utente ha confermato il dialogo successivo al saluto, arresto/ripresa e chiusura. Verificati sul telefono icona normale con un solo personaggio e apertura dalla Home.
+Il dialogo attivato passa al riconoscimento locale dopo la finestra iniziale Android e resta disponibile fino alla pausa esplicita. L’ultima trascrizione resta nel rigo fino a una nuova frase o modifica manuale. Le bozze manuali restano protette.
 
-65 test JVM superati, build APK/test Android e Lint riusciti nell’ultima verifica dei sorgenti. Le prove acustiche sintetiche restano distinte: 13/13 frasi positive e 0/15 attivazioni nei casi negativi. Non certificano ogni ambiente o durata.
+74 test JVM superati. Prove sintetiche sul dispositivo con 15/15 comandi, 0/20 attivazioni negative o di sola voce TTS, 3/3 comandi con parlato sovrapposto. I risultati sintetici sono distinti dalla prova reale. TalkBack, sessioni lunghe, cuffie, rumore, batteria e altri dispositivi restano da verificare.
 
-Pacchetto principale it.solphivia.mobile; variante isolata it.solphivia.mobile.v11.verification. minSdk26, compileSdk/targetSdk35, Java17. L’APK pubblico mantiene la firma debug già usata nelle prove, con checksum nelle note. Nessuna versione Play è stata caricata.
+Pacchetto principale `it.solphivia.mobile`, variante isolata `it.solphivia.mobile.v11.verification`, Android 8+, ARM64/ARMv7, Java 17. APK beta con firma debug compatibile con le beta precedenti e checksum SHA-256. Aggiornare sopra l’installazione esistente per conservare i dati.
 
-Il richiamo resta disponibile finché il microfono non viene spento esplicitamente. Dopo cinque secondi senza iniziare il comando successivo si torna all’attesa locale di Hola Solphivia. Stop/Alt interrompono la lettura; ⏻ chiude avatar, voce e microfono conservando i dati.
-
-Per la Home usa l’icona normale dall’elenco app. Il menu mostra istruzioni e non crea altre scorciatoie con badge duplicato. · [Tutti i vecchi file e riferimenti](../old/README.md).
+[Privacy](../PRIVACY-IT.md) · [Storia delle versioni](RELEASE_HISTORY.md) · [Archivio old](../old/README.md).
