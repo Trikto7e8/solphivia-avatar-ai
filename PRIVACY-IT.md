@@ -6,7 +6,7 @@ Ultimo aggiornamento: **31 ottobre 2026**. Questa informativa riguarda **Solphiv
 
 Sviluppatore del progetto: account GitHub **Trikto7e8**, repository [solphivia-avatar-ai](https://github.com/Trikto7e8/solphivia-avatar-ai).
 
-Titolare: **Marco Iacobellis**. Per richieste sulla privacy ed esercizio dei diritti: **[solphivia.privacy@gmail.com](mailto:solphivia.privacy@gmail.com)**. Non pubblicare dati personali o richieste di cancellazione nelle issue pubbliche di GitHub.
+Titolare: **Trikto7e8**. Per richieste sulla privacy ed esercizio dei diritti: **[solphivia.privacy@gmail.com](mailto:solphivia.privacy@gmail.com)**. Non pubblicare dati personali o richieste di cancellazione nelle issue pubbliche di GitHub.
 
 ## Finalità e scelta delle funzioni
 
