@@ -2,6 +2,12 @@
 
 Ogni aggiornamento distingue codice preparato, prove automatiche, collaudo reale e distribuzione.
 
+## 2.0.0-beta.2 — codice 57
+
+- Correzione del campo invito: il pannello flottante lascia temporaneamente il posto al menu e alle schermate dei collegamenti, che possono ricevere tocchi e tastiera. Alla chiusura riappare lo stesso avatar, senza ricreare il servizio, cambiare sprite o riavviare audio e richiamo.
+- Verifica aggiunta al collaudo HTTPS isolato: finestra demo in primo piano, campo invito con fuoco, tastiera effettivamente visibile e ritorno dello stesso servizio flottante. Prova superata in emulatore; seguono verifica sul Motorola e aggiornamento interno.
+- Icona ufficiale singola 512x512 caricata e salvata nella bozza della scheda Google Play. La scheda pubblica richiede ancora completamento e revisione; il nome temporaneo del test interno non viene dichiarato risolto.
+
 ## 2.0.0-beta.1 — candidata interna, 16 novembre 2026
 
 Rispetto alla beta 5 pubblica e alla preparazione locale della demo:

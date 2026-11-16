@@ -7,7 +7,7 @@ import android.text.InputType;
 import android.widget.*;
 
 /** Optional configuration only: does not replace the launcher or request microphone permissions. */
-public final class ModelConnectionsActivity extends Activity {
+public final class ModelConnectionsActivity extends OverlaySettingsActivity {
     private LinearLayout page;
     @Override public void onCreate(Bundle state){super.onCreate(state);getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);showChoices();}
     private void startPage(String title){

@@ -12,7 +12,7 @@ Una compagna animata sullo schermo Android. Puoi parlarle, scriverle, allegare d
 
 ## Solphivia IA 2.0 beta · avanzamenti
 
-**Candidata per il canale interno, 16 novembre 2026.** Collegamenti IA personali o locali e servizio con invito utilizzabile anche a voce, con quota per tester. Motore vocale Android, microfono, sprite e materiali promozionali conservati. [Novità rispetto alla precedente](CHANGELOG.md) · [Collegamenti e limiti](docs/CONNESSIONI-IA-2.0-IT.md) · [Preparazione della 2.0 beta](docs/releases/v2.0.0-beta.1.md). La prova reale dal canale interno resta da completare; il link di download precedente rimane disponibile.
+**Candidata per il canale interno, 16 novembre 2026.** Collegamenti IA personali o locali e servizio con invito utilizzabile anche a voce, con quota per tester. Motore vocale Android, microfono, sprite e materiali promozionali conservati. [Novità rispetto alla precedente](CHANGELOG.md) · [Collegamenti e limiti](docs/CONNESSIONI-IA-2.0-IT.md) · [Preparazione della 2.0 beta](docs/releases/v2.0.0-beta.2.md). La prova reale dal canale interno resta da completare; il link di download precedente rimane disponibile.
 
 
 ## Il personaggio e le animazioni

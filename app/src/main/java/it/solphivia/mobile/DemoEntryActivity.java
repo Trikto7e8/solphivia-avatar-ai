@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 
 /** Explicit account choice shared by the activity and floating bubble. */
-public class DemoEntryActivity extends Activity {
+public class DemoEntryActivity extends OverlaySettingsActivity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         new AlertDialog.Builder(this).setTitle("Come vuoi usare Solphivia?")

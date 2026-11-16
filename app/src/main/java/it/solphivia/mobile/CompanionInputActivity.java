@@ -28,7 +28,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /** Small relay activity for Android's speech recognizer and document picker. */
-public class CompanionInputActivity extends Activity {
+public class CompanionInputActivity extends OverlaySettingsActivity {
     static final String ACTION_VOICE = "it.solphivia.mobile.action.VOICE_INPUT";
     static final String ACTION_HOME_ICON = "it.solphivia.mobile.action.HOME_ICON";
     static final String ACTION_SETTINGS = "it.solphivia.mobile.action.SETTINGS";

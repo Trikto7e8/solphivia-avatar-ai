@@ -10,7 +10,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 /** Explicit opt-in to the invitation-backed text demo. */
-public class DemoActivity extends Activity {
+public class DemoActivity extends OverlaySettingsActivity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);

@@ -109,6 +109,20 @@ public final class DemoInstrumentation extends Instrumentation {
                     && (Boolean) field(field(PetService.class, "activeInstance"), "overlayAttached"));
             Object pet = field(PetService.class, "activeInstance");
             await(() -> !(Boolean) field(pet, "busy"));
+            Activity configuration = startActivitySync(new Intent(getTargetContext(), DemoActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            await(() -> configuration.hasWindowFocus() && !(Boolean) field(pet, "overlayAttached"));
+            EditText[] invitationField = {null};
+            runOnMainSync(() -> {
+                invitationField[0] = findEditor(configuration.getWindow().getDecorView());
+                if (invitationField[0] == null) throw new AssertionError("Invitation editor missing");
+                invitationField[0].requestFocus();
+                ((android.view.inputmethod.InputMethodManager) configuration.getSystemService(Activity.INPUT_METHOD_SERVICE))
+                        .showSoftInput(invitationField[0], android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+            });
+            await(() -> invitationField[0].hasFocus() && configuration.getWindow().getDecorView().getRootWindowInsets() != null
+                    && configuration.getWindow().getDecorView().getRootWindowInsets().isVisible(android.view.WindowInsets.Type.ime()));
+            runOnMainSync(configuration::finish);
+            await(() -> field(PetService.class, "activeInstance") == pet && (Boolean) field(pet, "overlayAttached"));
             runOnMainSync(() -> {
                 try {
                     Method voice=PetService.class.getDeclaredMethod("submitMessage",String.class,java.util.ArrayList.class,boolean.class);
@@ -119,7 +133,7 @@ public final class DemoInstrumentation extends Instrumentation {
             send(pet, "Terzo messaggio oltre il limite");
             await(() -> !(Boolean) field(pet, "busy") && field(pet, "speechTarget").toString().contains("limite di richieste"));
             if (OpenAiChatClient.isAuthorizing() || OpenAiChatClient.isConnected(getTargetContext())) throw new AssertionError("Demo touched ChatGPT account");
-            result.putString("stream", "PASS: no account/browser, invalid invite, typed main chat and transcribed-voice floating bubble over local HTTPS share the tester quota; third request refused; missing-overlay button and overlay return. Synthetic provider, no microphone/audio-quality test.\n");
+            result.putString("stream", "PASS: no account/browser, invalid invite, typed main chat and transcribed-voice floating bubble over local HTTPS share the tester quota; third request refused; missing-overlay button and overlay return; invitation settings own keyboard focus and restore the same overlay service. Synthetic provider, no microphone/audio-quality test.\n");
             finish(Activity.RESULT_OK, result);
         } catch (Throwable error) {
             result.putString("stream", "FAIL: " + android.util.Log.getStackTraceString(error));
@@ -129,5 +143,16 @@ public final class DemoInstrumentation extends Instrumentation {
             DemoAccess.disable(getTargetContext());
             runOnMainSync(() -> AppControls.close(getTargetContext()));
         }
+    }
+
+    private static EditText findEditor(android.view.View view) {
+        if (view instanceof EditText) return (EditText) view;
+        if (view instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup) view;
+            for (int i=0;i<group.getChildCount();i++) {
+                EditText found=findEditor(group.getChildAt(i)); if(found!=null)return found;
+            }
+        }
+        return null;
     }
 }
