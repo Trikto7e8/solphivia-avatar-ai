@@ -10,8 +10,8 @@ public class DemoEntryActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         new AlertDialog.Builder(this).setTitle("Come vuoi usare Solphivia?")
-                .setItems(new String[]{"Prova senza account", "Collega ChatGPT"}, (dialog, choice) -> {
-                    Intent target = choice == 0 ? new Intent(this, DemoActivity.class)
+                .setItems(new String[]{"Servizio Solphivia · codice d’invito", "Collega ChatGPT", "Altre IA · API personali o locali"}, (dialog, choice) -> {
+                    Intent target = choice == 2 ? new Intent(this, ModelConnectionsActivity.class) : choice == 0 ? new Intent(this, DemoActivity.class)
                             : new Intent(this, MainActivity.class).setAction(MainActivity.ACTION_CONNECT_CHATGPT);
                     startActivity(target);
                     finish();

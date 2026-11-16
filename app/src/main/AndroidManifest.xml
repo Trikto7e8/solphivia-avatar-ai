@@ -15,6 +15,7 @@
    <intent-filter><action android:name="android.intent.action.VIEW"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.BROWSABLE"/><data android:scheme="solphivia" android:host="oauth-callback"/></intent-filter>
   </activity>
   <activity android:name=".CompanionInputActivity" android:exported="false" android:excludeFromRecents="true" android:theme="@style/CompanionRelayTheme" />
+  <activity android:name=".ModelConnectionsActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
   <activity android:name=".DemoActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
   <activity android:name=".DemoEntryActivity" android:exported="false" android:excludeFromRecents="true" android:theme="@style/CompanionRelayTheme" />
   <activity android:name=".MemoryActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />

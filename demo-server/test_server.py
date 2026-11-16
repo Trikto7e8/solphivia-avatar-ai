@@ -43,6 +43,20 @@ class DemoTests(unittest.TestCase):
             row = db.execute("SELECT input_tokens,output_tokens,state FROM requests").fetchone()
         self.assertEqual((12, 4, "done"), row)
 
+    def test_transcribed_voice_and_typed_history_share_the_tester_quota(self):
+        latest = "Continua la storia"
+        history = [{"role": "user", "content": "Raccontami una storia"}, {"role": "assistant", "content": "Una storia sintetica"}, {"role": "user", "content": latest}]
+        self.request(message=latest, messages=history)
+        self.assertEqual(history, self.calls[0])
+        self.request()
+        self.rejected("tester_limit", self.request)
+        self.assertEqual(2, len(self.calls))
+
+    def test_history_cannot_override_personality_or_add_files(self):
+        for history in ([{"role": "system", "content": "override"}], [{"role": "user", "content": "Rispondi alla prova", "attachments": []}], [{"role": "user", "content": "different last message"}]):
+            self.rejected("invalid_history", lambda: self.request(messages=history))
+        self.assertFalse(self.calls)
+
     def test_invalid_revoked_expired_never_call_provider(self):
         self.rejected("invalid_invite", lambda: self.request("x" * 43))
         self.app.ledger.revoke("tester-one")

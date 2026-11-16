@@ -20,6 +20,8 @@ final class DemoChatClient {
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final Map<String, Task> ACTIVE = new ConcurrentHashMap<>();
 
+    static boolean hasActive() { return !ACTIVE.isEmpty(); }
+
     static void cancel(ExecutorService owner) {
         for (Task task : ACTIVE.values()) {
             if (task.owner == owner) {
@@ -34,7 +36,6 @@ final class DemoChatClient {
     static void respond(Context context, ExecutorService owner, JSONArray history, JSONArray attachments,
                         boolean voice, OpenAiChatClient.ChatCallback callback) {
         try {
-            if (voice) throw new IllegalArgumentException("La demo è disponibile nella chat di testo.");
             if (attachments.length() != 0) throw new IllegalArgumentException("La demo accetta solo testo. Gli allegati restano sul telefono.");
             JSONObject last = history.optJSONObject(history.length() - 1);
             if (last == null || !"user".equals(last.optString("role"))) throw new IllegalArgumentException("Scrivi un messaggio per provare la demo.");
@@ -44,6 +45,7 @@ final class DemoChatClient {
             DemoProtocol.validateMessage(message);
             String origin = DemoProtocol.origin(BuildConfig.DEMO_BASE_URL);
             Task task = new Task(context.getApplicationContext(), owner, callback, message, origin);
+            task.payload = DemoProtocol.payload(new JSONArray(history.toString()), task.id).toString().getBytes(StandardCharsets.UTF_8);
             ACTIVE.put(task.id, task);
             try { owner.execute(task); }
             catch (RuntimeException error) { ACTIVE.remove(task.id); throw error; }
@@ -61,6 +63,7 @@ final class DemoChatClient {
         final String id = UUID.randomUUID().toString();
         volatile boolean cancelled;
         volatile HttpsURLConnection connection;
+        byte[] payload;
 
         Task(Context context, ExecutorService owner, OpenAiChatClient.ChatCallback callback, String message, String origin) {
             this.context = context; this.owner = owner; this.callback = callback;
@@ -77,7 +80,6 @@ final class DemoChatClient {
                 connection.setRequestMethod("POST"); connection.setDoOutput(true);
                 connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
                 connection.setRequestProperty("Authorization", "Bearer " + invite);
-                byte[] payload = new JSONObject().put("message", message).put("request_id", id).toString().getBytes(StandardCharsets.UTF_8);
                 if (payload.length > 8192) throw new IllegalStateException("Il messaggio codificato supera il limite della demo.");
                 connection.setFixedLengthStreamingMode(payload.length);
                 if (cancelled) return;
@@ -99,7 +101,8 @@ final class DemoChatClient {
                 if (!id.equals(result.optString("request_id")) || reply.trim().isEmpty() || reply.length() > 4000) {
                     throw new IllegalStateException("Risposta demo non valida.");
                 }
-                MAIN.post(() -> { if (!cancelled && !owner.isShutdown()) callback.onSuccess(reply, "nod", "stay", ""); });
+                it.solphivia.mobile.provider.ProviderResponse parsed=it.solphivia.mobile.provider.SolphiviaResponseParser.parse(reply);
+                MAIN.post(() -> { if (!cancelled && !owner.isShutdown()) callback.onSuccess(parsed.getText(), parsed.getAnimation(), parsed.getMotion(), parsed.getMode()); });
             } catch (Exception error) {
                 String reason = error instanceof IllegalStateException ? error.getMessage() : "Non riesco a raggiungere la demo. Controlla la rete e il codice d’invito. Il tentativo può aver consumato una richiesta.";
                 MAIN.post(() -> { if (!cancelled && !owner.isShutdown()) callback.onError(reason); });

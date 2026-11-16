@@ -1,6 +1,6 @@
 # Informativa sulla privacy — Solphivia IA
 
-Ultimo aggiornamento: **7 novembre 2026**. Questa informativa riguarda **Solphivia IA**, pacchetto `it.solphivia.mobile`, beta **1.1.0-beta.5** (versionCode 53), e descrive i dati utilizzati dalle sue funzioni.
+Ultimo aggiornamento: **16 novembre 2026**. Questa informativa riguarda **Solphivia IA**, pacchetto `it.solphivia.mobile`, candidata **2.0.0-beta.1** (versionCode 56), e descrive i dati utilizzati dalle sue funzioni.
 
 ## Sviluppatore e contatto privacy
 
@@ -109,3 +109,16 @@ Il pulsante tondo ⏻ o Chiudi Solphivia dalla notifica dell’avatar ferma serv
 ## Arresto e ripresa della lettura
 
 Durante il parlato, il rilevatore locale ascolta le frasi di arresto abilitate. Una lettura sospesa può essere ripresa con una frase dedicata. Nessuna registrazione audio è conservata da Solphivia. Il testo letto e la posizione di ripresa restano in memoria del processo; vengono sostituiti da una nuova richiesta o rimossi dalla chiusura. I comandi sono controllati localmente considerando frase riconosciuta, stabilità ed eco del testo letto. Fermati è riuscito nella prova reale più recente, mentre Stop resta un problema noto. Non è autenticazione biometrica. La trascrizione inviata resta nella barra fino alla frase successiva o alla modifica manuale e rispetta le bozze modificate a mano.
+
+
+## Collegamenti della candidata 2.0 beta
+
+La modalità con invito ora accetta anche parole già trascritte dal riconoscimento esistente. Non carica registrazioni audio su Cloudflare: il testo e il contesto recente della sola conversazione dell'invito passano a Cloudflare e al progetto API OpenAI dedicato. La voce della risposta usa il motore Android già selezionato. Il server non riceve vault o allegati; conserva hash invito, pseudonimo tester, conteggi/prenotazioni, esito e utilizzo. Voce e tastiera consumano la stessa quota, applicata dal server insieme ai tetti globali. Il riconoscitore Android e il TTS possono usare i propri servizi di rete come già indicato sopra.
+
+I collegamenti personali OpenAI/Gemini/Claude/API compatibile inviano richieste direttamente al fornitore confermato dall'utente, con la sua chiave API; non passano al credito Solphivia in caso di errore. La chiave e il profilo sono cifrati in Android Keystore, senza precompilazione fra servizi o richieste autenticate automatiche durante la configurazione. L'utente deve consultare condizioni, costi e trattamento dati del proprio fornitore: un abbonamento consumer non equivale necessariamente all'accesso API.
+
+Ogni nuova configurazione ha una cronologia separata, senza trasferimento automatico di quella dei collegamenti precedenti. L'invio della memoria per le richieste scritte mantiene il consenso monouso con destinazione indicata. Le richieste vocali restano senza vault o allegati. I nuovi adattatori non supportano allegati; il percorso ChatGPT preesistente li mantiene.
+
+Il collegamento a un modello sul PC usa il server scelto dall'utente. Per HTTP locale, dopo scelta esplicita, sono ammessi solo IP IPv4 privati/loopback senza chiavi: il testo non è cifrato sulla LAN. Per chiavi o reti non fidate è richiesto HTTPS. Non viene aperto automaticamente alcun server o porta del PC, né viene installato un modello sul telefono. Non è abilitato il traffico HTTP in chiaro globalmente nell'app.
+
+Questa informativa descrive il codice della candidata: distribuzione interna, configurazione effettiva dei servizi e dichiarazioni Play devono essere verificate prima del rilascio. [Guida dei collegamenti](docs/CONNESSIONI-IA-2.0-IT.md).

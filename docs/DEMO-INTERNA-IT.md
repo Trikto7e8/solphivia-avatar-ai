@@ -1,3 +1,5 @@
+> **Documento storico della preparazione iniziale del 7 novembre.** Per la candidata **2.0 beta, codice 56**, con demo anche vocale e collegamenti personali/locali, usare [la guida aggiornata](CONNESSIONI-IA-2.0-IT.md) e [le note di release](releases/v2.0.0-beta.1.md). I limiti al solo testo e i riferimenti al codice 55 sotto descrivono quella prima preparazione.
+
 # Prova senza account — candidata interna API 36
 
 ## Base e versione

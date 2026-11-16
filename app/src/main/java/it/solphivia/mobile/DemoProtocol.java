@@ -8,6 +8,25 @@ final class DemoProtocol {
     static final int MAX_MESSAGE_BYTES = 4096;
     static final int MAX_RESPONSE_BYTES = 20000;
 
+    /** Only recent text from this invitation's isolated conversation; never vault or file references. */
+    static org.json.JSONObject payload(org.json.JSONArray history, String id) throws Exception {
+        org.json.JSONObject last=history.optJSONObject(history.length()-1);
+        if(last==null||!"user".equals(last.optString("role")))throw new IllegalArgumentException("Scrivi o pronuncia un messaggio.");
+        String message=last.optString("content");validateMessage(message);
+        org.json.JSONArray messages=new org.json.JSONArray();
+        for(int i=Math.max(0,history.length()-8);i<history.length();i++) {
+            org.json.JSONObject line=history.optJSONObject(i);if(line==null)continue;
+            String role=line.optString("role"),text=line.optString("content");
+            if((role.equals("user")||role.equals("assistant"))&&!text.trim().isEmpty()&&text.getBytes(StandardCharsets.UTF_8).length<=4096)
+                messages.put(new org.json.JSONObject().put("role",role).put("content",text));
+        }
+        org.json.JSONObject body=new org.json.JSONObject().put("message",message).put("request_id",id).put("messages",messages);
+        while(messages.length()>1&&(messages.toString().getBytes(StandardCharsets.UTF_8).length>6144||body.toString().getBytes(StandardCharsets.UTF_8).length>8192))messages.remove(0);
+        if(body.toString().getBytes(StandardCharsets.UTF_8).length>8192)body.remove("messages");
+        if(body.toString().getBytes(StandardCharsets.UTF_8).length>8192)throw new IllegalArgumentException("Il messaggio codificato supera il limite della prova.");
+        return body;
+    }
+
     static String origin(String value) {
         URI uri = URI.create(value);
         if (!"https".equals(uri.getScheme()) || uri.getHost() == null || uri.getRawUserInfo() != null

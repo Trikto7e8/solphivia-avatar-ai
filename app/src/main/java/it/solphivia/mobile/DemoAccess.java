@@ -31,9 +31,10 @@ final class DemoAccess {
         byte[] packed = new byte[12 + encrypted.length];
         System.arraycopy(cipher.getIV(), 0, packed, 0, 12);
         System.arraycopy(encrypted, 0, packed, 12, encrypted.length);
-        if (!context.getSharedPreferences("demo", 0).edit().putString("invite", Base64.encodeToString(packed, Base64.NO_WRAP)).putBoolean("enabled", true).commit()) {
+        if (!context.getSharedPreferences("demo", 0).edit().putString("invite", Base64.encodeToString(packed, Base64.NO_WRAP)).putBoolean("enabled", true).putString("conversation", java.util.UUID.randomUUID().toString()).commit()) {
             throw new IllegalStateException("Non riesco a salvare il codice sul telefono.");
         }
+        ModelConnection.clear(context);
     }
 
     static String invite(Context context) throws Exception {

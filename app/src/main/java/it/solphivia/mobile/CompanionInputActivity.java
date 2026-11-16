@@ -56,7 +56,8 @@ public class CompanionInputActivity extends Activity {
         if(ACTION_HOME_ICON.equals(action)){showHomeIconHelp();return;}
         if (ACTION_SETTINGS.equals(action)) {
             new AlertDialog.Builder(this).setTitle("Solphivia")
-                    .setItems(new String[]{"Memoria e Memory Vault", "Voce italiana e pronuncia", "Prova animazioni", "Microfono e sessione", "Aggiungi icona sulla Home", "Ferma la voce", "Riprendi la voce", "Collega ChatGPT", "Prova senza account"}, (d,w) -> {
+                    .setItems(new String[]{"Memoria e Memory Vault", "Voce italiana e pronuncia", "Prova animazioni", "Microfono e sessione", "Aggiungi icona sulla Home", "Ferma la voce", "Riprendi la voce", "Collega ChatGPT", "Prova senza account", "Collegamenti IA · personali o locali"}, (d,w) -> {
+                        if(w==9){startActivity(new Intent(this,ModelConnectionsActivity.class));finish();return;}
                         if(w==8){startActivity(new Intent(this,DemoActivity.class));finish();return;}
                         if(w==7){startActivity(new Intent(this,MainActivity.class).setAction(MainActivity.ACTION_CONNECT_CHATGPT));finish();return;}
                         if(w==6){PetService.resumeReading();finish();return;}

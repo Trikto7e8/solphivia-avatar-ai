@@ -1,4 +1,4 @@
-name: Solphivia IA beta verification
+name: Solphivia IA 2.0 beta verification
 on:
   push:
     branches: [main]
@@ -39,3 +39,8 @@ jobs:
           python-version: '3.13'
       - name: Test invitation limits and Responses gateway without real credentials
         run: python -m unittest discover -s demo-server -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test Cloudflare quotas and voice transcript context without real credentials
+        run: node --test demo-server/cloudflare/worker.test.mjs

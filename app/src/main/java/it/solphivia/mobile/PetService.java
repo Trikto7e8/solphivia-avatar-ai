@@ -581,7 +581,7 @@ public class PetService extends Service {
             return;
         }
         if (attachmentUris.isEmpty() && normalizeCommand(text).equals("nuova chat")) {
-            getSharedPreferences("chat", 0).edit().remove("history").apply();
+            getSharedPreferences("chat", 0).edit().remove(ConversationRoute.historyKey(this)).apply();
             if(!voice)composer.setText(""); setSpeech("Nuova chat pronta."); return;
         }
         String normalized = Normalizer.normalize(text.toLowerCase(Locale.ROOT), Normalizer.Form.NFD).replaceAll("\\p{M}", "");
@@ -610,11 +610,12 @@ public class PetService extends Service {
         if (attachmentUris.isEmpty() && isShutdownCommand(text)) {AppControls.close(this);return;}
 
         applyCostumeCommand(text);
+        if(ModelConnection.active(this) && !attachmentUris.isEmpty()){setSpeech("Questo collegamento supporta testo e voce, non allegati.");return;}
         if (DemoAccess.enabled(this) && !attachmentUris.isEmpty()) {
             setSpeech("La demo accetta solo testo. Rimuovi gli allegati prima di inviare.");
             return;
         }
-        if (!OpenAiChatClient.isConnected(this) && !DemoAccess.enabled(this)) {
+        if (!OpenAiChatClient.isConnected(this) && !DemoAccess.enabled(this) && !ModelConnection.active(this)) {
             setSpeech("Scegli Prova senza account oppure Collega ChatGPT. Il messaggio resta nel fumetto.");
             try {
                 startActivity(new Intent(this, DemoEntryActivity.class)
@@ -884,6 +885,7 @@ public class PetService extends Service {
             storedText += names.append(']').toString();
         }
         JSONArray history = loadHistory();
+        final String requestHistoryKey=ConversationRoute.historyKey(this);
         try {
             history.put(new JSONObject().put("role", "user").put("content", storedText)
                     .put("attachments", AttachmentReader.references(attachments)));
@@ -896,7 +898,8 @@ public class PetService extends Service {
             @Override public void onSuccess(String reply, String mood, String motion, String mode) {
                 main.post(() -> {
                     if (destroyed) return;
-                    getSharedPreferences("chat", 0).edit().putString("history", history.toString()).apply();
+                    if(!requestHistoryKey.equals(ConversationRoute.historyKey(PetService.this))){busy=false;composer.setEnabled(true);sendButton.setEnabled(true);return;}
+                    getSharedPreferences("chat", 0).edit().putString(requestHistoryKey, history.toString()).apply();
                     if(!voice){pendingFiles.clear();updateFilesButton();}
                     busy = false; composer.setEnabled(true); sendButton.setEnabled(true);
                     applyContextualMode(PetService.this, mode, pet);
@@ -1290,11 +1293,11 @@ public class PetService extends Service {
         JSONArray history = loadHistory();
         try { history.put(new JSONObject().put("role", role).put("content", body)); } catch (Exception ignored) { }
         while (history.length() > 16) history.remove(0);
-        getSharedPreferences("chat", 0).edit().putString("history", history.toString()).apply();
+        getSharedPreferences("chat", 0).edit().putString(ConversationRoute.historyKey(this), history.toString()).apply();
     }
 
     private JSONArray loadHistory() {
-        try { return new JSONArray(getSharedPreferences("chat", 0).getString("history", "[]")); }
+        try { return new JSONArray(getSharedPreferences("chat", 0).getString(ConversationRoute.historyKey(this), "[]")); }
         catch (Exception ignored) { return new JSONArray(); }
     }
 

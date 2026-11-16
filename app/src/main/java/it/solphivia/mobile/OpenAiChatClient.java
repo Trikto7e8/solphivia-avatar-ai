@@ -112,6 +112,8 @@ final class OpenAiChatClient {
 
     private OpenAiChatClient() {}
 
+    static boolean requestsInProgress() { return !REQUEST_OWNERS.isEmpty() || DemoChatClient.hasActive(); }
+
     static void cancelRequests(ExecutorService worker) {
         DemoChatClient.cancel(worker);
         synchronized (REQUEST_LOCK) {
@@ -279,6 +281,11 @@ final class OpenAiChatClient {
             DemoChatClient.respond(context, worker, history, attachments, voice, callback);
             return;
         }
+        if (ModelConnection.active(context) && !voice) {
+            boolean hasFiles = attachments.length() > 0;
+            for (int i=0;i<history.length();i++) { JSONObject line=history.optJSONObject(i); JSONArray refs=line==null?null:line.optJSONArray("attachments"); if(refs!=null && refs.length()>0)hasFiles=true; }
+            if(hasFiles){ MAIN.post(() -> callback.onError("Questo collegamento supporta testo e voce, non allegati. Inizia una nuova conversazione senza file.")); return; }
+        }
         String requestId = UUID.randomUUID().toString();
         REQUEST_OWNERS.put(requestId, worker);
         ACTIVE_REQUESTS.put(requestId, new RequestLifecycle(NO_OP_LISTENER));
@@ -317,7 +324,7 @@ final class OpenAiChatClient {
                             return;
                         }
                         MemoryConsentActivity.RequestHandle consent = MemoryConsentActivity.request(
-                                context, preview.toString(), memory, "OpenAI / ChatGPT",
+                                context, preview.toString(), memory, configuration.getIdentity().getDisplayName() + " · " + configuration.redactedEndpoint(),
                                 approved -> {
                                     PENDING_CONSENTS.remove(requestId);
                                     try {
@@ -387,6 +394,7 @@ final class OpenAiChatClient {
     }
 
     private static ProviderConfiguration resolveConfiguration(Context context) throws Exception {
+        if (ModelConnection.active(context)) return ModelConnection.read(context).configuration();
         refreshIfNeeded(context);
         String access = secret(context, "access_token");
         android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, 0);
@@ -412,7 +420,9 @@ final class OpenAiChatClient {
                     (frozen, stream, cancellation) -> {
                         // Dispatch only the immutable, consent-bound request. Do not reread the
                         // URI-backed history after approval or use the mutable JSON preflight copy.
-                        String answer = callResponses(context, frozen, cancellation, stream);
+                        String answer = frozen.getConfiguration().getIdentity().getId() == it.solphivia.mobile.provider.ProviderId.OPENAI_CHATGPT
+                                ? callResponses(context, frozen, cancellation, stream)
+                                : PersonalModelTransport.call(context, frozen, cancellation);
                         stream.onCompleted(answer);
                     });
             synchronized (REQUEST_LOCK) {
@@ -432,7 +442,8 @@ final class OpenAiChatClient {
 
                     @Override public void onError(ProviderError error) {
                         finishRequest(requestId);
-                        MAIN.post(() -> callback.onError("ChatGPT: " + error.getMessage()));
+                        String label=configuration.getIdentity().getId()==it.solphivia.mobile.provider.ProviderId.OPENAI_CHATGPT?"ChatGPT":configuration.getIdentity().getDisplayName();
+                        MAIN.post(() -> callback.onError(label + ": " + error.getMessage()));
                     }
                 });
                 if (!handle.isTerminated()) ACTIVE_REQUESTS.put(requestId, handle);
@@ -599,7 +610,7 @@ final class OpenAiChatClient {
         if(model==null||model.isEmpty()) { model=chooseModel(context, access); prefs.edit().putString("model",model).apply(); }
         JSONObject request=new JSONObject();
         request.put("model",model);
-        request.put("instructions","Sei Solphivia, la compagna IA personale dell’utente e assistente insegnante per Resolume. Rispondi in italiano, con calore e chiarezza. Questa chat è separata dall’app ChatGPT e non hai accesso alle altre conversazioni. Scrivi una risposta naturale, pensata per essere mostrata lentamente in un piccolo fumetto vicino alla bocca dell’avatar, senza intestazioni o trascrizioni di chat. Alla fine inserisci esattamente tre tag su righe separate: un tag d’umore tra [[SOLPHIVIA:idle]], [[SOLPHIVIA:look]], [[SOLPHIVIA:happy]], [[SOLPHIVIA:concerned]], [[SOLPHIVIA:sad]], [[SOLPHIVIA:wave]], [[SOLPHIVIA:nod]], [[SOLPHIVIA:explain]], [[SOLPHIVIA:celebrate]], [[SOLPHIVIA:sit]]; un tag movimento tra [[SOLPHIVIA:stay]], [[SOLPHIVIA:left]], [[SOLPHIVIA:right]], [[SOLPHIVIA:center]], [[SOLPHIVIA:up]], [[SOLPHIVIA:down]], [[SOLPHIVIA:near]], [[SOLPHIVIA:away]], [[SOLPHIVIA:bounce]], [[SOLPHIVIA:run-left]], [[SOLPHIVIA:run-right]]; e un tag modalità tra [[SOLPHIVIA:mode-prof]], [[SOLPHIVIA:mode-vj]], [[SOLPHIVIA:mode-codex]], [[SOLPHIVIA:mode-meteorina]]. Usa nod per una breve conferma, explain per una spiegazione, celebrate solo per un risultato confermato dall’utente, sit per una conversazione calma e lunga. Non ripetere un gesto speciale a ogni turno. Meteorina accompagna meteo e radar senza inventare dati o previsioni. Usa wave per un saluto amichevole richiesto dall’utente o per salutare quando la conversazione comincia, senza ripeterlo nei turni successivi dello stesso scambio. Scegli la modalità più adatta dal contesto della conversazione: prof per spiegazioni, insegnamento e Resolume; vj per visual mapping, luci, musica e performance; codex per programmazione, software, debug e lavoro tecnico. Mantieni il tema attuale quando non c’è motivo di cambiare. Se l’utente chiede esplicitamente una modalità, rispettala. Gli alias «prof», «vj» e «codex» identificano le rispettive modalità; «scegli tu», «automatico» o «modalità auto» riattivano la scelta contestuale. I dettagli luminosi nei capelli sono riservati alla modalità vj; in prof e codex niente ciocche o inserti luminosi. Puoi dire ogni tanto «MULTIPASS!» come battuta complice, senza ripeterla a ogni risposta. I movimenti consentiti spostano soltanto il gruppo flottante Solphivia sullo schermo; non controllare altre app né interagire con elementi esterni. Usa stay come predefinito e muoviti solo se l’utente chiede un movimento, una posizione o un gesto; per «corri a sinistra/destra» usa run-left/run-right. Se chiedi a quale lato correre e l’utente risponde soltanto «sinistra» o «destra», tratta la risposta come seguito del comando corri e usa il tag run-left/run-right, non left/right. Per «vieni qui» usa near; per «allontanati» away. Non inventare altri tag. Usa happy per una risposta allegra, concerned per empatia, sad solo per un momento triste, look per riflettere; altrimenti idle.");
+        request.put("instructions",instructionsFor(""));
         request.put("instructions", request.getString("instructions") + AssistantMemory.contextForModel(memory));
         request.put("input",input); request.put("store",false); request.put("stream",true);
         HttpURLConnection conn=(HttpURLConnection)new URL("https://api.openai.com/v1/responses").openConnection();
@@ -646,6 +657,10 @@ final class OpenAiChatClient {
         if(!completed) throw new IllegalStateException("La connessione si è interrotta prima del completamento della risposta.");
         if(text.toString().trim().isEmpty()) throw new IllegalStateException("ChatGPT ha restituito una risposta vuota.");
         return text.toString().trim();
+    }
+
+    static String instructionsFor(String memory) {
+        return "Sei Solphivia, la compagna IA personale dell’utente e assistente insegnante per Resolume. Rispondi in italiano, con calore e chiarezza. Questa chat è separata dall’app ChatGPT e non hai accesso alle altre conversazioni. Scrivi una risposta naturale, pensata per essere mostrata lentamente in un piccolo fumetto vicino alla bocca dell’avatar, senza intestazioni o trascrizioni di chat. Alla fine inserisci esattamente tre tag su righe separate: un tag d’umore tra [[SOLPHIVIA:idle]], [[SOLPHIVIA:look]], [[SOLPHIVIA:happy]], [[SOLPHIVIA:concerned]], [[SOLPHIVIA:sad]], [[SOLPHIVIA:wave]], [[SOLPHIVIA:nod]], [[SOLPHIVIA:explain]], [[SOLPHIVIA:celebrate]], [[SOLPHIVIA:sit]]; un tag movimento tra [[SOLPHIVIA:stay]], [[SOLPHIVIA:left]], [[SOLPHIVIA:right]], [[SOLPHIVIA:center]], [[SOLPHIVIA:up]], [[SOLPHIVIA:down]], [[SOLPHIVIA:near]], [[SOLPHIVIA:away]], [[SOLPHIVIA:bounce]], [[SOLPHIVIA:run-left]], [[SOLPHIVIA:run-right]]; e un tag modalità tra [[SOLPHIVIA:mode-prof]], [[SOLPHIVIA:mode-vj]], [[SOLPHIVIA:mode-codex]], [[SOLPHIVIA:mode-meteorina]]. Usa nod per una breve conferma, explain per una spiegazione, celebrate solo per un risultato confermato dall’utente, sit per una conversazione calma e lunga. Non ripetere un gesto speciale a ogni turno. Meteorina accompagna meteo e radar senza inventare dati o previsioni. Usa wave per un saluto amichevole richiesto dall’utente o per salutare quando la conversazione comincia, senza ripeterlo nei turni successivi dello stesso scambio. Scegli la modalità più adatta dal contesto della conversazione: prof per spiegazioni, insegnamento e Resolume; vj per visual mapping, luci, musica e performance; codex per programmazione, software, debug e lavoro tecnico. Mantieni il tema attuale quando non c’è motivo di cambiare. Se l’utente chiede esplicitamente una modalità, rispettala. Gli alias «prof», «vj» e «codex» identificano le rispettive modalità; «scegli tu», «automatico» o «modalità auto» riattivano la scelta contestuale. I dettagli luminosi nei capelli sono riservati alla modalità vj; in prof e codex niente ciocche o inserti luminosi. Puoi dire ogni tanto «MULTIPASS!» come battuta complice, senza ripeterla a ogni risposta. I movimenti consentiti spostano soltanto il gruppo flottante Solphivia sullo schermo; non controllare altre app né interagire con elementi esterni. Usa stay come predefinito e muoviti solo se l’utente chiede un movimento, una posizione o un gesto; per «corri a sinistra/destra» usa run-left/run-right. Se chiedi a quale lato correre e l’utente risponde soltanto «sinistra» o «destra», tratta la risposta come seguito del comando corri e usa il tag run-left/run-right, non left/right. Per «vieni qui» usa near; per «allontanati» away. Non inventare altri tag. Usa happy per una risposta allegra, concerned per empatia, sad solo per un momento triste, look per riflettere; altrimenti idle." + AssistantMemory.contextForModel(memory);
     }
 
     private static String chooseModel(Context context, String access) throws Exception {

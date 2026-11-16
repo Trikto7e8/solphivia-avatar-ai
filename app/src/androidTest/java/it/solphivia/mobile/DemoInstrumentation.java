@@ -109,12 +109,17 @@ public final class DemoInstrumentation extends Instrumentation {
                     && (Boolean) field(field(PetService.class, "activeInstance"), "overlayAttached"));
             Object pet = field(PetService.class, "activeInstance");
             await(() -> !(Boolean) field(pet, "busy"));
-            send(pet, "Scrivi un secondo messaggio per il test");
+            runOnMainSync(() -> {
+                try {
+                    Method voice=PetService.class.getDeclaredMethod("submitMessage",String.class,java.util.ArrayList.class,boolean.class);
+                    voice.setAccessible(true);voice.invoke(pet,"Scrivi un secondo messaggio per il test",new java.util.ArrayList<String>(),true);
+                }catch(Exception e){throw new AssertionError(e);}
+            });
             await(() -> !(Boolean) field(pet, "busy") && "Risposta demo sintetica".equals(field(pet, "speechTarget")));
             send(pet, "Terzo messaggio oltre il limite");
             await(() -> !(Boolean) field(pet, "busy") && field(pet, "speechTarget").toString().contains("limite di richieste"));
             if (OpenAiChatClient.isAuthorizing() || OpenAiChatClient.isConnected(getTargetContext())) throw new AssertionError("Demo touched ChatGPT account");
-            result.putString("stream", "PASS: no account/browser, invalid invite, text response in main chat and floating bubble over local HTTPS, tester limit, missing-overlay button and overlay return. Synthetic provider only.\n");
+            result.putString("stream", "PASS: no account/browser, invalid invite, typed main chat and transcribed-voice floating bubble over local HTTPS share the tester quota; third request refused; missing-overlay button and overlay return. Synthetic provider, no microphone/audio-quality test.\n");
             finish(Activity.RESULT_OK, result);
         } catch (Throwable error) {
             result.putString("stream", "FAIL: " + android.util.Log.getStackTraceString(error));

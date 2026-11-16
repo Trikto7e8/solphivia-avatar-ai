@@ -187,6 +187,8 @@ public class MainActivity extends Activity {
         demoButton.setMinHeight(dp(48));
         demoButton.setOnClickListener(v -> startActivity(new Intent(this, DemoActivity.class)));
         page.addView(demoButton);
+        Button modelsButton=new Button(this);modelsButton.setText("Collegamenti IA · personali o locali");modelsButton.setMinHeight(dp(48));
+        modelsButton.setOnClickListener(v -> startActivity(new Intent(this,ModelConnectionsActivity.class)));page.addView(modelsButton);
         overlayPermissionButton = new Button(this);
         overlayPermissionButton.setText("Attiva avatar flottante · Mostra sopra altre app");
         overlayPermissionButton.setMinHeight(dp(48));
@@ -421,7 +423,9 @@ public class MainActivity extends Activity {
     }
 
     private void connectChatGPT() {
+        if(busy||OpenAiChatClient.requestsInProgress()){status.setText("Attendi la risposta prima di cambiare collegamento.");return;}
         DemoAccess.disable(this);
+        ModelConnection.clear(this);
         if (authBrowser || OpenAiChatClient.isAuthorizing()) {
             authBrowser = true;
             status.setText("Completa l’autorizzazione ChatGPT già aperta e poi torna qui.");
@@ -485,7 +489,7 @@ public class MainActivity extends Activity {
         if(text.equalsIgnoreCase("impostazioni voce")){if(!voice)composer.setText("");startActivity(new Intent(this,VoiceSettingsActivity.class));return;}
         if(VoicePhrases.greeting(text)){if(!voice)composer.setText("");speak("Cosa posso fare per te?","wave","stay",false);return;}
         if (text.equalsIgnoreCase("nuova chat")) {
-            getSharedPreferences("chat", 0).edit().remove("history").apply();
+            getSharedPreferences("chat", 0).edit().remove(ConversationRoute.historyKey(this)).apply();
             if(!voice)composer.setText(""); setSpeech("Nuova chat pronta.", false); return;
         }
         if (PetService.isShutdownCommand(text)) {AppControls.close(this);return;}
@@ -497,7 +501,7 @@ public class MainActivity extends Activity {
             inlinePet.setClassicCyborgSuit(cyborg);
             getSharedPreferences("pet", 0).edit().putBoolean("cyborg_suit", cyborg).apply();
         }
-        if (!OpenAiChatClient.isConnected(this) && !DemoAccess.enabled(this)) {
+        if (!OpenAiChatClient.isConnected(this) && !DemoAccess.enabled(this) && !ModelConnection.active(this)) {
             startActivity(new Intent(this, DemoEntryActivity.class));
             return;
         }
@@ -508,6 +512,7 @@ public class MainActivity extends Activity {
         status.setText("Solphivia sta pensando…");
         setAnimation("thinking"); setSpeech(VoiceStatusState.THINKING_LABEL, false);
         JSONArray history = loadHistory();
+        final String requestHistoryKey=ConversationRoute.historyKey(this);
         final String requestText=text;
         try {history.put(new JSONObject().put("role","user").put("content",requestText));}catch(Exception e){throw new IllegalStateException(e);}
         while(history.length()>16)history.remove(0);
@@ -515,9 +520,10 @@ public class MainActivity extends Activity {
             @Override public void onSuccess(String reply, String animation, String motion, String mode) {
                 runOnUiThread(() -> {
                     if (isFinishing() || isDestroyed()) return;
-                    getSharedPreferences("chat",0).edit().putString("history",history.toString()).apply();
+                    if(!requestHistoryKey.equals(ConversationRoute.historyKey(MainActivity.this))){busy=false;sendButton.setEnabled(true);composer.setEnabled(true);return;}
+                    getSharedPreferences("chat",0).edit().putString(requestHistoryKey,history.toString()).apply();
                     busy = false; sendButton.setEnabled(true); composer.setEnabled(true);
-                    status.setText(DemoAccess.enabled(MainActivity.this) ? "Demo di testo · senza account" : "Chat privata · collegata a ChatGPT");
+                    status.setText(DemoAccess.enabled(MainActivity.this) ? "Servizio Solphivia · quota tester" : ModelConnection.active(MainActivity.this) ? "IA personale · collegata" : "Chat privata · collegata a ChatGPT");
                     PetService.applyContextualMode(MainActivity.this, mode, inlinePet);
                     speak(reply, animation, preserveRunIntent(motion), true);
                     composer.requestFocus();
@@ -558,6 +564,7 @@ public class MainActivity extends Activity {
         status.setText("Bozza pronta: controlla il messaggio e premi ➜. Tieni premuto + per rimuovere gli allegati.");
     }
     private void sendInlineFiles(String text) {
+        if(ModelConnection.active(this)){status.setText("Questo collegamento supporta testo e voce, non allegati.");return;}
         if(!OpenAiChatClient.isConnected(this)){status.setText("Collega ChatGPT prima di inviare gli allegati.");return;}
         busy=true;sendButton.setEnabled(false);composer.setEnabled(false);
         java.util.ArrayList<String> selected=new java.util.ArrayList<>(pendingFiles);
@@ -572,7 +579,7 @@ public class MainActivity extends Activity {
                     OpenAiChatClient.respond(this,worker,history,files,new OpenAiChatClient.ChatCallback(){
                         public void onSuccess(String reply,String mood,String motion,String mode){
                             if(isDestroyed())return;
-                            getSharedPreferences("chat",0).edit().putString("history",history.toString()).apply();
+                            getSharedPreferences("chat",0).edit().putString(ConversationRoute.historyKey(MainActivity.this),history.toString()).apply();
                             busy=false;sendButton.setEnabled(true);composer.setEnabled(true);composer.setText("");pendingFiles.clear();filesButton.setText("+");
                             PetService.applyContextualMode(MainActivity.this,mode,inlinePet);speak(reply,mood,motion,true);refreshConnectionState();
                         }
@@ -690,7 +697,7 @@ public class MainActivity extends Activity {
         JSONArray history = loadHistory();
         try { history.put(new JSONObject().put("role", role).put("content", body)); } catch (Exception ignored) {}
         while (history.length() > 16) history.remove(0);
-        getSharedPreferences("chat", 0).edit().putString("history", history.toString()).apply();
+        getSharedPreferences("chat", 0).edit().putString(ConversationRoute.historyKey(this), history.toString()).apply();
     }
 
     @Override protected void onDestroy() {
@@ -716,7 +723,7 @@ public class MainActivity extends Activity {
     }
 
     private JSONArray loadHistory() {
-        try { return new JSONArray(getSharedPreferences("chat",0).getString("history","[]")); }
+        try { return new JSONArray(getSharedPreferences("chat",0).getString(ConversationRoute.historyKey(this),"[]")); }
         catch(Exception ignored) { return new JSONArray(); }
     }
 
@@ -732,13 +739,15 @@ public class MainActivity extends Activity {
         composer.setEnabled(!busy && !authPending); sendButton.setEnabled(!busy && !authPending);
         status.setText(connected ? (Settings.canDrawOverlays(this) ? "Chat privata · collegata a ChatGPT" : "Chat collegata · tocca per attivare l’avatar flottante") :
                 (Settings.canDrawOverlays(this) ? "Scrivi per iniziare la chat" : "Chat pronta · avatar flottante disattivato"));
-        if (demo) status.setText("Demo di testo · senza account");
+        if (demo) status.setText("Servizio Solphivia · quota tester · testo e voce");
+        else if(ModelConnection.active(this))status.setText("IA personale · testo e voce · nessun credito del progetto");
         status.setOnClickListener(v -> {
             if (!Settings.canDrawOverlays(this)) startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
         });
     }
 
     private void showFirstUseNotice() {
+        if(DemoAccess.enabled(this)||ModelConnection.active(this))return;
         android.content.SharedPreferences p=getSharedPreferences("chatgpt_oauth",0);
         if (p.getBoolean("plan_welcome_seen",false)) return;
         connectionNoticePending = true;

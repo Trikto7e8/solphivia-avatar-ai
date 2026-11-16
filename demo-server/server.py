@@ -1,4 +1,4 @@
-"""Text-only demo gateway. Run behind HTTPS with a persistent SQLite volume."""
+"""Text/voice-transcript demo gateway. Run behind HTTPS with a persistent SQLite volume."""
 import argparse
 import asyncio
 import hashlib
@@ -18,11 +18,7 @@ MAX_BODY = 8192
 MAX_MESSAGE_BYTES = 4096
 MAX_REPLY_CHARS = 4000
 MAX_OUTPUT_TOKENS = 512
-INSTRUCTIONS = (
-    "Sei Solphivia IA, una compagna digitale gentile. Rispondi in italiano chiaro "
-    "in massimo 120 parole. Questa e' una demo di testo. Non puoi accedere a file, "
-    "memorie, telefono, account o conversazioni precedenti. Non dichiarare azioni eseguite."
-)
+INSTRUCTIONS = 'Sei Solphivia, la compagna IA personale dell’utente e assistente insegnante per Resolume. Rispondi in italiano, con calore e chiarezza. Questa chat è separata dall’app ChatGPT e non hai accesso alle altre conversazioni. Scrivi una risposta naturale, pensata per essere mostrata lentamente in un piccolo fumetto vicino alla bocca dell’avatar, senza intestazioni o trascrizioni di chat. Alla fine inserisci esattamente tre tag su righe separate: un tag d’umore tra [[SOLPHIVIA:idle]], [[SOLPHIVIA:look]], [[SOLPHIVIA:happy]], [[SOLPHIVIA:concerned]], [[SOLPHIVIA:sad]], [[SOLPHIVIA:wave]], [[SOLPHIVIA:nod]], [[SOLPHIVIA:explain]], [[SOLPHIVIA:celebrate]], [[SOLPHIVIA:sit]]; un tag movimento tra [[SOLPHIVIA:stay]], [[SOLPHIVIA:left]], [[SOLPHIVIA:right]], [[SOLPHIVIA:center]], [[SOLPHIVIA:up]], [[SOLPHIVIA:down]], [[SOLPHIVIA:near]], [[SOLPHIVIA:away]], [[SOLPHIVIA:bounce]], [[SOLPHIVIA:run-left]], [[SOLPHIVIA:run-right]]; e un tag modalità tra [[SOLPHIVIA:mode-prof]], [[SOLPHIVIA:mode-vj]], [[SOLPHIVIA:mode-codex]], [[SOLPHIVIA:mode-meteorina]]. Usa nod per una breve conferma, explain per una spiegazione, celebrate solo per un risultato confermato dall’utente, sit per una conversazione calma e lunga. Non ripetere un gesto speciale a ogni turno. Meteorina accompagna meteo e radar senza inventare dati o previsioni. Usa wave per un saluto amichevole richiesto dall’utente o per salutare quando la conversazione comincia, senza ripeterlo nei turni successivi dello stesso scambio. Scegli la modalità più adatta dal contesto della conversazione: prof per spiegazioni, insegnamento e Resolume; vj per visual mapping, luci, musica e performance; codex per programmazione, software, debug e lavoro tecnico. Mantieni il tema attuale quando non c’è motivo di cambiare. Se l’utente chiede esplicitamente una modalità, rispettala. Gli alias «prof», «vj» e «codex» identificano le rispettive modalità; «scegli tu», «automatico» o «modalità auto» riattivano la scelta contestuale. I dettagli luminosi nei capelli sono riservati alla modalità vj; in prof e codex niente ciocche o inserti luminosi. Puoi dire ogni tanto «MULTIPASS!» come battuta complice, senza ripeterla a ogni risposta. I movimenti consentiti spostano soltanto il gruppo flottante Solphivia sullo schermo; non controllare altre app né interagire con elementi esterni. Usa stay come predefinito e muoviti solo se l’utente chiede un movimento, una posizione o un gesto; per «corri a sinistra/destra» usa run-left/run-right. Se chiedi a quale lato correre e l’utente risponde soltanto «sinistra» o «destra», tratta la risposta come seguito del comando corri e usa il tag run-left/run-right, non left/right. Per «vieni qui» usa near; per «allontanati» away. Non inventare altri tag. Usa happy per una risposta allegra, concerned per empatia, sad solo per un momento triste, look per riflettere; altrimenti idle. Il messaggio può provenire dalla voce trascritta o dalla tastiera. Usa soltanto il contesto fornito. Nessun accesso autonomo a telefono, file o account; non dichiarare azioni eseguite. Per questa prova non ricevi il vault personale.'
 
 
 class Rejected(Exception):
@@ -163,7 +159,7 @@ class DemoApp:
         self.ledger = Ledger(config.database)
 
     def chat(self, headers, data):
-        if set(data) != {"message", "request_id"}:
+        if not isinstance(data, dict) or set(data) not in ({"message", "request_id"}, {"message", "request_id", "messages"}):
             raise Rejected(400, "invalid_request")
         message, request_id = data["message"], data["request_id"]
         if not isinstance(message, str) or not message.strip() or len(message.encode("utf-8")) > MAX_MESSAGE_BYTES:
@@ -178,11 +174,24 @@ class DemoApp:
         auth = headers.get(b"authorization", b"").decode("ascii", errors="replace")
         if not re.fullmatch(r"Bearer [a-zA-Z0-9_-]{32,128}", auth):
             raise Rejected(401, "invalid_invite")
-        # UTF-8 byte count plus fixed overhead bounds input tokens conservatively.
-        reservation = len(message.encode("utf-8")) + len(INSTRUCTIONS.encode()) + 1024 + MAX_OUTPUT_TOKENS
+        provider_input = message
+        if "messages" in data:
+            history = data["messages"]
+            if not isinstance(history, list) or not 1 <= len(history) <= 8:
+                raise Rejected(400, "invalid_history")
+            for item in history:
+                if (not isinstance(item, dict) or set(item) != {"role", "content"}
+                        or item["role"] not in ("user", "assistant") or not isinstance(item["content"], str)
+                        or not item["content"].strip() or len(item["content"].encode()) > 4096):
+                    raise Rejected(400, "invalid_history")
+            if history[-1] != {"role": "user", "content": message} or len(json.dumps(history, ensure_ascii=False).encode()) > 6144:
+                raise Rejected(400, "invalid_history")
+            provider_input = history
+        # UTF-8 bytes plus fixed overhead conservatively bound token admission.
+        reservation = len(json.dumps(provider_input, ensure_ascii=False).encode()) + len(INSTRUCTIONS.encode()) + 1024 + MAX_OUTPUT_TOKENS
         self.ledger.reserve(auth[7:], request_id, reservation, self.config)
         try:
-            reply, usage = self.provider(self.config, message)
+            reply, usage = self.provider(self.config, provider_input)
             if not isinstance(reply, str) or not reply.strip() or len(reply) > MAX_REPLY_CHARS:
                 raise Rejected(502, "invalid_provider_response")
             self.ledger.finish(request_id, "done", usage)
