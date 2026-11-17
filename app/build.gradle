@@ -4,12 +4,30 @@ plugins {
 }
 android {
  namespace 'it.solphivia.mobile'
- compileSdk 35
- defaultConfig { applicationId 'it.solphivia.mobile'; minSdk 26; targetSdk 35; versionCode 53; versionName '1.1.0-beta.5'; manifestPlaceholders = [appLabel: 'Solphivia IA'] }
- if (project.hasProperty('verificationBuild')) { defaultConfig { applicationIdSuffix '.v11.verification'; manifestPlaceholders = [appLabel: 'Solphivia IA 1.1 beta 5 · PROVA'] } }
+ compileSdk 36
+ buildFeatures { buildConfig true }
+ defaultConfig {
+  applicationId 'it.solphivia.mobile'; minSdk 26; targetSdk 36; versionCode 57; versionName '2.0.0-beta.2'
+  manifestPlaceholders = [appLabel: 'Solphivia IA']
+  def demoUrl = providers.gradleProperty('solphiviaDemoUrl').orElse(providers.environmentVariable('SOLPHIVIA_DEMO_URL')).getOrElse('')
+  if (demoUrl && !(demoUrl ==~ /https:\/\/[a-zA-Z0-9.-]+(?::[0-9]+)?/)) throw new GradleException('Demo URL must be an HTTPS origin without path, credentials or query')
+  buildConfigField 'String', 'DEMO_BASE_URL', '"' + demoUrl + '"'
+ }
+ if (project.hasProperty('verificationBuild')) { defaultConfig { applicationIdSuffix '.v11.verification'; manifestPlaceholders = [appLabel: 'Solphivia IA 2.0 beta · PROVA'] } }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
  defaultConfig { ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' } }
  defaultConfig { testInstrumentationRunner project.findProperty('testRunner') ?: 'it.solphivia.mobile.RegressionInstrumentation' }
+ def signingValues = ['SOLPHIVIA_UPLOAD_STORE_FILE', 'SOLPHIVIA_UPLOAD_STORE_PASSWORD', 'SOLPHIVIA_UPLOAD_KEY_ALIAS', 'SOLPHIVIA_UPLOAD_KEY_PASSWORD'].collect { System.getenv(it) ?: '' }
+ if (signingValues.any { it } && !signingValues.every { it }) throw new GradleException('Incomplete upload signing configuration')
+ if (signingValues.every { it }) {
+  def keyStore = java.security.KeyStore.getInstance('JKS')
+  file(signingValues[0]).withInputStream { keyStore.load(it, signingValues[1].toCharArray()) }
+  def certificate = keyStore.getCertificate(signingValues[2])
+  def expected = '76110773e7fa518f553f79a3b9a48aac1d5c5b45f3913d58467b7de01fc20c6a'
+  if (certificate == null || java.security.MessageDigest.getInstance('SHA-256').digest(certificate.encoded).encodeHex().toString() != expected) throw new GradleException('Upload certificate differs from the previously uploaded bundle')
+  signingConfigs { upload { storeFile file(signingValues[0]); storePassword signingValues[1]; keyAlias signingValues[2]; keyPassword signingValues[3] } }
+  buildTypes { release { signingConfig signingConfigs.upload } }
+ }
 }
 kotlin { jvmToolchain(17) }
 dependencies {

@@ -1,6 +1,6 @@
 # Informativa sulla privacy — Solphivia IA
 
-Ultimo aggiornamento: **7 novembre 2026**. Questa informativa riguarda **Solphivia IA**, pacchetto `it.solphivia.mobile`, beta **1.1.0-beta.5** (versionCode 53), e descrive i dati utilizzati dalle sue funzioni.
+Ultimo aggiornamento: **16 novembre 2026**. Questa informativa riguarda **Solphivia IA**, pacchetto `it.solphivia.mobile`, candidata **2.0.0-beta.1** (versionCode 56), e descrive i dati utilizzati dalle sue funzioni.
 
 ## Sviluppatore e contatto privacy
 
@@ -12,7 +12,17 @@ Per richieste sulla privacy ed esercizio dei diritti: **[solphivia.privacy@gmail
 
 Solphivia IA offre un avatar flottante, chat con il fornitore AI collegato, interazione vocale, memoria personale locale e funzioni meteo. Dati e permessi servono alle funzioni attivate dall'utente. Non è obbligatorio concedere microfono, posizione o overlay per il solo fatto di installare l'app; negare o revocare un permesso impedisce la funzione che ne dipende. Senza collegamento al fornitore AI non è possibile usare la conversazione AI.
 
-Nella configurazione esaminata non risultano SDK pubblicitari o analytics nelle dipendenze dell'app. Le richieste di rete dirette sono effettuate dal telefono ai servizi indicati sotto: il codice esaminato non usa un server intermedio del manutentore per ricevere le conversazioni. Questo non significa che tutti i dati restino sul telefono.
+Nella configurazione esaminata non risultano SDK pubblicitari o analytics nelle dipendenze dell'app. Nella modalità account le richieste di rete partono dal telefono verso i servizi indicati sotto. La candidata 1.1.0-beta.6, quando la demo è configurata e scelta dall’utente, usa anche il servizio HTTPS del progetto descritto nella sezione seguente.
+
+## Prova senza account nella candidata 1.1.0-beta.6
+
+Questa modalità viene attivata con un codice d’invito. Il messaggio di testo corrente passa dal telefono al servizio HTTPS del progetto e poi a OpenAI, usando la chiave del progetto API conservata sul server. La schermata di attivazione spiega il percorso prima dell’invio. Cronologia precedente, memoria personale e allegati restano sul telefono per questa modalità. La demo iniziale accetta la chat di testo.
+
+Il codice d’invito è cifrato sul telefono con Android Keystore. Disattivare la demo rimuove il codice locale. Il server conserva hash degli inviti, pseudonimo del tester, scadenze, revoche, identificativi delle richieste e contatori di consumo per applicare i limiti. Il servizio fornito elabora messaggi e risposte in memoria e conserva soltanto questi metadati nel database della campagna. Gli access log HTTP sono disattivati nella configurazione fornita. Il gestore dell’hosting può trattare indirizzo IP e metadati tecnici secondo le proprie condizioni.
+
+Le richieste alla Responses API usano `store: false`. Restano applicabili le condizioni e la conservazione dei dati del fornitore descritte sotto. I contatori sul server restano validi anche dopo la reinstallazione del telefono o il riavvio del servizio. Gli inviti sono revocabili e soggetti a scadenza. Il gestore può revocare gli inviti e gestire la cancellazione dei metadati della campagna tramite il recapito privacy del progetto.
+
+Il collegamento ChatGPT resta una scelta separata. L’invio demo richiede l’indirizzo HTTPS configurato nella build e viene rifiutato se il codice o il budget del tester non sono validi. La guida della candidata è in [Prova senza account](docs/DEMO-INTERNA-IT.md).
 
 ## Finalità e basi giuridiche
 
@@ -99,3 +109,16 @@ Il pulsante tondo ⏻ o Chiudi Solphivia dalla notifica dell’avatar ferma serv
 ## Arresto e ripresa della lettura
 
 Durante il parlato, il rilevatore locale ascolta le frasi di arresto abilitate. Una lettura sospesa può essere ripresa con una frase dedicata. Nessuna registrazione audio è conservata da Solphivia. Il testo letto e la posizione di ripresa restano in memoria del processo; vengono sostituiti da una nuova richiesta o rimossi dalla chiusura. I comandi sono controllati localmente considerando frase riconosciuta, stabilità ed eco del testo letto. Fermati è riuscito nella prova reale più recente, mentre Stop resta un problema noto. Non è autenticazione biometrica. La trascrizione inviata resta nella barra fino alla frase successiva o alla modifica manuale e rispetta le bozze modificate a mano.
+
+
+## Collegamenti della candidata 2.0 beta
+
+La modalità con invito ora accetta anche parole già trascritte dal riconoscimento esistente. Non carica registrazioni audio su Cloudflare: il testo e il contesto recente della sola conversazione dell'invito passano a Cloudflare e al progetto API OpenAI dedicato. La voce della risposta usa il motore Android già selezionato. Il server non riceve vault o allegati; conserva hash invito, pseudonimo tester, conteggi/prenotazioni, esito e utilizzo. Voce e tastiera consumano la stessa quota, applicata dal server insieme ai tetti globali. Il riconoscitore Android e il TTS possono usare i propri servizi di rete come già indicato sopra.
+
+I collegamenti personali OpenAI/Gemini/Claude/API compatibile inviano richieste direttamente al fornitore confermato dall'utente, con la sua chiave API; non passano al credito Solphivia in caso di errore. La chiave e il profilo sono cifrati in Android Keystore, senza precompilazione fra servizi o richieste autenticate automatiche durante la configurazione. L'utente deve consultare condizioni, costi e trattamento dati del proprio fornitore: un abbonamento consumer non equivale necessariamente all'accesso API.
+
+Ogni nuova configurazione ha una cronologia separata, senza trasferimento automatico di quella dei collegamenti precedenti. L'invio della memoria per le richieste scritte mantiene il consenso monouso con destinazione indicata. Le richieste vocali restano senza vault o allegati. I nuovi adattatori non supportano allegati; il percorso ChatGPT preesistente li mantiene.
+
+Il collegamento a un modello sul PC usa il server scelto dall'utente. Per HTTP locale, dopo scelta esplicita, sono ammessi solo IP IPv4 privati/loopback senza chiavi: il testo non è cifrato sulla LAN. Per chiavi o reti non fidate è richiesto HTTPS. Non viene aperto automaticamente alcun server o porta del PC, né viene installato un modello sul telefono. Non è abilitato il traffico HTTP in chiaro globalmente nell'app.
+
+Questa informativa descrive il codice della candidata: distribuzione interna, configurazione effettiva dei servizi e dichiarazioni Play devono essere verificate prima del rilascio. [Guida dei collegamenti](docs/CONNESSIONI-IA-2.0-IT.md).

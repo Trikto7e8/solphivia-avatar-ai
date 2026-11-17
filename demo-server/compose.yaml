@@ -1,0 +1,27 @@
+services:
+  demo:
+    build: .
+    restart: unless-stopped
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?Set the dedicated project key on the server}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
+      DEMO_GLOBAL_REQUESTS: ${DEMO_GLOBAL_REQUESTS:-100}
+      DEMO_GLOBAL_TOKENS: ${DEMO_GLOBAL_TOKENS:-200000}
+    volumes:
+      - demo_data:/data
+  https:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      DEMO_HOST: ${DEMO_HOST:?Set the demo hostname}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  demo_data:
+  caddy_data:
+  caddy_config:
