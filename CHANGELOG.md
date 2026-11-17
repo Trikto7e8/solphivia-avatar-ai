@@ -5,7 +5,8 @@ Ogni aggiornamento distingue codice preparato, prove automatiche, collaudo reale
 ## 2.0.0-beta.2 — codice 57
 
 - Correzione del campo invito: il pannello flottante lascia temporaneamente il posto al menu e alle schermate dei collegamenti, che possono ricevere tocchi e tastiera. Alla chiusura riappare lo stesso avatar, senza ricreare il servizio, cambiare sprite o riavviare audio e richiamo.
-- Verifica aggiunta al collaudo HTTPS isolato: finestra demo in primo piano, campo invito con fuoco, tastiera effettivamente visibile e ritorno dello stesso servizio flottante. Prova superata in emulatore; seguono verifica sul Motorola e aggiornamento interno.
+- Verifica aggiunta al collaudo HTTPS isolato: finestra demo in primo piano, campo invito con fuoco, tastiera effettivamente visibile e ritorno dello stesso servizio flottante. Prova superata in emulatore. Il 17 novembre il Motorola e stato aggiornato da Play al codice 57: tastiera reale visibile, attivazione invito, ritorno dell’avatar e risposta OpenAI dal fumetto verificati senza browser. Il collaudo vocale dell’utente prosegue.
+- Bundle 57 firmato con la chiave di caricamento esistente e pubblicato nel canale interno Google Play il 17 novembre 2026. API 36 e dispositivi supportati conservati; controlli GitHub superati.
 - Icona ufficiale singola 512x512 caricata e salvata nella bozza della scheda Google Play. La scheda pubblica richiede ancora completamento e revisione; il nome temporaneo del test interno non viene dichiarato risolto.
 
 ## 2.0.0-beta.1 — candidata interna, 16 novembre 2026
